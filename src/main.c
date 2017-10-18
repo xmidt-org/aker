@@ -66,7 +66,7 @@ int main( int argc, char **argv)
     };
 
     libpd_cfg_t cfg = { .service_name = "parental-control",
-                        .receive = true, 
+                        .receive = true,
                         .keepalive_timeout_secs = 64,
                         .parodus_url = NULL,
                         .client_url = NULL
@@ -98,7 +98,7 @@ int main( int argc, char **argv)
                 break;
             default:
                 break;
-        }    
+        }
     }
 
     if( (NULL != cfg.parodus_url) && (NULL != cfg.client_url) ) {
@@ -135,7 +135,7 @@ static void sig_handler(int sig)
     } else if( sig == SIGPIPE ) {
         signal(SIGPIPE, sig_handler); /* reset it to this function */
         debug_info("SIGPIPE received!\n");
-    } else if( sig == SIGALRM )	{
+    } else if( sig == SIGALRM ) {
         signal(SIGALRM, sig_handler); /* reset it to this function */
         debug_info("SIGALRM received!\n");
     } else {
@@ -149,7 +149,7 @@ static void connect_parodus(libpd_cfg_t *cfg)
     int backoffRetryTime = 0;
     int max_retry_sleep = (1 << 5) - 1; /* 2^5 - 1 */
     int c = 2;   //Retry Backoff count shall start at c=2 & calculate 2^c - 1.
-    
+
 
     // TODO This needs to be re-worked so 1 thread can do everything.
     while( 1 ) {
@@ -165,14 +165,14 @@ static void connect_parodus(libpd_cfg_t *cfg)
             debug_error("Init for parodus (url %s) failed: '%s'\n", cfg->parodus_url, libparodus_strerror(ret));
             sleep(backoffRetryTime);
             c++;
-         
-	    if( backoffRetryTime == max_retry_sleep ) {
-		c = 2;
-		backoffRetryTime = 0;
-		debug_print("backoffRetryTime reached max value, reseting to initial value\n");
-	    }
+
+        if( backoffRetryTime == max_retry_sleep ) {
+            c = 2;
+            backoffRetryTime = 0;
+            debug_print("backoffRetryTime reached max value, reseting to initial value\n");
+            }
         }
-	libparodus_shutdown(&hpd_instance);
+        libparodus_shutdown(&hpd_instance);
     }
 }
 

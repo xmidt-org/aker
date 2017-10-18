@@ -33,9 +33,9 @@ struct schedule_event {
                                      * or UTC Unix time. */
     size_t block_count;             /* Number of mac addresses to block. */
     struct schedule_event *next;    /* The next node in the SLL or NULL. */
-    
+
     struct mac_address *block[];    /* The list of mac addresses to block.
-                                     * DO NOT FREE THIS LIST. */        
+                                     * DO NOT FREE THIS LIST. */
 };
 
 struct mac_address {

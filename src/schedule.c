@@ -51,23 +51,23 @@ int decode_schedule( size_t count, uint8_t *bytes, schedule_t **s )
     schedule_t *schedule;
     msgpack_zone mempool;
     msgpack_object deserialized;
-    msgpack_unpack_return unpack_ret; 
-    
+    msgpack_unpack_return unpack_ret;
+
     if (!count || !bytes) {
         return -1;
     }
-    
+
     schedule = malloc(sizeof(schedule_t));
     if (!schedule) {
         return -2;
     }
-    
+
     *s = schedule;
-    
+
     msgpack_zone_init( &mempool, 2048 );
-    unpack_ret = msgpack_unpack( (const char *) bytes, count, NULL, &mempool, &deserialized );   
+    unpack_ret = msgpack_unpack( (const char *) bytes, count, NULL, &mempool, &deserialized );
     (void ) unpack_ret;
-    
+
     return ret;
 }
 
