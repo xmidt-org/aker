@@ -13,7 +13,8 @@
 #   limitations under the License.
 
 set(PROJ_AKER aker)
-set(SOURCES main.c wrp_interface.c)
+set(SOURCES wrp_interface.c schedule.c main.c)
+
 
 add_executable(aker ${SOURCES})
 
