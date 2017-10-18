@@ -32,17 +32,17 @@ struct schedule_event {
     uint32_t start;                 /* Time is either minutes since last sunday
                                      * or UTC Unix time. */
     size_t block_count;             /* Number of mac addresses to block. */
-    struct mac_address *block[];    /* The list of mac addresses to block.
-                                     * DO NOT FREE THIS LIST. */
-                                    
     struct schedule_event *next;    /* The next node in the SLL or NULL. */
+    
+    struct mac_address *block[];    /* The list of mac addresses to block.
+                                     * DO NOT FREE THIS LIST. */        
 };
 
 struct mac_address {
     char mac[18];   /* MAC addresses stored/used: "11:22:33:44:55:66" */
-}
+};
 
-typedef struct {
+typedef struct schedule_t_type {
     uint32_t abs_start;                 /* UTC Unix time starting time for
                                          * the absolute rules. */
     uint32_t abs_end;                   /* UTC Unix time ending time for
