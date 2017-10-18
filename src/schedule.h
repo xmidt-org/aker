@@ -34,13 +34,13 @@ struct schedule_event {
     size_t block_count;             /* Number of mac addresses to block. */
     struct schedule_event *next;    /* The next node in the SLL or NULL. */
     
-    struct mac_address *block[];    /* The list of mac addresses to block.
+    int block[];    /* The list of mac addresses to block.
                                      * DO NOT FREE THIS LIST. */        
 };
 
-struct mac_address {
+typedef struct mac_address_t {
     char mac[18];   /* MAC addresses stored/used: "11:22:33:44:55:66" */
-};
+}mac_address;
 
 typedef struct schedule_t_type {
     uint32_t abs_start;                 /* UTC Unix time starting time for
