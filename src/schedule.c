@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <msgpack.h>
+#include <time.h>
 
 #include "schedule.h"
 
@@ -113,7 +114,7 @@ void decodeRequest(msgpack_object *deserialized, schedule_t *schedule) {
                  } else if (!strcmp(p->key.via.str.ptr, "absolute-schedule") {
                  decodeMap();
                  } else {return error;}
-                    */
+                 */
                 break;
             default:
                 break;
@@ -126,49 +127,45 @@ void decodeRequest(msgpack_object *deserialized, schedule_t *schedule) {
 static int mac_table_size = 0;
 static mac_address **mac_address_table;
 
-mac_address **create_mac_table(int count)
-{
+mac_address **create_mac_table(int count) {
     mac_address ** macs = (mac_address **) malloc(count * sizeof (mac_address));
-    
+
     mac_address_table = macs;
     mac_table_size = count;
-    for (;count > 0; count--) {
+    for (; count > 0; count--) {
         macs[count] = NULL;
     }
-    
+
     return macs;
 }
 
-void insert_mac_address(mac_address *mac, int index) 
-{/* This is just replacing, "insert" will require a list or a dynamic array */
+void insert_mac_address(mac_address *mac, int index) {/* This is just replacing, "insert" will require a list or a dynamic array */
     if (index >= mac_table_size) {
         return;
     }
     mac_address_table[index] = mac;
 }
 
-void destroy_mac_table(void)
-{
+void destroy_mac_table(void) {
     free(mac_address_table);
     mac_address_table = NULL;
 }
 
-void insert_weekly_schedule(schedule_t *t, schedule_event *e)
-{
+void insert_weekly_schedule(schedule_t *t, schedule_event *e) {
     if (!(t && e)) {
         return;
     }
-    
+
     if (NULL == t->reoccuring) {
-        schedule_event *new_event = (schedule_event *) malloc(sizeof(schedule_event));
+        schedule_event *new_event = (schedule_event *) malloc(sizeof (schedule_event));
         *new_event = *e;
         new_event->next = NULL;
         t->reoccuring = new_event;
         return;
     }
-    
+
     schedule_event *head = t->reoccuring;
-    schedule_event *new_event = (schedule_event *) malloc(sizeof(schedule_event));
+    schedule_event *new_event = (schedule_event *) malloc(sizeof (schedule_event));
     *new_event = *e;
     while (head) {
         if (head->start <= new_event->start) {
@@ -177,33 +174,31 @@ void insert_weekly_schedule(schedule_t *t, schedule_event *e)
                 head->next = new_event;
                 new_event->next = NULL;
             }
-           head = head->next;
-           continue;
+            head = head->next;
+            continue;
         }
         new_event->next = head->next;
         head->next = new_event;
-        
+
         break;
-    }    
+    }
 }
 
-
-void insert_absolute_schedule(schedule_t *t, schedule_event *e)
-{
+void insert_absolute_schedule(schedule_t *t, schedule_event *e) {
     if (!(t && e)) {
         return;
     }
-    
+
     if (NULL == t->absolute) {
-        schedule_event *new_event = (schedule_event *) malloc(sizeof(schedule_event));
+        schedule_event *new_event = (schedule_event *) malloc(sizeof (schedule_event));
         *new_event = *e;
         new_event->next = NULL;
         t->absolute = new_event;
         return;
     }
-    
+
     schedule_event *head = t->absolute;
-    schedule_event *new_event = (schedule_event *) malloc(sizeof(schedule_event));
+    schedule_event *new_event = (schedule_event *) malloc(sizeof (schedule_event));
     *new_event = *e;
     while (head) {
         if (head->start <= new_event->start) {
@@ -212,22 +207,33 @@ void insert_absolute_schedule(schedule_t *t, schedule_event *e)
                 head->next = new_event;
                 new_event->next = NULL;
             }
-           head = head->next;
-           continue;
+            head = head->next;
+            continue;
         }
         new_event->next = head->next;
         head->next = new_event;
-        
+
         break;
-    }    
+    }
 }
 
-void destroy_lsit_of_events(schedule_event *e)
-{
+void destroy_lsit_of_events(schedule_event *e) {
     schedule_event *temp = e;
     while (NULL != temp) {
         schedule_event *next = temp->next;
         free(temp);
         temp = next;
     }
+}
+
+uint8_t *extract_mac_addresses_for_time_window(schedule_t *t, int relative_time, int abs_time) {
+    uint8_t *cp = NULL;
+    struct tm calendar_time;
+    time_t time_now = time(NULL);
+
+    if (NULL == localtime_r(&time_now, &calendar_time)) {
+        return cp;
+    }
+
+    return cp;
 }
