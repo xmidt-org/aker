@@ -183,9 +183,12 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
 
         if( 0 == rv ) {
             void *message = NULL;
+            ssize_t message_size;
+
             debug_info("Got something from parodus.\n");
-            wrp_to_object(wrp_msg, &message);
+            message_size = wrp_processing(wrp_msg, &message);
             /* TODO: Send message through parodus */
+            (void) message_size;
             if( NULL != message ) {
                 free(message);
             }

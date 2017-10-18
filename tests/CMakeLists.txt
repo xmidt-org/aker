@@ -30,3 +30,11 @@ link_directories ( ${LIBRARY_DIR} )
 add_test(NAME test_schedule COMMAND ${MEMORY_CHECK} ./test_schedule)
 add_executable(test_schedule test_schedule.c ../src/schedule.c)
 target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
+
+#-------------------------------------------------------------------------------
+#   test_wrp_interface
+#-------------------------------------------------------------------------------
+#add_test(NAME test_wrp_interface COMMAND ${MEMORY_CHECK} ./test_wrp_interface)
+#add_executable(test_wrp_inteface test_wrp_inteface.c ../src/wrp_inteface.c)
+#target_link_libraries (test_wrp_inteface ${AKER_COMMON_LIBS})
+

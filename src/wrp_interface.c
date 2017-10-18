@@ -18,13 +18,12 @@
 
 #include "aker_log.h"
 #include "wrp_interface.h"
+#include "process_data.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-#define SET_DEST  "/parental control/schedule/set"
-#define GET_DEST  "/parental control/schedule/get"
-#define FILE_NAME "pcs.bin"
+/* None */
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -35,16 +34,12 @@ typedef struct wrp_req_msg  req_msg_t;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-static int process_message_cu( crud_msg_t *msg, crud_msg_t *resp );
-static uint8_t *process_message_ret( crud_msg_t *msg );
-
-static int process_request_set( req_msg_t *req, req_msg_t *resp );
-static int process_request_get( req_msg_t *msg, req_msg_t *resp );
+/* None */
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-ssize_t wrp_to_object(wrp_msg_t *msg, void **message)
+ssize_t wrp_processing(wrp_msg_t *msg, void **message)
 {
     wrp_msg_t *in_msg = msg;
     wrp_msg_t response;
@@ -56,14 +51,13 @@ ssize_t wrp_to_object(wrp_msg_t *msg, void **message)
         case (WRP_MSG_TYPE__CREATE): 
         case (WRP_MSG_TYPE__UPDATE):
         {
-            crud_msg_t *in_crud  = &(in_msg->u.crud);
             crud_msg_t *out_crud = &(response.u.crud);
 
             out_crud->status = 400; // default to failed
             /* Not as per WRP spec - Response to Update */
             response.msg_type = in_msg->msg_type;
 
-            if( 0 == process_message_cu(in_crud, out_crud) ) {
+            if( 0 == process_message_cu(in_msg, &response) ) {
                 out_crud->status =200;
             }
         }
@@ -88,8 +82,7 @@ ssize_t wrp_to_object(wrp_msg_t *msg, void **message)
             out_crud->rdr     = 0;
             out_crud->path    = strdup(in_crud->path);
             /* TODO: once payload type is resolved */
-            // out_crud->payload = process_message_ret(in_crud);
-            process_message_ret(in_crud); 
+            // process_message_ret(in_msg, &(out_crud->payload)); 
             if( NULL != out_crud->payload ) {
                 out_crud->status = 200;
             }
@@ -115,9 +108,9 @@ ssize_t wrp_to_object(wrp_msg_t *msg, void **message)
             resp->payload = NULL;
             resp->payload_size = 0;
             if( 0 == strcmp(SET_DEST, req->dest) ) {
-                process_request_set(req, resp);
+                process_request_set(in_msg, &response);
             } else if( 0 == strcmp(GET_DEST, req->dest) ) {
-                process_request_get(req, resp);
+                process_request_get(in_msg, &response);
             } else {
                 debug_error("Request-Response message destination %s is invalid\n", req->dest);
                 break;
@@ -156,83 +149,4 @@ ssize_t wrp_to_object(wrp_msg_t *msg, void **message)
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-/**
- * @brief Processes wrp CRUD message for Create and Update.
- *
- * @param[in]  wrp CRUD message.
- * @param[out] wrp CRUD message;
- */
-int process_message_cu( crud_msg_t *msg, crud_msg_t *object )
-{
-    if( 0 != strcmp("/parental control/schedule", msg->dest) ) {
-        return -1;
-    }
-
-    /* Process msg */
-    
-    return 0;
-}
-
-/**
- * @brief Returns a JSON object for the service the wrp CRUD message.
- * 
- * @note return JSON object buffer needs to be free()-ed by caller.
- *
- * @param[in] wrp CRUD message.
- *
- * @return buffer of the object retrieved.
- */
-uint8_t *process_message_ret( crud_msg_t *msg )
-{
-    if( 0 != strcmp("/parental control/schedule", msg->dest) &&
-        0 != strcmp("/parental control/md5", msg->dest) ) 
-    {
-        return NULL;
-    }
-
-    /* Retrieve schedule info and return. */
-
-    return NULL;
-}
-
-static int process_request_set( req_msg_t *req, req_msg_t *resp )
-{
-    uint8_t *payload = (uint8_t *)malloc(sizeof(uint8_t) * req->payload_size);
-    size_t payload_size = req->payload_size;
-    FILE *file_handle = fopen(FILE_NAME, "wb");
-    size_t write_size = 0;
-    
-    if( NULL == file_handle ) {
-        return -1;
-    }
-
-    write_size = fwrite(payload, sizeof(uint8_t), payload_size, file_handle);
-    fclose(file_handle);
-
-    /* TODO: Pass off payload to decoder */
-    return write_size;
-}
-
-static int process_request_get( req_msg_t *req, req_msg_t *resp )
-{
-    FILE *file_handle = fopen(FILE_NAME, "rb");
-    size_t file_size = 0, read_size = 0;
-    uint8_t *buf = NULL;
-
-    if( NULL == file_handle ) {
-        return -1;
-    }
-
-    resp->content_type = "application/msgpack";
-
-    fseek(file_handle, 0, SEEK_END);
-    file_size = ftell(file_handle);
-    fseek(file_handle, 0, SEEK_SET);
-
-    buf = (uint8_t *)malloc(sizeof(uint8_t) * file_size);
-    read_size = fread(buf, sizeof(uint8_t), file_size, file_handle);
-    fclose(file_handle); 
-
-    return read_size;
-}
-
+/* None */
