@@ -122,3 +122,26 @@ void decodeRequest(msgpack_object *deserialized, schedule_t *schedule) {
     }
 
 }
+
+static int mac_table_size = 0;
+static mac_address **mac_address_table;
+
+mac_address **create_mac_table(int count)
+{
+    mac_address ** macs = (mac_address **) malloc(count * sizeof (mac_address));
+    mac_address_table = macs;
+    mac_table_size = count;
+    for (;count > 0; count--) {
+        macs[count] = NULL;
+    }
+    
+    return macs;
+}
+
+void insert_mac_address(mac_address *mac, int index) 
+{/* This is just replacing, "insert" will require a list or a dynamic array */
+    if (index >= mac_table_size) {
+        return;
+    }
+    mac_address_table[index] = mac;
+}
