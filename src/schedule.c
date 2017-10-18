@@ -129,6 +129,7 @@ static mac_address **mac_address_table;
 mac_address **create_mac_table(int count)
 {
     mac_address ** macs = (mac_address **) malloc(count * sizeof (mac_address));
+    
     mac_address_table = macs;
     mac_table_size = count;
     for (;count > 0; count--) {
@@ -149,4 +150,24 @@ void insert_mac_address(mac_address *mac, int index)
 void destroy_mac_table(void)
 {
     free(mac_address_table);
+    mac_address_table = NULL;
+}
+
+void insert_weekly_schedule(schedule_t *t, schedule_event *e)
+{
+    if (!(t && e)) {
+        return;
+    }
+    
+    if (NULL == t->reoccuring) {
+        schedule_event *new_event = (schedule_event *) malloc(sizeof(schedule_event));
+        *new_event = *e;
+        t->reoccuring = new_event;
+        return;
+    }
+    
+    while (1) {
+        /* insert event */
+        break;
+    }
 }
