@@ -182,11 +182,16 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
         rv = libparodus_receive(hpd_instance, &wrp_msg, 2000);
 
         if( 0 == rv ) {
-            uint8_t *bytes = NULL;
-            debug_info("Got something from parodus.\n");
-            wrp_to_object(wrp_msg, &bytes);
-            // TODO process the request, then write to the file
+            void *message = NULL;
+            ssize_t message_size;
 
+            debug_info("Got something from parodus.\n");
+            message_size = wrp_processing(wrp_msg, &message);
+            /* TODO: Send message through parodus */
+            (void) message_size;
+            if( NULL != message ) {
+                free(message);
+            }
         } else if( 1 == rv || 2 == rv ) {
             debug_info("Timed out or message closed.\n");
             continue;
