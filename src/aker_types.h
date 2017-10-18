@@ -14,6 +14,9 @@
  * limitations under the License.
  *
  */
+#ifndef __AKER_TYPES_H__
+#define __AKER_TYPES_H__
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -75,3 +78,5 @@ typedef struct {
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
 /* none */
+
+#endif
