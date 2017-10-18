@@ -17,6 +17,7 @@ cmake_minimum_required(VERSION 2.8.7)
 project(aker)
 
 include(ExternalProject)
+include(CTest)
 
 set(INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/_install)
 set(PREFIX_DIR ${CMAKE_CURRENT_BINARY_DIR}/_prefix)
@@ -47,6 +48,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall")
 # pthread external dependency
 #-------------------------------------------------------------------------------
 find_package (Threads)
+
+if (NOT BUILD_YOCTO)
 
 # base64 external dependency
 #-------------------------------------------------------------------------------
@@ -135,7 +138,12 @@ ExternalProject_Add(libparodus
 add_library(liblibparodus STATIC SHARED IMPORTED)
 add_dependencies(liblibparodus libparodus)
 
+endif()
 
 link_directories ( ${LIBRARY_DIR} ${LIBRARY_DIR64} ${COMMON_LIBRARY_DIR} ${MAIN_PROJ_COMMON_PATH} ${MAIN_PROJ_LIB_PATH} ${MAIN_PROJ_LIB64_PATH} )
 
 add_subdirectory(src)
+
+if (BUILD_TESTING)
+    add_subdirectory(tests)
+endif (BUILD_TESTING)
