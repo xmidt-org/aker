@@ -20,15 +20,26 @@
 #include "wrp_interface.h"
 
 /*----------------------------------------------------------------------------*/
+/*                                   Macros                                   */
+/*----------------------------------------------------------------------------*/
+#define SET_DEST  "/parental control/schedule/set"
+#define GET_DEST  "/parental control/schedule/get"
+#define FILE_NAME "pcs.bin"
+
+/*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 typedef struct wrp_crud_msg crud_msg_t;
+typedef struct wrp_req_msg  req_msg_t;
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 static int process_message_cu( crud_msg_t *msg, uint8_t **object );
 static uint8_t *process_message_ret( crud_msg_t *msg );
+
+static int process_request_set( req_msg_t *req, req_msg_t *resp, uint8_t **object );
+static int process_request_get( req_msg_t *msg, req_msg_t *resp );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -64,7 +75,7 @@ ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object)
             crud_msg_t *out_crud = &(response.u.crud);
 
             out_crud->status = 400; // default to failed
-            response.msg_type = in_msg->msg_type;
+            response.msg_type = WRP_MSG_TYPE__RETREIVE;
 
             out_crud->transaction_uuid = strdup(in_crud->transaction_uuid);
             out_crud->source  = strdup(in_crud->dest);
@@ -84,6 +95,35 @@ ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object)
             }
         }
         break;
+
+        case (WRP_MSG_TYPE__REQ):
+        {
+            req_msg_t *req = &(in_msg->u.req);
+            req_msg_t *resp = &(response.u.req);
+
+            resp->status = 400;
+            response.msg_type = WRP_MSG_TYPE__REQ;
+            
+            resp->transaction_uuid = req->transaction_uuid;
+            resp->source = req->dest;
+            resp->dest = req->source;
+            resp->partner_ids = req->partner_ids;
+            resp->headers = req->headers;
+            resp->content_type = NULL;
+            resp->include_spans = req->include_spans;
+            resp->spans.spans = req->spans.spans;
+            resp->spans.count = req->spans.count;
+            resp->payload = NULL;
+            resp->payload_size = 0;
+            if( 0 == strcmp(SET_DEST, req->dest) ) {
+                process_request_set(req, resp);
+            } else if( 0 == strcmp(GET_DEST, req->dest) ) {
+                process_request_get(req, resp);
+            } else {
+                debug_error("Request-Response message destination %s is invalid\n", req->dest);
+                break;
+            }
+        }
             
         default:
             debug_info("Message of type %d not handled\n", in_msg->msg_type);
@@ -156,3 +196,45 @@ uint8_t *process_message_ret( crud_msg_t *msg )
 
     return NULL;
 }
+
+static int process_request_set( req_msg_t *req, req_msg_t *resp )
+{
+    uint8_t *payload = (uint8_t *)malloc(sizeof(uint8_t) * req->payload_size);
+    size_t payload_size = req->payload_size;
+    FILE *file_handle = fopen(FILE_NAME, "wb");
+    size_t write_size = 0;
+    
+    if( NULL == file_hande ) {
+        return -1;
+    }
+
+    write_size = fwrite(payload, sizeof(uint8_t), payload_size, file_handle);
+    fclose(file_handle);
+
+    /* TODO: Pass off payload to decoder */
+    return write_size;
+}
+
+static uint8_t *process_request_get( req_msg_t *req, req_msg_t *resp )
+{
+    FILE *file_handle = fopen(FILE_NAME, "rb");
+    size_t file_size = 0, read_size = 0;
+    uint8_t *buf = NULL;
+
+    if( NULL == file_handle ) {
+        return -1;
+    }
+
+    resp->content_type = "application/msgpack";
+
+    fseek(file_handle, 0, SEEK_END);
+    file_size = ftell(file_handle);
+    fseek(file_handle, 0, SEEK_SET);
+
+    buf = (uint8_t *)malloc(sizeof(uint8_t) * file_size);
+    read_size = fread(buf, sizeof(uint8_t), file_size, file_handle);
+    fclose(file_handle); 
+
+    return read_size;
+}
+
