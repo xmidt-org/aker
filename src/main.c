@@ -26,6 +26,9 @@
 
 #include <libparodus.h>
 #include <cimplog.h>
+#include <msgpack.h>
+
+#include "aker_types.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -50,6 +53,8 @@ static libpd_instance_t hpd_instance;
 static void sig_handler(int sig);
 static int main_loop(libpd_cfg_t *cfg);
 static void connect_parodus(libpd_cfg_t *cfg);
+
+int decode_aker( size_t count, uint8_t *bytes, schedule_t **s );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -203,4 +208,31 @@ static int main_loop(libpd_cfg_t *cfg)
     sleep(1);
     debug_print("End of parodus_upstream\n");
     return 0;
+}
+
+
+int decode_aker( size_t count, uint8_t *bytes, schedule_t **s )
+{
+    int ret = 0;
+    schedule_t *schedule;
+    msgpack_zone mempool;
+    msgpack_object deserialized;
+    msgpack_unpack_return unpack_ret; 
+    
+    if (!count || !bytes || s) {
+        return -1;
+    }
+    
+    schedule = malloc(sizeof(schedule_t));
+    if (!schedule) {
+        return -2;
+    }
+    
+    *s = schedule;
+    
+    msgpack_zone_init( &mempool, 2048 );
+    unpack_ret = msgpack_unpack( (const char *) bytes, count, NULL, &mempool, &deserialized );   
+    (void ) unpack_ret;
+    
+    return ret;
 }
