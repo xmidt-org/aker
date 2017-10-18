@@ -22,12 +22,12 @@ extern "C" {
  *
  *  @note If object is not NULL, it needs to be free()-ed by the caller.
  *
- *  @param msg    [in]  incoming WRP data.
- *  @param object [out] object ready to be deserialized.
+ *  @param msg      [in]  incoming WRP data.
+ *  @param response [out] response message.
  *
  *  @return size of valid message, < 0 otherwise.
  */
-ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object);
+ssize_t wrp_to_object(wrp_msg_t *msg, void **response);
 
 #ifdef __cplusplus
 }

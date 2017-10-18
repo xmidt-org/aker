@@ -190,9 +190,13 @@ static int main_loop(libpd_cfg_t *cfg)
         debug_print("    rtn = %d\n", rtn);
 
         if( 0 == rtn ) {
-            uint8_t *bytes = NULL;
+            void *message = NULL;
             debug_info("Got something from parodus.\n");
-            wrp_to_object(wrp_msg, &bytes);
+            wrp_to_object(wrp_msg, &message);
+            /* TODO: Send response */
+            if( NULL != message ) {
+                free(message);
+            }
         } else if( 1 == rtn || 2 == rtn ) {
             debug_info("Timed out or message closed.\n");
             continue;

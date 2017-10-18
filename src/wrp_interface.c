@@ -35,20 +35,20 @@ typedef struct wrp_req_msg  req_msg_t;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-static int process_message_cu( crud_msg_t *msg, uint8_t **object );
+static int process_message_cu( crud_msg_t *msg, crud_msg_t *resp );
 static uint8_t *process_message_ret( crud_msg_t *msg );
 
-static int process_request_set( req_msg_t *req, req_msg_t *resp, uint8_t **object );
+static int process_request_set( req_msg_t *req, req_msg_t *resp );
 static int process_request_get( req_msg_t *msg, req_msg_t *resp );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object)
+ssize_t wrp_to_object(wrp_msg_t *msg, void **message)
 {
     wrp_msg_t *in_msg = msg;
     wrp_msg_t response;
-    /* ssize_t   message_size; */
+    ssize_t   message_size;
 
     memset(&response, 0, sizeof(wrp_msg_t));
 
@@ -63,7 +63,7 @@ ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object)
             /* Not as per WRP spec - Response to Update */
             response.msg_type = in_msg->msg_type;
 
-            if( 0 == process_message_cu(in_crud, object) ) {
+            if( 0 == process_message_cu(in_crud, out_crud) ) {
                 out_crud->status =200;
             }
         }
@@ -101,12 +101,11 @@ ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object)
             req_msg_t *req = &(in_msg->u.req);
             req_msg_t *resp = &(response.u.req);
 
-            resp->status = 400;
             response.msg_type = WRP_MSG_TYPE__REQ;
             
-            resp->transaction_uuid = req->transaction_uuid;
-            resp->source = req->dest;
-            resp->dest = req->source;
+            resp->transaction_uuid = strdup(req->transaction_uuid);
+            resp->source = strdup(req->dest);
+            resp->dest   = strdup(req->source);
             resp->partner_ids = req->partner_ids;
             resp->headers = req->headers;
             resp->content_type = NULL;
@@ -130,29 +129,28 @@ ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object)
         break;
     }
 
-    /* TODO: Handle response */
-/*
     message_size = wrp_struct_to(&response, WRP_BYTES, message);    
-    if( WRP_MSG_TYPE__RETREIVE == response.msg_type ) {
-        ret_msg_t *ret = &(response.u.crud);
+    /* TODO: Handle CRUD type after fix to handle binary payload. */
+    /* Request-Response WRP is temporary. */
+    if( WRP_MSG_TYPE__REQ == response.msg_type )
+    {
+        req_msg_t *ret = &(response.u.req);
         if (ret->transaction_uuid)
             free(ret->transaction_uuid);
         if (ret->dest)             
             free(ret->dest);
-        if (ret->path)             
-            free(ret->path);
         if (ret->payload )         
             free(ret->payload);
         if (ret->source)           
             free(ret->source);
     }
- */    
+     
     if (in_msg) {
         wrp_free_struct(in_msg);
     }
 
     /* Return message_size or object size */
-    return 0;
+    return message_size;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -162,9 +160,9 @@ ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object)
  * @brief Processes wrp CRUD message for Create and Update.
  *
  * @param[in]  wrp CRUD message.
- * @param[out] msgpack object
+ * @param[out] wrp CRUD message;
  */
-int process_message_cu( crud_msg_t *msg, uint8_t **object )
+int process_message_cu( crud_msg_t *msg, crud_msg_t *object )
 {
     if( 0 != strcmp("/parental control/schedule", msg->dest) ) {
         return -1;
@@ -204,7 +202,7 @@ static int process_request_set( req_msg_t *req, req_msg_t *resp )
     FILE *file_handle = fopen(FILE_NAME, "wb");
     size_t write_size = 0;
     
-    if( NULL == file_hande ) {
+    if( NULL == file_handle ) {
         return -1;
     }
 
@@ -215,7 +213,7 @@ static int process_request_set( req_msg_t *req, req_msg_t *resp )
     return write_size;
 }
 
-static uint8_t *process_request_get( req_msg_t *req, req_msg_t *resp )
+static int process_request_get( req_msg_t *req, req_msg_t *resp )
 {
     FILE *file_handle = fopen(FILE_NAME, "rb");
     size_t file_size = 0, read_size = 0;
