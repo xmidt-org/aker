@@ -30,7 +30,8 @@
 /*----------------------------------------------------------------------------*/
 #define MAX_BLOCKED_COUNT 256
 
-typedef struct schedule_event_t {
+
+typedef struct schedule_event {
     uint32_t start;                 /* Time is either minutes since last sunday
                                      * or UTC Unix time. */
     size_t block_count;             /* Number of mac addresses to block. */

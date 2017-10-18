@@ -162,12 +162,25 @@ void insert_weekly_schedule(schedule_t *t, schedule_event *e)
     if (NULL == t->reoccuring) {
         schedule_event *new_event = (schedule_event *) malloc(sizeof(schedule_event));
         *new_event = *e;
+        new_event->next = NULL;
         t->reoccuring = new_event;
         return;
     }
     
-    while (1) {
-        /* insert event */
+    schedule_event *head = t->reoccuring;
+    while (head) {
+        if (head->start <= e->start) {
+            if (NULL == head->next) {
+                /* End of List */
+                head->next = e;
+                e->next = NULL;
+            }
+           head = head->next;
+           continue;
+        }
+        e->next = head->next;
+        head->next = e;
+        
         break;
-    }
+    }    
 }
