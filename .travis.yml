@@ -11,7 +11,7 @@ addons:
   coverity_scan:
     project:
       name: "Comcast/aker"
-      description: " Aker is a parental control experiment. "
+      description: "  Aker is an experimental MAC address blocking scheduler."
     notification_email: weston_schmidt@alumni.purdue.edu
     build_command: "make"
 
@@ -20,13 +20,14 @@ before_install:
 
 install:
     - sudo apt-get update -qq
-    - sudo apt-get install -y -qq libcunit1 libcunit1-dev
+    - sudo apt-get install -y -qq libcunit1 libcunit1-dev valgrind
 
 script:
     - mkdir build
     - cd build
     - cmake ..
     - make
+    - make test
 
 after_success:
     - codecov

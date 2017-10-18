@@ -63,7 +63,7 @@ int decode_schedule(size_t count, uint8_t *bytes, schedule_t **s) {
     }
 
     *s = schedule;
-
+  
     msgpack_zone_init(&mempool, 2048);
     unpack_ret = msgpack_unpack((const char *) bytes, count, NULL, &mempool, &deserialized);
 
