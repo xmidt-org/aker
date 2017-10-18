@@ -219,7 +219,7 @@ int decode_aker( size_t count, uint8_t *bytes, schedule_t **s )
     msgpack_object deserialized;
     msgpack_unpack_return unpack_ret; 
     
-    if (!count || !bytes || s) {
+    if (!count || !bytes) {
         return -1;
     }
     
