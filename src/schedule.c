@@ -89,9 +89,11 @@ int decode_schedule(size_t count, uint8_t *bytes, schedule_t **s) {
 
 /*----------------------------------------------------------------------------*/
 
-void decodeRequest(msgpack_object *deserialized, schedule_t *schedule) {
+void decodeRequest(msgpack_object *deserialized, schedule_t *t) {
     msgpack_object_kv* p = deserialized->via.map.ptr;
 
+    (void ) t;
+    
     while (deserialized->via.map.size--) {
         //msgpack_object keyType = p->key;
         //msgpack_object ValueType = p->val;
@@ -124,31 +126,27 @@ void decodeRequest(msgpack_object *deserialized, schedule_t *schedule) {
 
 }
 
-static int mac_table_size = 0;
-static mac_address **mac_address_table;
+mac_address *create_mac_table(int count, schedule_t *t) {
+    mac_address * macs = (mac_address *) malloc(count * sizeof (mac_address));
 
-mac_address **create_mac_table(int count) {
-    mac_address ** macs = (mac_address **) malloc(count * sizeof (mac_address));
+    memset(macs, 0, count * sizeof(mac_address));
+    t->macs = macs;
+    t->mac_count = count;
 
-    mac_address_table = macs;
-    mac_table_size = count;
-    for (; count > 0; count--) {
-        macs[count] = NULL;
-    }
-
-    return macs;
+    return t->macs;
 }
 
-void insert_mac_address(mac_address *mac, int index) {/* This is just replacing, "insert" will require a list or a dynamic array */
-    if (index >= mac_table_size) {
+void insert_mac_address(mac_address *mac, size_t index, schedule_t *t) {
+    /* This is just replacing, "insert" will require a list or a dynamic array */
+    if (index >= t->mac_count) {
         return;
     }
-    mac_address_table[index] = mac;
+    t->macs[index] = *mac;
 }
 
-void destroy_mac_table(void) {
-    free(mac_address_table);
-    mac_address_table = NULL;
+void destroy_mac_table(schedule_t *t) {
+    free(t->macs);
+    t->macs = NULL;
 }
 
 void insert_weekly_schedule(schedule_t *t, schedule_event *e) {
@@ -231,6 +229,8 @@ uint8_t *extract_mac_addresses_for_time_window(schedule_t *t, int relative_time,
     struct tm calendar_time;
     time_t time_now = time(NULL);
 
+    (void ) t; (void ) relative_time; (void ) abs_time;
+    
     if (NULL == localtime_r(&time_now, &calendar_time)) {
         return cp;
     }
