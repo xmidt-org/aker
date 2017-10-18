@@ -202,5 +202,5 @@ static int main_loop(libpd_cfg_t *cfg)
     libparodus_shutdown(&hpd_instance);
     sleep(1);
     debug_print("End of parodus_upstream\n");
-    return NULL;
+    return 0;
 }
