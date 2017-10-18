@@ -221,3 +221,13 @@ void insert_absolute_schedule(schedule_t *t, schedule_event *e)
         break;
     }    
 }
+
+void destroy_lsit_of_events(schedule_event *e)
+{
+    schedule_event *temp = e;
+    while (NULL != temp) {
+        schedule_event *next = temp->next;
+        free(temp);
+        temp = next;
+    }
+}
