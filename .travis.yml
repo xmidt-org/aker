@@ -11,7 +11,7 @@ addons:
   coverity_scan:
     project:
       name: "Comcast/aker"
-      description: " Aker is a parental control experiment. "
+      description: "  Aker is an experimental MAC address blocking scheduler."
     notification_email: weston_schmidt@alumni.purdue.edu
     build_command: "make"
 
