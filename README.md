@@ -4,7 +4,12 @@
 
 # aker
 
-Aker is a parental control experiment.
+Aker is an experimental MAC address blocking scheduler.
+
+For details:
+
+https://github.com/Comcast/aker/wiki
+
 
 # Building and Testing Instructions
 

@@ -27,7 +27,6 @@ script:
     - cd build
     - cmake ..
     - make
-    - make test
 
 after_success:
     - codecov
