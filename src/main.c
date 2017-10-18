@@ -27,6 +27,8 @@
 #include <libparodus.h>
 #include <cimplog.h>
 
+#include "wrp_interface.h"
+
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -186,8 +188,9 @@ static int main_loop(libpd_cfg_t *cfg)
         debug_print("    rtn = %d\n", rtn);
 
         if( 0 == rtn ) {
+            void *bytes = NULL;
             debug_info("Got something from parodus.\n");
-            // handle_notification(wrp_msg);
+            wrp_to_object(wrp_msg, &bytes);
         } else if( 1 == rtn || 2 == rtn ) {
             debug_info("Timed out or message closed.\n");
             continue;
