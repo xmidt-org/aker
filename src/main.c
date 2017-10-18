@@ -25,11 +25,10 @@
 #include <getopt.h>
 
 #include <libparodus.h>
-#include <cimplog.h>
 #include <msgpack.h>
 
+#include "aker_log.h"
 #include "aker_types.h"
-
 #include "wrp_interface.h"
 
 /*----------------------------------------------------------------------------*/
@@ -193,7 +192,7 @@ static int main_loop(libpd_cfg_t *cfg)
         debug_print("    rtn = %d\n", rtn);
 
         if( 0 == rtn ) {
-            void *bytes = NULL;
+            uint8_t *bytes = NULL;
             debug_info("Got something from parodus.\n");
             wrp_to_object(wrp_msg, &bytes);
         } else if( 1 == rtn || 2 == rtn ) {

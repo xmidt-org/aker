@@ -27,7 +27,7 @@ extern "C" {
  *
  *  @return size of valid message, < 0 otherwise.
  */
-ssize_t wrp_to_object(wrp_msg_t *msg, void **object);
+ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object);
 
 #ifdef __cplusplus
 }

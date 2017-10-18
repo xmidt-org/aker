@@ -16,6 +16,7 @@
  */
 #include <stdio.h>
 
+#include "aker_log.h"
 #include "wrp_interface.h"
 
 /*----------------------------------------------------------------------------*/
@@ -26,13 +27,13 @@ typedef struct wrp_crud_msg crud_msg_t;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-static int process_message_cu( crud_msg_t *msg, void **object );
-static void *process_message_ret( crud_msg_t *msg );
+static int process_message_cu( crud_msg_t *msg, uint8_t **object );
+static uint8_t *process_message_ret( crud_msg_t *msg );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-ssize_t wrp_to_object(wrp_msg_t *msg, void **object)
+ssize_t wrp_to_object(wrp_msg_t *msg, uint8_t **object)
 {
     wrp_msg_t *in_msg = msg;
     wrp_msg_t response;
@@ -43,7 +44,6 @@ ssize_t wrp_to_object(wrp_msg_t *msg, void **object)
     switch (in_msg->msg_type) {
         case (WRP_MSG_TYPE__CREATE): 
         case (WRP_MSG_TYPE__UPDATE):
-        case (WRP_MSG_TYPE__RETREIVE):
         {
             crud_msg_t *in_crud  = &(in_msg->u.crud);
             crud_msg_t *out_crud = &(response.u.crud);
@@ -52,37 +52,41 @@ ssize_t wrp_to_object(wrp_msg_t *msg, void **object)
             /* Not as per WRP spec - Response to Update */
             response.msg_type = in_msg->msg_type;
 
-            if( WRP_MSG_TYPE__CREATE == in_msg->msg_type ||
-                WRP_MSG_TYPE__UPDATE == in_msg->msg_type )
-            {
-                if( 0 == process_message_cu(in_crud, object) ) {
-                    out_crud->status =200;
-                }
+            if( 0 == process_message_cu(in_crud, object) ) {
+                out_crud->status =200;
             }
+        }
+        break;
         
-            if( WRP_MSG_TYPE__RETREIVE == in_msg->msg_type )
-            {
-                out_crud->transaction_uuid = strdup(in_crud->transaction_uuid);
-                out_crud->source  = strdup(in_crud->dest);
-                out_crud->dest    = strdup(in_crud->source);
-                out_crud->headers = NULL;
-                out_crud->metadata = NULL;
-                out_crud->include_spans = false;
-                out_crud->spans.spans = NULL;
-                out_crud->spans.count = 0;
-                out_crud->rdr     = 0;
-                out_crud->path    = strdup(in_crud->path);
-                out_crud->payload = process_message_ret(in_crud);
-                if( NULL != out_crud->payload ) {
-                    out_crud->status = 200;
-                }
+        case (WRP_MSG_TYPE__RETREIVE):
+        {
+            crud_msg_t *in_crud  = &(in_msg->u.crud);
+            crud_msg_t *out_crud = &(response.u.crud);
+
+            out_crud->status = 400; // default to failed
+            response.msg_type = in_msg->msg_type;
+
+            out_crud->transaction_uuid = strdup(in_crud->transaction_uuid);
+            out_crud->source  = strdup(in_crud->dest);
+            out_crud->dest    = strdup(in_crud->source);
+            out_crud->headers = NULL;
+            out_crud->metadata = NULL;
+            out_crud->include_spans = false;
+            out_crud->spans.spans = NULL;
+            out_crud->spans.count = 0;
+            out_crud->rdr     = 0;
+            out_crud->path    = strdup(in_crud->path);
+            /* TODO: once payload type is resolved */
+            // out_crud->payload = process_message_ret(in_crud);
+            process_message_ret(in_crud); 
+            if( NULL != out_crud->payload ) {
+                out_crud->status = 200;
             }
         }
         break;
             
         default:
-            response.msg_type = in_msg->msg_type;                 
-            response.u.auth.status = 501; // Not Implemented
+            debug_info("Message of type %d not handled\n", in_msg->msg_type);
         break;
     }
 
@@ -120,7 +124,7 @@ ssize_t wrp_to_object(wrp_msg_t *msg, void **object)
  * @param[in]  wrp CRUD message.
  * @param[out] msgpack object
  */
-int process_message_cu( crud_msg_t *msg, void **object )
+int process_message_cu( crud_msg_t *msg, uint8_t **object )
 {
     if( 0 != strcmp("/parental control/schedule", msg->dest) ) {
         return -1;
@@ -140,7 +144,7 @@ int process_message_cu( crud_msg_t *msg, void **object )
  *
  * @return buffer of the object retrieved.
  */
-void *process_message_ret( crud_msg_t *msg )
+uint8_t *process_message_ret( crud_msg_t *msg )
 {
     if( 0 != strcmp("/parental control/schedule", msg->dest) &&
         0 != strcmp("/parental control/md5", msg->dest) ) 
