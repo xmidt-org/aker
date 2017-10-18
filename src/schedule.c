@@ -14,11 +14,11 @@
  * limitations under the License.
  *
  */
-#ifndef __AKER_TYPES_H__
-#define __AKER_TYPES_H__
-
 #include <stdbool.h>
 #include <stdint.h>
+#include <msgpack.h>
+
+#include "schedule.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -28,36 +28,7 @@
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
-struct schedule_event {
-    uint32_t start;                 /* Time is either minutes since last sunday
-                                     * or UTC Unix time. */
-    size_t block_count;             /* Number of mac addresses to block. */
-    struct schedule_event *next;    /* The next node in the SLL or NULL. */
-    
-    struct mac_address *block[];    /* The list of mac addresses to block.
-                                     * DO NOT FREE THIS LIST. */        
-};
-
-struct mac_address {
-    char mac[18];   /* MAC addresses stored/used: "11:22:33:44:55:66" */
-};
-
-typedef struct schedule_t_type {
-    uint32_t abs_start;                 /* UTC Unix time starting time for
-                                         * the absolute rules. */
-    uint32_t abs_end;                   /* UTC Unix time ending time for
-                                         * the absolute rules. */
-    struct schedule_event *absolute;    /* The absolute schedule to apply if
-                                         * a matching time window is found. */
-
-    struct schedule_event *reoccuring;  /* The list of re-occuring rules to
-                                         * apply until a new schedule is
-                                         * acquired. */
-
-    size_t mac_count;                   /* The count of the macs. */
-    struct mac_address *macs;           /* The shared list of mac addresses to
-                                         * block.  FREE THIS LIST. */
-} schedule_t;
+/* none */
 
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
@@ -72,11 +43,35 @@ typedef struct schedule_t_type {
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-/* none */
+
+/* See schedule.h for details. */
+int decode_schedule( size_t count, uint8_t *bytes, schedule_t **s )
+{
+    int ret = 0;
+    schedule_t *schedule;
+    msgpack_zone mempool;
+    msgpack_object deserialized;
+    msgpack_unpack_return unpack_ret; 
+    
+    if (!count || !bytes) {
+        return -1;
+    }
+    
+    schedule = malloc(sizeof(schedule_t));
+    if (!schedule) {
+        return -2;
+    }
+    
+    *s = schedule;
+    
+    msgpack_zone_init( &mempool, 2048 );
+    unpack_ret = msgpack_unpack( (const char *) bytes, count, NULL, &mempool, &deserialized );   
+    (void ) unpack_ret;
+    
+    return ret;
+}
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
 /* none */
-
-#endif

@@ -13,7 +13,7 @@
 #   limitations under the License.
 
 set(PROJ_AKER aker)
-set(SOURCES main.c)
+set(SOURCES schedule.c main.c)
 
 add_executable(aker ${SOURCES})
 
