@@ -145,3 +145,8 @@ void insert_mac_address(mac_address *mac, int index)
     }
     mac_address_table[index] = mac;
 }
+
+void destroy_mac_table(void)
+{
+    free(mac_address_table);
+}
