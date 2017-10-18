@@ -19,9 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <math.h>
 #include <getopt.h>
 
 #include <libparodus.h>
@@ -34,9 +31,7 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-#define debug_error(...)      cimplog_error("aker", __VA_ARGS__)
-#define debug_info(...)       cimplog_info("aker", __VA_ARGS__)
-#define debug_print(...)      cimplog_debug("aker", __VA_ARGS__)
+/* none */
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -46,14 +41,14 @@
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-static libpd_instance_t hpd_instance;
+/* none */
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 static void sig_handler(int sig);
-static int main_loop(libpd_cfg_t *cfg);
-static void connect_parodus(libpd_cfg_t *cfg);
+static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
+                     char *md5_file );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -61,8 +56,11 @@ static void connect_parodus(libpd_cfg_t *cfg);
 int main( int argc, char **argv)
 {
     static const struct option options[] = {
-        { "parodus_url", required_argument, 0, 'p' },
-        { "client_url",  required_argument, 0, 'c' },
+        { "parodus-url",  required_argument, 0, 'p' },
+        { "client-url",   required_argument, 0, 'c' },
+        { "firewall-cli", required_argument, 0, 'w' },
+        { "data-file",    required_argument, 0, 'd' },
+        { "md5-file",     required_argument, 0, 'm' },
         { 0, 0, 0, 0 }
     };
 
@@ -73,8 +71,12 @@ int main( int argc, char **argv)
                         .client_url = NULL
                       };
 
+    char *firewall_cli = NULL;
+    char *data_file = NULL;
+    char *md5_file = NULL;
     int item = 0;
     int opt_index = 0;
+    int rv = -1;
 
     signal(SIGTERM, sig_handler);
     signal(SIGINT, sig_handler);
@@ -89,7 +91,7 @@ int main( int argc, char **argv)
     signal(SIGHUP, sig_handler);
     signal(SIGALRM, sig_handler);
 
-    while( -1 != (item = getopt_long(argc, argv, "p:c", options, &opt_index)) ) {
+    while( -1 != (item = getopt_long(argc, argv, "p:c:w:d:m", options, &opt_index)) ) {
         switch( item ) {
             case 'p':
                 cfg.parodus_url = strdup(optarg);
@@ -97,23 +99,37 @@ int main( int argc, char **argv)
             case 'c':
                 cfg.client_url = strdup(optarg);
                 break;
+            case 'w':
+                firewall_cli = strdup(optarg);
+                break;
+            case 'd':
+                data_file = strdup(optarg);
+                break;
+            case 'm':
+                md5_file = strdup(optarg);
+                break;
             default:
                 break;
         }
     }
 
-    if( (NULL != cfg.parodus_url) && (NULL != cfg.client_url) ) {
-        main_loop(&cfg);
+    if( (NULL != cfg.parodus_url) &&
+        (NULL != cfg.client_url) &&
+        (NULL != firewall_cli) &&
+        (NULL != data_file) &&
+        (NULL != md5_file) )
+    {
+        main_loop(&cfg, firewall_cli, data_file, md5_file);
+        rv = 0;
     }
 
-    if( NULL != cfg.parodus_url ) {
-        free((char *) cfg.parodus_url);
-    }
-    if( NULL != cfg.client_url ) {
-        free((char *) cfg.client_url);
-    }
+    if( NULL != md5_file )          free( md5_file );
+    if( NULL != data_file )         free( data_file );
+    if( NULL != firewall_cli )      free( firewall_cli );
+    if( NULL != cfg.parodus_url )   free( (char*) cfg.parodus_url );
+    if( NULL != cfg.client_url )    free( (char*) cfg.client_url );
 
-    return 0;
+    return rv;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -145,67 +161,45 @@ static void sig_handler(int sig)
     }
 }
 
-static void connect_parodus(libpd_cfg_t *cfg)
+
+static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
+                     char *md5_file )
 {
-    int backoffRetryTime = 0;
-    int max_retry_sleep = (1 << 5) - 1; /* 2^5 - 1 */
-    int c = 2;   //Retry Backoff count shall start at c=2 & calculate 2^c - 1.
-
-
-    // TODO This needs to be re-worked so 1 thread can do everything.
-    while( 1 ) {
-        if( backoffRetryTime < max_retry_sleep ) {
-            backoffRetryTime = (1 << c) - 1;
-        }
-        debug_print("New backoffRetryTime value calculated as %d seconds\n", backoffRetryTime);
-        int ret = libparodus_init(&hpd_instance, cfg);
-        if( ret ==0 ) {
-            debug_info("Init for parodus Success..!!\n");
-            break;
-        } else {
-            debug_error("Init for parodus (url %s) failed: '%s'\n", cfg->parodus_url, libparodus_strerror(ret));
-            sleep(backoffRetryTime);
-            c++;
-
-        if( backoffRetryTime == max_retry_sleep ) {
-            c = 2;
-            backoffRetryTime = 0;
-            debug_print("backoffRetryTime reached max value, reseting to initial value\n");
-            }
-        }
-        libparodus_shutdown(&hpd_instance);
-    }
-}
-
-static int main_loop(libpd_cfg_t *cfg)
-{
-    int rtn;
+    int rv;
     wrp_msg_t *wrp_msg;
+    libpd_instance_t hpd_instance;
 
-    connect_parodus(cfg);
+
+    rv = libparodus_init( &hpd_instance, cfg );
+    if( 0 != rv ) {
+        debug_error("Init for parodus (url %s) failed: '%s'\n", cfg->parodus_url, libparodus_strerror(rv) );
+        return -1;
+    }
+    debug_info("Init for parodus Success..!!\n");
 
     debug_print("starting the main loop...\n");
     while( 1 ) {
-        rtn = libparodus_receive(hpd_instance, &wrp_msg, 2000);
-        debug_print("    rtn = %d\n", rtn);
+        rv = libparodus_receive(hpd_instance, &wrp_msg, 2000);
 
-        if( 0 == rtn ) {
+        if( 0 == rv ) {
             uint8_t *bytes = NULL;
             debug_info("Got something from parodus.\n");
             wrp_to_object(wrp_msg, &bytes);
-        } else if( 1 == rtn || 2 == rtn ) {
+            // TODO process the request, then write to the file
+
+        } else if( 1 == rv || 2 == rv ) {
             debug_info("Timed out or message closed.\n");
             continue;
         } else {
-            debug_info("Libparodus failed to receive message: '%s'\n",libparodus_strerror(rtn));
+            debug_info("Libparodus failed to receive message: '%s'\n",libparodus_strerror(rv));
         }
+
         if( NULL != wrp_msg ) {
             free(wrp_msg);
         }
-        sleep(5);
     }
+
     libparodus_shutdown(&hpd_instance);
-    sleep(1);
     debug_print("End of parodus_upstream\n");
     return 0;
 }
