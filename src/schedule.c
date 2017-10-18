@@ -20,6 +20,8 @@
 
 #include "schedule.h"
 
+static void decodeRequest(msgpack_object *deserialized, schedule_t *);
+
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -47,7 +49,6 @@
 /* See schedule.h for details. */
 int decode_schedule( size_t count, uint8_t *bytes, schedule_t **s )
 {
-    int ret = 0;
     schedule_t *schedule;
     msgpack_zone mempool;
     msgpack_object deserialized;
@@ -66,12 +67,52 @@ int decode_schedule( size_t count, uint8_t *bytes, schedule_t **s )
     
     msgpack_zone_init( &mempool, 2048 );
     unpack_ret = msgpack_unpack( (const char *) bytes, count, NULL, &mempool, &deserialized );   
-    (void ) unpack_ret;
     
-    return ret;
+    switch (unpack_ret) {
+        case MSGPACK_UNPACK_SUCCESS:
+                if( deserialized.via.map.size != 0 ) {
+                    decodeRequest( &deserialized, schedule );
+                }
+                msgpack_zone_destroy( &mempool );
+                break;
+                
+        default:
+            free(schedule);
+            return -3;
+    }    
+    
+    return 0;
 }
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-/* none */
+
+void decodeRequest(msgpack_object *deserialized, schedule_t *schedule)
+{
+    msgpack_object_kv* p = deserialized->via.map.ptr;
+
+    while( deserialized->via.map.size--) {
+        //msgpack_object keyType = p->key;
+        //msgpack_object ValueType = p->val;
+        // key name keyType.via.str.ptr
+        switch (p->val.type) {
+            case MSGPACK_OBJECT_ARRAY:
+                /*
+                    msgpack_object_array array = ValueType.via.array;
+                    msgpack_object *ptr = array.ptr;
+                    int num_elements = array.size;
+                 
+                    if (!strcmp(p->key.via.str.ptr, "weekly-schedule")) {
+                 
+                 } else next one "macs, and "absolute-schedule"
+                 */
+                break;
+                
+            default:
+                break;
+        }
+        
+    }
+    
+}
