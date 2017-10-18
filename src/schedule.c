@@ -186,3 +186,38 @@ void insert_weekly_schedule(schedule_t *t, schedule_event *e)
         break;
     }    
 }
+
+
+void insert_absolute_schedule(schedule_t *t, schedule_event *e)
+{
+    if (!(t && e)) {
+        return;
+    }
+    
+    if (NULL == t->absolute) {
+        schedule_event *new_event = (schedule_event *) malloc(sizeof(schedule_event));
+        *new_event = *e;
+        new_event->next = NULL;
+        t->absolute = new_event;
+        return;
+    }
+    
+    schedule_event *head = t->absolute;
+    schedule_event *new_event = (schedule_event *) malloc(sizeof(schedule_event));
+    *new_event = *e;
+    while (head) {
+        if (head->start <= new_event->start) {
+            if (NULL == head->next) {
+                /* End of List */
+                head->next = new_event;
+                new_event->next = NULL;
+            }
+           head = head->next;
+           continue;
+        }
+        new_event->next = head->next;
+        head->next = new_event;
+        
+        break;
+    }    
+}
