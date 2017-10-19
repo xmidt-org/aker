@@ -28,34 +28,37 @@
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
-struct schedule_event {
+#define MAX_BLOCKED_COUNT 256
+
+
+typedef struct schedule_event {
     uint32_t start;                 /* Time is either minutes since last sunday
                                      * or UTC Unix time. */
     size_t block_count;             /* Number of mac addresses to block. */
     struct schedule_event *next;    /* The next node in the SLL or NULL. */
+    
+    int block[MAX_BLOCKED_COUNT];    /* The list of mac addresses to block.
+                                     * DO NOT FREE THIS LIST. */        
+} schedule_event;
 
-    struct mac_address *block[];    /* The list of mac addresses to block.
-                                     * DO NOT FREE THIS LIST. */
-};
-
-struct mac_address {
+typedef struct mac_address_t {
     char mac[18];   /* MAC addresses stored/used: "11:22:33:44:55:66" */
-};
+}mac_address;
 
 typedef struct schedule_t_type {
     uint32_t abs_start;                 /* UTC Unix time starting time for
                                          * the absolute rules. */
     uint32_t abs_end;                   /* UTC Unix time ending time for
                                          * the absolute rules. */
-    struct schedule_event *absolute;    /* The absolute schedule to apply if
+    schedule_event *absolute;    /* The absolute schedule to apply if
                                          * a matching time window is found. */
 
-    struct schedule_event *reoccuring;  /* The list of re-occuring rules to
+    schedule_event *reoccuring;  /* The list of re-occuring rules to
                                          * apply until a new schedule is
                                          * acquired. */
 
     size_t mac_count;                   /* The count of the macs. */
-    struct mac_address *macs;           /* The shared list of mac addresses to
+    mac_address *macs;           /* The shared list of mac addresses to
                                          * block.  FREE THIS LIST. */
 } schedule_t;
 
