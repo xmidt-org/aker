@@ -63,23 +63,21 @@ ssize_t process_message_ret( wrp_msg_t *msg, void **data);
  * @brief Processes wrp Request-Response set.
  *
  * @param[in]  wrp REQ request
- * @param[out] wrp REQ response
  *
  * @return size of payload, <0 otherwise.
  */
-ssize_t process_request_set( wrp_msg_t *req, wrp_msg_t *resp );
+ssize_t process_request_set( wrp_msg_t *req );
 
 /**
  * @brief Returns wrp Request-Response get response.
  * 
  * @note return data buffer needs to be free()-ed by caller.
  *
- * @param[in]  wrp REQ request
  * @param[out] wrp REQ response
  *
  * @return size of dat buffer retrieved, <0 otherwise.
  */
-ssize_t process_request_get( wrp_msg_t *req, wrp_msg_t *resp );
+ssize_t process_request_get( wrp_msg_t *resp );
 
 #ifdef __cplusplus
 }

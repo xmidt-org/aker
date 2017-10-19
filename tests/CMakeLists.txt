@@ -38,3 +38,10 @@ add_test(NAME test_wrp_interface COMMAND ${MEMORY_CHECK} ./test_wrp_interface)
 add_executable(test_wrp_interface test_wrp_interface.c ../src/wrp_interface.c)
 target_link_libraries (test_wrp_interface ${AKER_COMMON_LIBS})
 
+#-------------------------------------------------------------------------------
+#   test_process_data
+#-------------------------------------------------------------------------------
+add_test(NAME test_process_data COMMAND ${MEMORY_CHECK} ./test_process_data)
+add_executable(test_process_data test_process_data.c ../src/process_data.c)
+target_link_libraries (test_process_data ${AKER_COMMON_LIBS})
+

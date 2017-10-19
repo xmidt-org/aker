@@ -109,9 +109,9 @@ ssize_t wrp_processing(wrp_msg_t *msg, void **message)
             resp->payload = NULL;
             resp->payload_size = 0;
             if( 0 == strcmp(SET_DEST, req->dest) ) {
-                process_request_set(in_msg, &response);
+                process_request_set(in_msg);
             } else if( 0 == strcmp(GET_DEST, req->dest) ) {
-                process_request_get(in_msg, &response);
+                process_request_get(&response);
             } else {
                 debug_error("Request-Response message destination %s is invalid\n", req->dest);
                 break;
