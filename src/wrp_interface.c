@@ -117,6 +117,7 @@ ssize_t wrp_processing(wrp_msg_t *msg, void **message)
                 break;
             }
         }
+        break;
             
         default:
             debug_info("Message of type %d not handled\n", in_msg->msg_type);
