@@ -113,7 +113,7 @@ int main( int argc, char **argv)
         }
     }
 
-    if( (NULL != cfg.parodus_url) &&  
+    if( (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
         (NULL != firewall_cli) &&
         (NULL != data_file) &&
