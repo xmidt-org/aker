@@ -19,10 +19,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <msgpack.h>
 #include <ctype.h>
 #include <time.h>
 
-#include <mpack.h>
 
 #include "schedule.h"
 
@@ -44,18 +44,46 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-/* none */
+void decodeRequest(msgpack_object *deserialized, schedule_t *t);
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
 
 /* See schedule.h for details. */
-int decode_schedule( size_t len, uint8_t *bytes, schedule_t **s_out )
+int decode_schedule(size_t count, uint8_t *bytes, schedule_t **s)
 {
-    (void) len;
-    (void) bytes;
-    (void) s_out;
+    schedule_t *schedule;
+    msgpack_zone mempool;
+    msgpack_object deserialized;
+    msgpack_unpack_return unpack_ret;
+
+    if (!count || !bytes) {
+        return -1;
+    }
+
+    schedule = malloc(sizeof (schedule_t));
+    if (!schedule) {
+        return -2;
+    }
+
+    *s = schedule;
+
+    msgpack_zone_init(&mempool, 2048);
+    unpack_ret = msgpack_unpack((const char *) bytes, count, NULL, &mempool, &deserialized);
+
+    switch (unpack_ret) {
+        case MSGPACK_UNPACK_SUCCESS:
+            if (deserialized.via.map.size != 0) {
+                decodeRequest(&deserialized, schedule);
+            }
+            msgpack_zone_destroy(&mempool);
+            break;
+
+        default:
+            free(schedule);
+            return -3;
+    }
 
     return 0;
 }
@@ -63,7 +91,43 @@ int decode_schedule( size_t len, uint8_t *bytes, schedule_t **s_out )
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
+void decodeRequest(msgpack_object *deserialized, schedule_t *t) {
+    msgpack_object_kv* p = deserialized->via.map.ptr;
+ 
+    (void ) t;
 
+    while (deserialized->via.map.size--) {
+        //msgpack_object keyType = p->key;
+        //msgpack_object ValueType = p->val;
+        // key name keyType.via.str.ptr
+        switch (p->val.type) {
+            case MSGPACK_OBJECT_ARRAY:
+                /*
+                    msgpack_object_array array = ValueType.via.array;
+                    msgpack_object *ptr = array.ptr;
+                    int num_elements = array.size;
+                 *  if (!strcmp(p->key.via.str.ptr, "macs") {
+                 * }
+                 *                  */
+                break;
+            case MSGPACK_OBJECT_MAP:
+                /*"weekly-schedule" and "absolute-schedule" are maps? 
+
+                    if (!strcmp(p->key.via.str.ptr, "weekly-schedule")) {
+                 * decodeMap();
+                 } else if (!strcmp(p->key.via.str.ptr, "absolute-schedule") {
+                 decodeMap();
+                 } else {return error;}
+                 */
+                break;
+            default:
+                break;
+        }
+        p++;
+    }
+
+}
+ 
 /**
  *  Create an empty schedule.
  *
