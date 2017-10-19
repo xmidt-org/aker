@@ -90,7 +90,7 @@ int main( int argc, char **argv)
     signal(SIGQUIT, sig_handler);
     signal(SIGHUP, sig_handler);
     signal(SIGALRM, sig_handler);
-
+    
     while( -1 != (item = getopt_long(argc, argv, "p:c:w:d:m:", options, &opt_index)) ) {
         switch( item ) {
             case 'p':
