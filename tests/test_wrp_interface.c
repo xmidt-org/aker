@@ -43,74 +43,113 @@ typedef struct {
 static test_t tests[] = {
     {
         .s.msg_type = WRP_MSG_TYPE__REQ,
-        .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-        .s.u.crud.source = "fake-server",
-        .s.u.crud.dest = "seshat",
-        .s.u.crud.headers = NULL,
-        .s.u.crud.metadata = NULL,
-        .s.u.crud.include_spans = false,
-        .s.u.crud.spans.spans = NULL,
-        .s.u.crud.spans.count = 0,
-        .s.u.crud.status = 1,
-        .s.u.crud.rdr = 0,
-        .s.u.crud.payload = "service1",
+        .s.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+        .s.u.req.source = "fake-server",
+        .s.u.req.dest = "/parental control/schedule/set",
+        .s.u.req.partner_ids = NULL,
+        .s.u.req.headers = NULL,
+        .s.u.req.metadata = NULL,
+        .s.u.req.include_spans = false,
+        .s.u.req.spans.spans = NULL,
+        .s.u.req.spans.count = 0,
+        .s.u.req.payload = "Some binary",
+        .s.u.req.payload_size = 11,
 
         .r.msg_type = WRP_MSG_TYPE__REQ,
-        .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-        .r.u.crud.source = "seshat",
-        .r.u.crud.dest = "fake-server",
-        .r.u.crud.headers = NULL,
-        .r.u.crud.metadata = NULL,
-        .r.u.crud.include_spans = false,
-        .r.u.crud.spans.spans = NULL,
-        .r.u.crud.spans.count = 0,
-        .r.u.crud.status = 200,
-        .r.u.crud.rdr = 0,
-        .r.u.crud.payload = "{\"service1\":{\"url\":\"url1\"}}",
+        .r.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+        .r.u.req.source = "/parental control/schedule/set",
+        .r.u.req.dest = "fake-server",
+        .r.u.req.partner_ids = NULL,
+        .r.u.req.headers = NULL,
+        .r.u.req.metadata = NULL,
+        .r.u.req.include_spans = false,
+        .r.u.req.spans.spans = NULL,
+        .r.u.req.spans.count = 0,
+        .r.u.req.payload = NULL,
+        .r.u.req.payload_size = 0,
+    },
+
+    {
+        .s.msg_type = WRP_MSG_TYPE__REQ,
+        .s.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+        .s.u.req.source = "fake-server",
+        .s.u.req.dest = "/parental control/schedule/get",
+        .s.u.req.partner_ids = NULL,
+        .s.u.req.headers = NULL,
+        .s.u.req.metadata = NULL,
+        .s.u.req.include_spans = false,
+        .s.u.req.spans.spans = NULL,
+        .s.u.req.spans.count = 0,
+        .s.u.req.payload = NULL,
+        .s.u.req.payload_size = 0,
+
+        .r.msg_type = WRP_MSG_TYPE__REQ,
+        .r.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+        .r.u.req.source = "/parental control/schedule/get",
+        .r.u.req.dest = "fake-server",
+        .r.u.req.partner_ids = NULL,
+        .r.u.req.headers = NULL,
+        .r.u.req.metadata = NULL,
+        .r.u.req.include_spans = false,
+        .r.u.req.spans.spans = NULL,
+        .r.u.req.spans.count = 0,
+        .r.u.req.payload = "Some other binary",
+        .r.u.req.payload_size = 16,
     },
 };
-static size_t i;
+static uint8_t i;
 
 /*----------------------------------------------------------------------------*/
 /*                                   Mocks                                    */
 /*----------------------------------------------------------------------------*/
-int ji_add_entry( const char *entry, const char *value )
+int process_message_cu( wrp_msg_t *msg, wrp_msg_t *object )
 {
-    (void) entry; (void) value;
-    return EXIT_SUCCESS;
+    (void) msg; (void) object;
+    return 0;
 }
 
-int ji_retrieve_entry( const char *entry, char **object )
+ssize_t process_message_ret( wrp_msg_t *msg, void **data )
 {
-    (void) entry; 
-    *object = strdup(tests[i].r.u.crud.payload);
-    return EXIT_SUCCESS;
+    (void) msg; (void) data;
+    return 0;
+}
+
+ssize_t process_request_set( wrp_msg_t *msg, wrp_msg_t *resp )
+{
+    (void) msg; (void) resp;
+    return 0;
+}
+
+ssize_t process_request_get( wrp_msg_t *msg, wrp_msg_t *resp )
+{
+    (void) msg;
+    resp->u.req.payload = malloc(msg->u.req.payload_size);
+    memcpy(resp->u.req.payload, tests[i].r.u.req.payload, tests[i].r.u.req.payload_size);
+    resp->u.req.payload_size = tests[i].r.u.req.payload_size;
+    return resp->u.req.payload_size;
 }
 
 /*----------------------------------------------------------------------------*/
 /*                                   Tests                                    */
 /*----------------------------------------------------------------------------*/
-void test_wi_create_response_to_message_ret()
+void test_wrp_processing()
 {
     size_t t_size = sizeof(tests)/sizeof(test_t);
 
     for( i = 0; i < t_size; i++ ) {
-        void *data;
         void *bytes;
         wrp_msg_t *msg;
-        ssize_t data_s = wrp_struct_to(&tests[i].s, WRP_BYTES, &data);
-        ssize_t bytes_s = wi_create_response_to_message(data, data_s, &bytes);
+        ssize_t bytes_s = wrp_processing(&(tests[i].s), &bytes);
         CU_ASSERT(0 < bytes_s);
         ssize_t msg_s = wrp_to_struct(bytes, bytes_s, WRP_BYTES, &msg);
         CU_ASSERT(0 < msg_s);
         CU_ASSERT(tests[i].r.msg_type == msg->msg_type);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.transaction_uuid, msg->u.crud.transaction_uuid);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.source, msg->u.crud.source);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.dest, msg->u.crud.dest);
-        CU_ASSERT(tests[i].r.u.crud.status == msg->u.crud.status);
-        CU_ASSERT(tests[i].r.u.crud.rdr == msg->u.crud.rdr);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.path, msg->u.crud.path);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.payload, msg->u.crud.payload);
+        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.transaction_uuid, msg->u.req.transaction_uuid);
+        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.source, msg->u.req.source);
+        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.dest, msg->u.req.dest);
+        CU_ASSERT(0 == memcmp(tests[i].r.u.req.payload, msg->u.req.payload, msg->u.req.payload_size));
+        printf("tests[%u].r.u.req.payload_size = %zd, msg->u.req.payload_size = %zd\n", i, tests[i].r.u.req.payload_size, msg->u.req.payload_size);
+        CU_ASSERT(tests[i].r.u.req.payload_size == msg->u.req.payload_size);
         wrp_free_struct(msg);
         free(bytes);
     }
@@ -120,7 +159,7 @@ void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "Test 1", test_wi_create_response_to_message_ret );
+    CU_add_test( *suite, "Test 1", test_wrp_processing );
 }
 
 /*----------------------------------------------------------------------------*/

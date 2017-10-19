@@ -34,7 +34,7 @@ target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
 #-------------------------------------------------------------------------------
 #   test_wrp_interface
 #-------------------------------------------------------------------------------
-#add_test(NAME test_wrp_interface COMMAND ${MEMORY_CHECK} ./test_wrp_interface)
-#add_executable(test_wrp_inteface test_wrp_inteface.c ../src/wrp_inteface.c)
-#target_link_libraries (test_wrp_inteface ${AKER_COMMON_LIBS})
+add_test(NAME test_wrp_interface COMMAND ${MEMORY_CHECK} ./test_wrp_interface)
+add_executable(test_wrp_interface test_wrp_interface.c ../src/wrp_interface.c)
+target_link_libraries (test_wrp_interface ${AKER_COMMON_LIBS})
 
