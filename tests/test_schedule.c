@@ -22,6 +22,7 @@
 #include <CUnit/Basic.h>
 
 #include "../src/schedule.h"
+#include "../src/decode.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */

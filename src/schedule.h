@@ -66,16 +66,7 @@ typedef struct schedule {
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-/**
- *  Decodes the MsgPacked structure (bytes) into a new schedule object.
- *
- *  @param len  [in]  the number of bytes to process
- *  @param data [in]  the msgpack bytes to process
- *  @param s    [out] the resulting schedule struture, or untouched on error
- *
- *  @return 0 on success, error otherwise.
- */
-int decode_schedule( size_t len, uint8_t *bytes, schedule_t **s );
+
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
