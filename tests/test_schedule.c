@@ -41,12 +41,21 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-/* none */
+schedule_t* create_schedule( void );
+schedule_event_t* create_schedule_event( size_t block_count );
+void insert_event(schedule_event_t **head, schedule_event_t *e );
+void prune_expired_events( schedule_t *s, uint32_t unixtime );
+void destroy_schedule( schedule_t *s );
+char* get_blocked_at_time( schedule_t *s, uint32_t unixtime, uint32_t weekly );
+char* convert_index_to_string( schedule_t *s, size_t count, uint32_t *block );
+int create_mac_table( schedule_t *s, size_t count );
+extern bool validate_mac( const char *mac, size_t len );
+bool set_mac_index( schedule_t *s, const char *mac, size_t len, uint32_t index );
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-void test_normal( void )
+void test_decoder( void )
 {
     uint8_t data[] = {
         0x83,
@@ -96,11 +105,71 @@ void test_normal( void )
     (void) rv;
 }
 
+void test_mac_validator( void )
+{
+    CU_ASSERT( true == validate_mac("11:22:33:aa:bb:CC", 17) );
+    CU_ASSERT( false == validate_mac("11-22-33-aa-bb-CC", 17) );
+    CU_ASSERT( false == validate_mac("zz:22:33:aa:bb:CC", 17) );
+    CU_ASSERT( false == validate_mac("11:22:33:aa:bb:CC:12", 20) );
+    CU_ASSERT( false == validate_mac("11:22:33:aa:bb", 14) );
+    CU_ASSERT( false == validate_mac(NULL, 17) );
+}
+
+void test_simple_case( void )
+{
+    schedule_t *s;
+    schedule_event_t *e;
+    char *block;
+    int rv;
+
+    s = create_schedule();
+    CU_ASSERT( NULL != s );
+
+    /* Don't crash */
+    block = get_blocked_at_time( s, 1234000, 30 );
+    CU_ASSERT( NULL == block );
+
+    /* Don't crash */
+    prune_expired_events( s, 1234000 );
+
+    rv = create_mac_table( s, 3 );
+    CU_ASSERT( 0 == rv );
+
+    CU_ASSERT( false == set_mac_index(s, NULL, 17, 0) );
+    CU_ASSERT( false == set_mac_index(s, "11:22:33:44:55:66", 17, 12) );
+    CU_ASSERT( true == set_mac_index(s, "11:22:33:44:55:66", 17, 0) );
+    CU_ASSERT( true == set_mac_index(s, "22:33:44:55:66:aa", 17, 1) );
+    CU_ASSERT( true == set_mac_index(s, "33:44:55:66:aa:BB", 17, 2) );
+
+
+    /* Add an entry */
+    e = create_schedule_event( 2 );
+    CU_ASSERT( NULL != e );
+    e->time = 1234000;
+    e->block[0] = 2;
+    e->block[1] = 1;
+
+    insert_event( &s->absolute, e );
+
+    block = convert_index_to_string( s, e->block_count, e->block );
+    CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
+
+    block = get_blocked_at_time( s, 1234001, 10 );
+    CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
+
+    block = get_blocked_at_time( s, 1234001, 10 );
+    CU_ASSERT( NULL == block );
+
+    destroy_schedule( s );
+}
+
 void add_suites( CU_pSuite *suite )
 {
     printf( "--------Start of Test Cases Execution ---------\n" );
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "Test 1", test_normal );
+    CU_add_test( *suite, "Test decoder", test_decoder );
+    CU_add_test( *suite, "Test MAC validator", test_mac_validator );
+    CU_add_test( *suite, "Test simple case", test_simple_case );
 }
 
 /*----------------------------------------------------------------------------*/
