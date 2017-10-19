@@ -45,7 +45,8 @@ int process_message_cu( wrp_msg_t *msg, wrp_msg_t *object )
         return -1;
     }
 
-    /* Process msg */
+    /* TODO: Process msg */
+    (void) object;
 
     return 0;
 }
@@ -58,12 +59,13 @@ ssize_t process_message_ret( wrp_msg_t *msg, void **data )
         return -1;
     }
 
-    /* Retrieve schedule info and return. */
+    /* TODO: Retrieve schedule info and return. */
+    (void) data;
 
     return 0;
 }
 
-ssize_t process_request_set( wrp_msg_t *req, wrp_msg_t *resp )
+ssize_t process_request_set( wrp_msg_t *req )
 {
     FILE *file_handle = NULL;
     size_t write_size = 0;
@@ -77,15 +79,14 @@ ssize_t process_request_set( wrp_msg_t *req, wrp_msg_t *resp )
     fclose(file_handle);
 
     /* TODO: Pass off payload to decoder */
-    /* TODO: Fill out response */
+
     return write_size;
 }
 
-ssize_t process_request_get( wrp_msg_t *req, wrp_msg_t *resp )
+ssize_t process_request_get( wrp_msg_t *resp )
 {
     FILE *file_handle = NULL;
     size_t file_size = 0, read_size = 0;
-    uint8_t *buf = NULL;
 
     file_handle = fopen(FILE_NAME, "rb");
     if( NULL == file_handle ) {
@@ -98,9 +99,11 @@ ssize_t process_request_get( wrp_msg_t *req, wrp_msg_t *resp )
     file_size = ftell(file_handle);
     fseek(file_handle, 0, SEEK_SET);
 
-    buf = (uint8_t *)malloc(sizeof(uint8_t) * file_size);
-    read_size = fread(buf, sizeof(uint8_t), file_size, file_handle);
+    resp->u.req.payload = (uint8_t *)malloc(sizeof(uint8_t) * file_size);
+    read_size = fread(&resp->u.req.payload, sizeof(uint8_t), file_size, file_handle);
     fclose(file_handle);
+
+    resp->u.req.payload_size = read_size;
 
     return read_size;
 }
