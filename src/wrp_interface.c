@@ -120,10 +120,6 @@ int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
         break;
     }
 
-    if (in_msg) {
-        wrp_free_struct(in_msg);
-    }
-
     return 0;
 }
 
