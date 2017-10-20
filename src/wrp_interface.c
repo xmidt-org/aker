@@ -40,25 +40,21 @@ typedef struct wrp_req_msg  req_msg_t;
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-ssize_t wrp_processing(wrp_msg_t *msg, void **message)
+int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
 {
     wrp_msg_t *in_msg = msg;
-    wrp_msg_t response;
-    ssize_t   message_size;
-
-    memset(&response, 0, sizeof(wrp_msg_t));
 
     switch (in_msg->msg_type) {
         case (WRP_MSG_TYPE__CREATE): 
         case (WRP_MSG_TYPE__UPDATE):
         {
-            crud_msg_t *out_crud = &(response.u.crud);
+            crud_msg_t *out_crud = &(response->u.crud);
 
             out_crud->status = 400; // default to failed
             /* Not as per WRP spec - Response to Update */
-            response.msg_type = in_msg->msg_type;
+            response->msg_type = in_msg->msg_type;
 
-            if( 0 == process_message_cu(in_msg, &response) ) {
+            if( 0 == process_message_cu(in_msg, response) ) {
                 out_crud->status =200;
             }
         }
@@ -67,10 +63,10 @@ ssize_t wrp_processing(wrp_msg_t *msg, void **message)
         case (WRP_MSG_TYPE__RETREIVE):
         {
             crud_msg_t *in_crud  = &(in_msg->u.crud);
-            crud_msg_t *out_crud = &(response.u.crud);
+            crud_msg_t *out_crud = &(response->u.crud);
 
             out_crud->status = 400; // default to failed
-            response.msg_type = WRP_MSG_TYPE__RETREIVE;
+            response->msg_type = WRP_MSG_TYPE__RETREIVE;
 
             out_crud->transaction_uuid = strdup(in_crud->transaction_uuid);
             out_crud->source  = strdup(in_crud->dest);
@@ -93,9 +89,9 @@ ssize_t wrp_processing(wrp_msg_t *msg, void **message)
         case (WRP_MSG_TYPE__REQ):
         {
             req_msg_t *req = &(in_msg->u.req);
-            req_msg_t *resp = &(response.u.req);
+            req_msg_t *resp = &(response->u.req);
 
-            response.msg_type = WRP_MSG_TYPE__REQ;
+            response->msg_type = WRP_MSG_TYPE__REQ;
             
             resp->transaction_uuid = strdup(req->transaction_uuid);
             resp->source = strdup(req->dest);
@@ -111,7 +107,7 @@ ssize_t wrp_processing(wrp_msg_t *msg, void **message)
             if( 0 == strcmp(SET_DEST, req->dest) ) {
                 process_request_set(in_msg);
             } else if( 0 == strcmp(GET_DEST, req->dest) ) {
-                process_request_get(&response);
+                process_request_get(response);
             } else {
                 debug_error("Request-Response message destination %s is invalid\n", req->dest);
                 break;
@@ -124,28 +120,31 @@ ssize_t wrp_processing(wrp_msg_t *msg, void **message)
         break;
     }
 
-    message_size = wrp_struct_to(&response, WRP_BYTES, message);    
-    /* TODO: Handle CRUD type after fix to handle binary payload. */
-    /* Request-Response WRP is temporary. */
-    if( WRP_MSG_TYPE__REQ == response.msg_type )
-    {
-        req_msg_t *ret = &(response.u.req);
-        if (ret->transaction_uuid)
-            free(ret->transaction_uuid);
-        if (ret->dest)             
-            free(ret->dest);
-        if (ret->payload )         
-            free(ret->payload);
-        if (ret->source)           
-            free(ret->source);
-    }
-     
     if (in_msg) {
         wrp_free_struct(in_msg);
     }
 
-    /* Return message_size or object size */
-    return message_size;
+    return 0;
+}
+
+int wrp_cleanup(wrp_msg_t *message)
+{
+    int rv = -1;
+
+    if( WRP_MSG_TYPE__REQ == message->msg_type ) {
+        req_msg_t *msg = &(message->u.req);
+        if( msg->transaction_uuid )
+            free(msg->transaction_uuid);
+        if( msg->source )          
+            free(msg->source);
+        if( msg->dest )             
+            free(msg->dest);
+        if( msg->payload )         
+            free(msg->payload);
+        rv = 0;
+    }
+
+    return rv;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -36,14 +36,23 @@ extern "C" {
 /**
  *  Process an incoming message.
  *
- *  @note If object is not NULL, it needs to be free()-ed by the caller.
+ *  @note The response WRP message needs to be cleaned up by the caller.
  *
  *  @param msg      [in]  incoming WRP data.
- *  @param response [out] response message.
+ *  @param response [in]  response WRP message.
  *
- *  @return size of response, < 0 otherwise.
+ *  @return 0 if success, < 0 otherwise.
  */
-ssize_t wrp_processing(wrp_msg_t *msg, void **response);
+int wrp_process(wrp_msg_t *msg, wrp_msg_t *response);
+
+/**
+ *  Cleanup WRP response returned by wrp_processing.
+ *
+ *  @param msg      [in]  WRP response structure 
+ *
+ *  @return 0 if success, < 0 otherwise.
+ */
+int wrp_cleanup(wrp_msg_t *response);
 
 #ifdef __cplusplus
 }
