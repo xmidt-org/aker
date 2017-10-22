@@ -17,8 +17,8 @@
 #ifndef __SCHEDULE_H__
 #define __SCHEDULE_H__
 
-#include <stdbool.h>
 #include <stdint.h>
+#include <time.h>
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -30,7 +30,7 @@
 /*----------------------------------------------------------------------------*/
 
 typedef struct schedule_event {
-    uint32_t time;                  /* Time is either minutes since last sunday
+    time_t time;                    /* Time is either minutes since last sunday
                                      * or UTC Unix time. */
     struct schedule_event *next ;   /* The next node in the SLL or NULL. */
     
@@ -68,9 +68,94 @@ typedef struct schedule {
 /*----------------------------------------------------------------------------*/
 
 
-/*----------------------------------------------------------------------------*/
-/*                             Internal functions                             */
-/*----------------------------------------------------------------------------*/
-/* none */
+/**
+ *  Create an empty schedule.
+ *
+ *  @return NULL on error, valid pointer to a schedule_t otherwise
+ */
+schedule_t* create_schedule( void );
+
+
+/**
+ *  Create a correctly sized but otherwise empty schedule_event_t struct.
+ *
+ *  @note Only the block_count is set and the space for the block entries has
+ *        been allocated.  The rest is up to the user.
+ *
+ *  @param block_count the number of blocked mac addresses to size for
+ *
+ *  @return NULL on error, valid pointer to a schedule_event_t otherwise
+ */
+schedule_event_t* create_schedule_event( size_t block_count );
+
+
+/**
+ *  Inserts a schedule_event_t in sorted order (smallest to largest) into
+ *  the specified list (head).
+ *
+ *  @param head the pointer to the list head
+ *  @param e    the schedule_event_t pointer to add to the list
+ */
+void insert_event(schedule_event_t **head, schedule_event_t *e );
+
+
+/**
+ *  Performs the tasks needed to make the scheduler's job a bit easier.
+ *
+ *  @param s the schedule to finalize
+ */
+int finalize_schedule( schedule_t *s );
+
+
+/**
+ *  Destroys the schedule passed in.
+ *
+ *  @param s the schedule to destroy
+ */
+void destroy_schedule( schedule_t *s );
+
+
+/**
+ *  Gets the string with the blocked MAC addresses at this time.
+ *
+ *  @param s       the schedule to apply
+ *  @param unitime the unixtime representation
+ *
+ *  @return the string with the list of blocked addresses (may be NULL and valid)
+ */
+char* get_blocked_at_time( schedule_t *s, time_t unixtime );
+
+
+/**
+ *  Creates the schedule's table of mac addresses.
+ *
+ *  @param t the schedule to work with
+ *  @param count the size of the table to allocate
+ *
+ *  @return 0 on success, failure otherwise
+ */
+int create_mac_table( schedule_t *s, size_t count );
+
+
+/**
+ *  Validates and copies the MAC address passed in into the right location in
+ *  the schedule.
+ *
+ *  @param s   the schedule to alter
+ *  @param mac the MAC address to check and copy
+ *  @param len the length of the MAC address passed in
+ *  @param index the location to copy into
+ *
+ *  @return 0 if successful, failure otherwise
+ */
+int set_mac_index( schedule_t *s, const char *mac, size_t len, uint32_t index );
+
+
+/**
+ *  Prints the schedule object out to stdout.
+ *
+ *  @param s the schedule to print
+ */
+void print_schedule( schedule_t *s );
 
 #endif
