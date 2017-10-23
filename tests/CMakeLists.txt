@@ -28,7 +28,7 @@ link_directories ( ${LIBRARY_DIR} )
 #   test_schedule
 #-------------------------------------------------------------------------------
 add_test(NAME test_schedule COMMAND ${MEMORY_CHECK} ./test_schedule)
-add_executable(test_schedule test_schedule.c ../src/schedule.c ../src/decode.c)
+add_executable(test_schedule test_schedule.c ../src/schedule_print.c ../src/schedule.c ../src/decode.c)
 target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------

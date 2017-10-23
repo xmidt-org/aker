@@ -145,6 +145,7 @@ static void sig_handler(int sig)
         signal(SIGUSR1, sig_handler); /* reset it to this function */
         debug_info("SIGUSR1 received!\n");
     } else if( sig == SIGUSR2 ) {
+        signal(SIGUSR2, sig_handler);
         debug_info("SIGUSR2 received!\n");
     } else if( sig == SIGCHLD ) {
         signal(SIGCHLD, sig_handler); /* reset it to this function */
@@ -178,19 +179,17 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
     debug_info("Init for parodus Success..!!\n");
 
     debug_print("starting the main loop...\n");
-    while( 1 ) {
+    while( true ) {
         rv = libparodus_receive(hpd_instance, &wrp_msg, 2000);
 
         if( 0 == rv ) {
-            void *message = NULL;
-            ssize_t message_size;
+            wrp_msg_t response;
 
             debug_info("Got something from parodus.\n");
-            message_size = wrp_processing(wrp_msg, &message);
-            /* TODO: Send message through parodus */
-            (void) message_size;
-            if( NULL != message ) {
-                free(message);
+            rv = wrp_process(wrp_msg, &response);
+            if( 0 == rv ) {
+                libparodus_send(hpd_instance, &response);
+                wrp_cleanup(&response);
             }
         } else if( 1 == rv || 2 == rv ) {
             debug_info("Timed out or message closed.\n");

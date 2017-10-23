@@ -1,3 +1,6 @@
+# Standard build directory
+build
+
 # Object files
 *.o
 *.ko

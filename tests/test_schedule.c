@@ -18,11 +18,13 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <CUnit/Basic.h>
 
 #include "../src/schedule.h"
 #include "../src/decode.h"
+#include "../src/time.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -42,16 +44,8 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-schedule_t* create_schedule( void );
-schedule_event_t* create_schedule_event( size_t block_count );
-void insert_event(schedule_event_t **head, schedule_event_t *e );
-void prune_expired_events( schedule_t *s, uint32_t unixtime );
-void destroy_schedule( schedule_t *s );
-char* get_blocked_at_time( schedule_t *s, uint32_t unixtime, uint32_t weekly );
-char* convert_index_to_string( schedule_t *s, size_t count, uint32_t *block );
-int create_mac_table( schedule_t *s, size_t count );
-extern bool validate_mac( const char *mac, size_t len );
-bool set_mac_index( schedule_t *s, const char *mac, size_t len, uint32_t index );
+int __validate_mac( const char *mac, size_t len );
+
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
@@ -106,14 +100,20 @@ void test_decoder( void )
     (void) rv;
 }
 
+time_t convert_unix_time_to_weekly( time_t unixtime )
+{
+    //printf( "unix: %ld -> rel: %ld\n", unixtime, (unixtime - 1234000 + 11) );
+    return unixtime - 1234000 + 11;
+}
+
 void test_mac_validator( void )
 {
-    CU_ASSERT( true == validate_mac("11:22:33:aa:bb:CC", 17) );
-    CU_ASSERT( false == validate_mac("11-22-33-aa-bb-CC", 17) );
-    CU_ASSERT( false == validate_mac("zz:22:33:aa:bb:CC", 17) );
-    CU_ASSERT( false == validate_mac("11:22:33:aa:bb:CC:12", 20) );
-    CU_ASSERT( false == validate_mac("11:22:33:aa:bb", 14) );
-    CU_ASSERT( false == validate_mac(NULL, 17) );
+    CU_ASSERT( 0 == __validate_mac("11:22:33:aa:bb:CC", 17) );
+    CU_ASSERT( 0 != __validate_mac("11-22-33-aa-bb-CC", 17) );
+    CU_ASSERT( 0 != __validate_mac("zz:22:33:aa:bb:CC", 17) );
+    CU_ASSERT( 0 != __validate_mac("11:22:33:aa:bb:CC:12", 20) );
+    CU_ASSERT( 0 != __validate_mac("11:22:33:aa:bb", 14) );
+    CU_ASSERT( 0 != __validate_mac(NULL, 17) );
 }
 
 void test_simple_case( void )
@@ -126,21 +126,14 @@ void test_simple_case( void )
     s = create_schedule();
     CU_ASSERT( NULL != s );
 
-    /* Don't crash */
-    block = get_blocked_at_time( s, 1234000, 30 );
-    CU_ASSERT( NULL == block );
-
-    /* Don't crash */
-    prune_expired_events( s, 1234000 );
-
     rv = create_mac_table( s, 3 );
     CU_ASSERT( 0 == rv );
 
-    CU_ASSERT( false == set_mac_index(s, NULL, 17, 0) );
-    CU_ASSERT( false == set_mac_index(s, "11:22:33:44:55:66", 17, 12) );
-    CU_ASSERT( true == set_mac_index(s, "11:22:33:44:55:66", 17, 0) );
-    CU_ASSERT( true == set_mac_index(s, "22:33:44:55:66:aa", 17, 1) );
-    CU_ASSERT( true == set_mac_index(s, "33:44:55:66:aa:BB", 17, 2) );
+    CU_ASSERT( 0 != set_mac_index(s, NULL, 17, 0) );
+    CU_ASSERT( 0 != set_mac_index(s, "11:22:33:44:55:66", 17, 12) );
+    CU_ASSERT( 0 == set_mac_index(s, "11:22:33:44:55:66", 17, 0) );
+    CU_ASSERT( 0 == set_mac_index(s, "22:33:44:55:66:aa", 17, 1) );
+    CU_ASSERT( 0 == set_mac_index(s, "33:44:55:66:aa:BB", 17, 2) );
 
 
     /* Add an entry */
@@ -149,18 +142,55 @@ void test_simple_case( void )
     e->time = 1234000;
     e->block[0] = 2;
     e->block[1] = 1;
-
     insert_event( &s->absolute, e );
 
-    block = convert_index_to_string( s, e->block_count, e->block );
+    /* Add an entry */
+    e = create_schedule_event( 1 );
+    CU_ASSERT( NULL != e );
+    e->time = 1234010;
+    e->block[0] = 2;
+    insert_event( &s->absolute, e );
+
+    /* Add an entry */
+    e = create_schedule_event( 1 );
+    CU_ASSERT( NULL != e );
+    e->time = 23;
+    e->block[0] = 0;
+    insert_event( &s->weekly, e );
+
+    /* Add an entry */
+    e = create_schedule_event( 1 );
+    CU_ASSERT( NULL != e );
+    e->time = 24;
+    e->block[0] = 1;
+    insert_event( &s->weekly, e );
+
+    finalize_schedule( s );
+
+    print_schedule( s );
+
+    block = get_blocked_at_time( s, 1233999 );
+    CU_ASSERT(NULL == block);
+
+    block = get_blocked_at_time( s, 1234000 );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
+    free(block);
 
-    block = get_blocked_at_time( s, 1234001, 10 );
+    block = get_blocked_at_time( s, 1234001 );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
+    free(block);
 
-    block = get_blocked_at_time( s, 1234001, 10 );
-    CU_ASSERT( NULL == block );
+    block = get_blocked_at_time( s, 1234010 );
+    CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB", block);
+    free(block);
 
+    block = get_blocked_at_time( s, 1234011 );
+    CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB", block);
+    free(block);
+
+    block = get_blocked_at_time( s, 1234012 );
+    CU_ASSERT_STRING_EQUAL("11:22:33:44:55:66", block);
+    free(block);
     destroy_schedule( s );
 }
 

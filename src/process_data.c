@@ -99,8 +99,8 @@ ssize_t process_request_get( wrp_msg_t *resp )
     file_size = ftell(file_handle);
     fseek(file_handle, 0, SEEK_SET);
 
-    resp->u.req.payload = (uint8_t *)malloc(sizeof(uint8_t) * file_size);
-    read_size = fread(&resp->u.req.payload, sizeof(uint8_t), file_size, file_handle);
+    resp->u.req.payload = (uint8_t*) malloc(file_size);
+    read_size = fread(resp->u.req.payload, sizeof(uint8_t), file_size, file_handle);
     fclose(file_handle);
 
     resp->u.req.payload_size = read_size;

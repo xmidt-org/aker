@@ -136,19 +136,16 @@ void test_wrp_processing()
     size_t t_size = sizeof(tests)/sizeof(test_t);
 
     for( i = 0; i < t_size; i++ ) {
-        void *bytes;
-        wrp_msg_t *msg;
-        ssize_t bytes_s = wrp_processing(&(tests[i].s), &bytes);
-        ssize_t msg_s = wrp_to_struct(bytes, bytes_s, WRP_BYTES, &msg);
-        CU_ASSERT(0 < msg_s);
-        CU_ASSERT(tests[i].r.msg_type == msg->msg_type);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.transaction_uuid, msg->u.req.transaction_uuid);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.source, msg->u.req.source);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.dest, msg->u.req.dest);
-        CU_ASSERT(0 == memcmp(tests[i].r.u.req.payload, msg->u.req.payload, msg->u.req.payload_size));
-        CU_ASSERT(tests[i].r.u.req.payload_size == msg->u.req.payload_size);
-        wrp_free_struct(msg);
-        free(bytes);
+        wrp_msg_t msg;
+        int rv = wrp_process(&(tests[i].s), &msg);
+        CU_ASSERT(0 == rv);
+        CU_ASSERT(tests[i].r.msg_type == msg.msg_type);
+        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.transaction_uuid, msg.u.req.transaction_uuid);
+        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.source, msg.u.req.source);
+        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.dest, msg.u.req.dest);
+        CU_ASSERT(0 == memcmp(tests[i].r.u.req.payload, msg.u.req.payload, msg.u.req.payload_size));
+        CU_ASSERT(tests[i].r.u.req.payload_size == msg.u.req.payload_size);
+        wrp_cleanup(&msg);
     }
 }
 

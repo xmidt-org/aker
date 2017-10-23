@@ -15,17 +15,14 @@
  *
  */
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdint.h>
-#include <msgpack.h>
 #include <ctype.h>
-#include <time.h>
 
 
 #include "schedule.h"
-#include "decode.h"
+#include "time.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -45,17 +42,15 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
+char* __convert_event_to_string( schedule_t *s, schedule_event_t *e );
+int __validate_mac( const char *mac, size_t len );
 
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
  
-/**
- *  Create an empty schedule.
- *
- *  @return NULL on error, valid pointer to a schedule_t otherwise
- */
+/* See schedule.h for details. */
 schedule_t* create_schedule( void )
 {
     schedule_t *s;
@@ -68,16 +63,8 @@ schedule_t* create_schedule( void )
     return s;
 }
 
-/**
- *  Create a correctly sized but otherwise empty schedule_event_t struct.
- *
- *  @note Only the block_count is set and the space for the block entries has
- *        been allocated.  The rest is up to the user.
- *
- *  @param block_count the number of blocked mac addresses to size for
- *
- *  @return NULL on error, valid pointer to a schedule_event_t otherwise
- */
+
+/* See schedule.h for details. */
 schedule_event_t* create_schedule_event( size_t block_count )
 {
     schedule_event_t *s;
@@ -94,13 +81,8 @@ schedule_event_t* create_schedule_event( size_t block_count )
     return s;
 }
 
-/**
- *  Inserts a schedule_event_t in sorted order (smallest to largest) into
- *  the specified list (head).
- *
- *  @param head the pointer to the list head
- *  @param e    the schedule_event_t pointer to add to the list
- */
+
+/* See schedule.h for details. */
 void insert_event(schedule_event_t **head, schedule_event_t *e )
 {
     schedule_event_t *cur, *prev;
@@ -116,39 +98,38 @@ void insert_event(schedule_event_t **head, schedule_event_t *e )
     }
 
     e->next = cur;
-    if( NULL == prev ) {
+    if( (NULL == prev) || (e->time < prev->time) ) {
         *head = e;
     } else {
         prev->next = e;
     }
 }
 
-/**
- *  Prune all the expired absolute events.
- *
- *  @param s        the schedule to clean up
- *  @param unixtime the time to clean up to
- */
-void prune_expired_events( schedule_t *s, uint32_t unixtime )
+
+/* See schedule.h for details. */
+int finalize_schedule( schedule_t *s )
 {
-    if( NULL == s ) {
-        return;
+    int rv = 0;
+
+    if( NULL != s ) {
+        /* Ensure we have an empty entry to start the week. */
+        if( (NULL == s->weekly) || (0 < s->weekly->time) ) {
+            schedule_event_t *e;
+
+            e = create_schedule_event( 0 );
+            if( NULL == e ) {
+                rv = -1;
+            } else {
+                e->time = 0;
+                insert_event( &s->weekly, e );
+            }
+        }
     }
 
-    while( (NULL != s->absolute) && (s->absolute->time < unixtime) ) {
-        schedule_event_t *p;
-
-        p = s->absolute;
-        s->absolute = s->absolute->next;
-        free(p);
-    }
+    return rv;
 }
 
-/**
- *  Destroys the schedule passed in.
- *
- *  @param s the schedule to destroy
- */
+/* See schedule.h for details. */
 void destroy_schedule( schedule_t *s )
 {
     if( NULL != s ) {
@@ -174,22 +155,128 @@ void destroy_schedule( schedule_t *s )
     }
 }
 
+
+/* See schedule.h for details. */
+char* get_blocked_at_time( schedule_t *s, time_t unixtime )
+{
+    schedule_event_t *abs_prev, *abs_cur, *w_prev, *w_cur;
+    char *rv;
+    time_t weekly, last_abs;
+
+    weekly = convert_unix_time_to_weekly( unixtime );
+
+    rv = NULL;
+
+    if( NULL != s ) {
+        /* Check absolute schedule first */
+        abs_prev = s->absolute;
+        abs_cur = NULL;
+        if( NULL != abs_prev ) {
+            abs_cur = abs_prev->next;
+        }
+
+        while( (NULL != abs_cur) && (abs_cur->time <= unixtime) ) {
+            abs_prev = abs_cur;
+            abs_cur = abs_cur->next;
+        }
+
+        /* Make the default relative value of the absolute time in the future
+         * so it's ignored. */
+        last_abs = weekly + 1;
+        if( NULL != abs_prev ) {
+            if( (NULL != abs_cur) && (abs_prev->time <= unixtime) ) {
+                /* In the absolute schedule */
+                rv = __convert_event_to_string( s, abs_prev );
+                goto done;
+            }
+   
+            last_abs = convert_unix_time_to_weekly( abs_prev->time );
+        }
+
+        /* Either we're not in the abs schedule or it just ended
+         * and we need to figure out the next event time for the end. */
+
+        /* Get the relative schedule */
+        w_prev = s->weekly;
+        w_cur = w_prev->next;
+
+        while( (NULL != w_cur) && (w_cur->time <= weekly) ) {
+            w_prev = w_cur;
+            w_cur = w_cur->next;
+        }
+
+        /* If the abs time event is the most recent, use it as long
+         * as it's in the past.  Otherwise use the weekly schedule. */
+        if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
+            rv = __convert_event_to_string( s, abs_prev );
+        } else {
+            rv = __convert_event_to_string( s, w_prev );
+        }
+    }
+
+done:
+    return rv;
+}
+
+
+/* See schedule.h for details. */
+int create_mac_table( schedule_t *s, size_t count )
+{
+    s->macs = (mac_address*) malloc( count * sizeof(mac_address) );
+    if( NULL == s->macs ) {
+        return -1;
+    }
+    s->mac_count = count;
+
+    memset( s->macs, 0, count * sizeof(mac_address) );
+
+    return 0;
+}
+
+
+
+/* See schedule.h for details. */
+int set_mac_index( schedule_t *s, const char *mac, size_t len, uint32_t index )
+{
+    int rv;
+
+    rv = -1;
+    if( (NULL != s) && (index < s->mac_count) ) {
+        rv = __validate_mac( mac, len );
+        if( 0 == rv ) {
+            memcpy( &s->macs[index].mac[0], mac, len );
+            s->macs[index].mac[len] = '\0';
+        }
+    }
+
+    return rv;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*                             Internal functions                             */
+/*----------------------------------------------------------------------------*/
+
+
 /**
  *  Convert a block pointing to a list of macs in a schedule into a string
  *  of the MAC addresses.
  *
- *  @param s     the schedule to use to for resolution
- *  @param count the number of indexes in the block
- *  @param block the array of indexes to convert
+ *  @param s the schedule to use to for resolution
+ *  @param e the event to convert
  *
  *  @return the string with the list of blocked addresses (may be NULL and valid)
  */
-char* convert_index_to_string( schedule_t *s, uint32_t count, uint32_t *block )
+char* __convert_event_to_string( schedule_t *s, schedule_event_t *e )
 {
     char *rv;
 
     rv = NULL;
-    if( (NULL != s) && (NULL != block) ) {
+    if( (NULL != s) && (NULL != e) ) {
+        size_t count;
+
+        count = e->block_count;
+
         rv = (char*) malloc( sizeof(char) * (count * 18 + 1) );
         if( NULL != rv ) {
             char *p = rv;
@@ -197,9 +284,9 @@ char* convert_index_to_string( schedule_t *s, uint32_t count, uint32_t *block )
             size_t i;
 
             for( i = 0; i < count; i++ ) {
-                if( block[i] < s->mac_count ) {
+                if( e->block[i] < s->mac_count ) {
                     string_ok = true;
-                    memcpy( p, &s->macs[block[i]], 17 );
+                    memcpy( p, &s->macs[e->block[i]], 17 );
                     p[17] = ' ';
                 }
                 p = &p[18];
@@ -223,89 +310,19 @@ char* convert_index_to_string( schedule_t *s, uint32_t count, uint32_t *block )
 
 
 /**
- *  Gets the string with the blocked MAC addresses at this time.
- *
- *  @param s       the schedule to apply
- *  @param unitime the unixtime representation
- *  @param weekly  the weekly relative time representation
- *
- *  @return the string with the list of blocked addresses (may be NULL and valid)
- */
-char* get_blocked_at_time( schedule_t *s, uint32_t unixtime, uint32_t weekly )
-{
-    schedule_event_t *prev, *cur;
-    char *rv;
-
-    rv = NULL;
-
-    if( NULL != s ) {
-        /* Check absolute schedule first */
-        cur = prev = s->absolute;
-        while( (NULL != cur) && (unixtime < cur->time) ) {
-            prev = cur;
-            cur = cur->next;
-        }
-
-        if( NULL != prev ) {
-            /* In the absolute schedule */
-            rv = convert_index_to_string( s, prev->block_count, prev->block );
-            prune_expired_events( s, unixtime );
-        } else {
-            /* Check the weekly schedule */
-            cur = prev = s->weekly;
-            while( (NULL != cur) && (weekly < cur->time) ) {
-                prev = cur;
-                cur = cur->next;
-            }
-
-            if( NULL != prev ) {
-                /* In the weekly schedule */
-                rv = convert_index_to_string( s, prev->block_count, prev->block );
-            }
-        }
-    }
-
-    return rv;
-}
-
-/**
- *  Creates the schedule's table of mac addresses.
- *
- *  @param t the schedule to work with
- *  @param count the size of the table to allocate
- *
- *  @return 0 on success, failure otherwise
- */
-int create_mac_table( schedule_t *s, size_t count )
-{
-    s->macs = (mac_address*) malloc( count * sizeof(mac_address) );
-    if( NULL == s->macs ) {
-        return -1;
-    }
-    s->mac_count = count;
-
-    memset( s->macs, 0, count * sizeof(mac_address) );
-
-    return 0;
-}
-
-/**
  *  Validates that the MAC address is in the expected format.
  *
  *  @param mac the MAC address to validate
  *  @param len the length of the mac string
  *
- *  @return true if valid, false otherwise
+ *  @return 0 if valid, failure otherwise
  */
-bool validate_mac( const char *mac, size_t len )
+int __validate_mac( const char *mac, size_t len )
 {
-    bool rv;
+    int mask = -1;
 
-    rv = false;
     if( (NULL != mac) && (17 == len) ) {
-        int mask = 0;
-
-        mask |= ! isxdigit(mac[0]);
+        mask  = ! isxdigit(mac[0]);
         mask |= ! isxdigit(mac[1]);
         mask |= mac[2] - ':';
         mask |= ! isxdigit(mac[3]);
@@ -322,43 +339,7 @@ bool validate_mac( const char *mac, size_t len )
         mask |= mac[14] - ':';
         mask |= ! isxdigit(mac[15]);
         mask |= ! isxdigit(mac[16]);
-
-        if( 0 == mask ) {
-            rv = true;
-        }
     }
 
-    return rv;
+    return mask;
 }
-
-bool set_mac_index( schedule_t *s, const char *mac, size_t len, uint32_t index )
-{
-    bool rv;
-
-    rv = false;
-    if( (NULL != s) && (index < s->mac_count) ) {
-        rv = validate_mac( mac, len );
-        if( true == rv ) {
-            memcpy( &s->macs[index].mac[0], mac, len );
-            s->macs[index].mac[len] = '\0';
-        }
-    }
-
-    return rv;
-}
-
-#if 0
-uint8_t *extract_mac_addresses_for_time_window(schedule_t *t, int relative_time, int abs_time) {
-    uint8_t *cp = NULL;
-    struct tm calendar_time;
-    time_t time_now = time(NULL);
-
-    (void ) t; (void ) relative_time; (void ) abs_time;
-    
-    if (NULL == localtime_r(&time_now, &calendar_time)) {
-        return cp;
-    }
-
-    return cp;
-}
-#endif
