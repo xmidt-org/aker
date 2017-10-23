@@ -48,8 +48,7 @@
 #define UNPACKED_BUFFER_SIZE 2048
 char unpacked_buffer[UNPACKED_BUFFER_SIZE];
 
-static int decode_weekly_schedule  (msgpack_object *key, msgpack_object *val);
-static int decode_absolute_schedule(msgpack_object *key, msgpack_object *val);
+static int decode_schedule_table   (msgpack_object *key, msgpack_object *val);
 static int decode_macs_table       (msgpack_object *key, msgpack_object *val);
 
 static void process_map(msgpack_object_map *);
@@ -76,11 +75,11 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
             while (size-- > 0) {
             if (0 == strncmp(key->via.str.ptr, WEEKLY_SCHEDULE, key->via.str.size)) {
                 printf("Found %s\n", WEEKLY_SCHEDULE);
-                decode_weekly_schedule(key, val);
+                decode_schedule_table(key, val);
                 }
             else if (0 == strncmp(key->via.str.ptr, ABSOLUTE_SCHEDULE, key->via.str.size)) {
                 printf("Found %s\n", ABSOLUTE_SCHEDULE);
-                decode_absolute_schedule(key, val);
+                decode_schedule_table(key, val);
                 }
             else  if (0 == strncmp(key->via.str.ptr, MACS, key->via.str.size)) {
                 printf("Found %s\n", MACS);
@@ -108,7 +107,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
 }
 
 
-int decode_weekly_schedule (msgpack_object *key, msgpack_object *val)
+int decode_schedule_table (msgpack_object *key, msgpack_object *val)
 {
     (void ) key;
     
@@ -129,17 +128,20 @@ int decode_weekly_schedule (msgpack_object *key, msgpack_object *val)
     return -1;    
 }
 
-int decode_absolute_schedule (msgpack_object *key, msgpack_object *val)
-{
-    (void ) key;
-    (void ) val;
-    return -1;
-}
-
 int decode_macs_table (msgpack_object *key, msgpack_object *val)
 {
+    uint32_t i;
+    msgpack_object *ptr = val->via.array.ptr;
     (void ) key;
-    (void ) val;
+    
+    for (i =0; i < (val->via.array.size);i++) {
+        char buf[128];
+        memset(buf, 0, 128);
+        memcpy(buf, ptr->via.str.ptr, ptr->via.str.size);
+        printf("MAC Table index %d is %s\n", i, buf);
+        ptr++;
+    }
+    
     return -1;    
 }
 
