@@ -20,81 +20,159 @@
 #include "schedule.h"
 #include "decode.h"
 
-void decodeRequest(msgpack_object *deserialized, schedule_t *t);
-
-int decode_schedule(size_t count, uint8_t *bytes, schedule_t **s)
+/* The test message
 {
-    schedule_t *schedule;
-    msgpack_zone mempool;
-    msgpack_object deserialized;
-    msgpack_unpack_return unpack_ret;
+    "weekly-schedule": [
+        { "time": 10, "indexes": [0, 1, 3] },
+        { "time": 20, "indexes": [0] },
+        { "time": 30, "indexes": [] }
+    ],
 
-    if (!count || !bytes) {
-        return -1;
-    }
+    "macs": [
+        "11:22:33:44:55:aa",
+        "22:33:44:55:66:bb",
+        "33:44:55:66:77:cc",
+        "44:55:66:77:88:dd"
+    ],
 
-    schedule = malloc(sizeof (schedule_t));
-    if (!schedule) {
-        return -2;
-    }
+    "absolute-schedule": [
+        { "unix-time": 1508213527, "indexes": [0, 2] }
+    ]
+}
+*/
 
-    *s = schedule;
+#define WEEKLY_SCHEDULE   "weekly-schedule"
+#define MACS              "macs"
+#define ABSOLUTE_SCHEDULE "absolute-schedule"
 
-    msgpack_zone_init(&mempool, 2048);
-    unpack_ret = msgpack_unpack((const char *) bytes, count, NULL, &mempool, &deserialized);
+#define UNPACKED_BUFFER_SIZE 2048
+char unpacked_buffer[UNPACKED_BUFFER_SIZE];
 
-    switch (unpack_ret) {
-        case MSGPACK_UNPACK_SUCCESS:
-            if (deserialized.via.map.size != 0) {
-                decodeRequest(&deserialized, schedule);
+static int decode_weekly_schedule  (msgpack_object *key, msgpack_object *val);
+static int decode_absolute_schedule(msgpack_object *key, msgpack_object *val);
+static int decode_macs_table       (msgpack_object *key, msgpack_object *val);
+
+static void process_map(msgpack_object_map *);
+
+int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
+    /* buf is allocated by client. */
+    msgpack_unpacked result;
+    size_t off = 0;
+    msgpack_unpack_return ret;
+    
+    (void ) t; // Temp Code  !!!
+    
+    msgpack_unpacked_init(&result);
+    ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
+    while (ret == MSGPACK_UNPACK_SUCCESS) {
+        msgpack_object obj = result.data;
+        if (obj.type == MSGPACK_OBJECT_MAP) {
+            msgpack_object_map *map = &obj.via.map;
+            msgpack_object_kv* p = map->ptr;
+            int size = map->size;
+            msgpack_object *key = &p->key;
+            msgpack_object *val = &p->val;
+            
+            while (size-- > 0) {
+            if (0 == strncmp(key->via.str.ptr, WEEKLY_SCHEDULE, key->via.str.size)) {
+                printf("Found %s\n", WEEKLY_SCHEDULE);
+                decode_weekly_schedule(key, val);
+                }
+            else if (0 == strncmp(key->via.str.ptr, ABSOLUTE_SCHEDULE, key->via.str.size)) {
+                printf("Found %s\n", ABSOLUTE_SCHEDULE);
+                decode_absolute_schedule(key, val);
+                }
+            else  if (0 == strncmp(key->via.str.ptr, MACS, key->via.str.size)) {
+                printf("Found %s\n", MACS);
+                decode_macs_table(key, val);
+                } else {
+                // zztop handle_decode_error();
+                }
+            p++;
+            key = &p->key;
+            val = &p->val;
             }
-            msgpack_zone_destroy(&mempool);
-            break;
 
-        default:
-            free(schedule);
-            return -3;
+        ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
     }
+        msgpack_unpacked_destroy(&result);
 
+        if (ret == MSGPACK_UNPACK_CONTINUE) {
+            printf("All msgpack_object in the buffer is consumed.\n");
+        }
+        else if (ret == MSGPACK_UNPACK_PARSE_ERROR) {
+            printf("The data in the buf is invalid format.\n");
+        }
+    }
     return 0;
 }
 
-/*----------------------------------------------------------------------------*/
-/*                             Internal functions                             */
-/*----------------------------------------------------------------------------*/
-void decodeRequest(msgpack_object *deserialized, schedule_t *t) {
-    msgpack_object_kv* p = deserialized->via.map.ptr;
- 
-    (void ) t;
 
-    while (deserialized->via.map.size--) {
-        //msgpack_object keyType = p->key;
-        //msgpack_object ValueType = p->val;
-        // key name keyType.via.str.ptr
-        switch (p->val.type) {
-            case MSGPACK_OBJECT_ARRAY:
-                /*
-                    msgpack_object_array array = ValueType.via.array;
-                    msgpack_object *ptr = array.ptr;
-                    int num_elements = array.size;
-                 *  if (!strcmp(p->key.via.str.ptr, "macs") {
-                 * }
-                 *                  */
-                break;
-            case MSGPACK_OBJECT_MAP:
-                /*"weekly-schedule" and "absolute-schedule" are maps? 
-
-                    if (!strcmp(p->key.via.str.ptr, "weekly-schedule")) {
-                 * decodeMap();
-                 } else if (!strcmp(p->key.via.str.ptr, "absolute-schedule") {
-                 decodeMap();
-                 } else {return error;}
-                 */
-                break;
-            default:
-                break;
+int decode_weekly_schedule (msgpack_object *key, msgpack_object *val)
+{
+    (void ) key;
+    
+    if (val->type == MSGPACK_OBJECT_ARRAY) {
+       msgpack_object *ptr = val->via.array.ptr;
+       int count = val->via.array.size; 
+        for (;count > 0; count--) {
+            if (ptr->type == MSGPACK_OBJECT_MAP) {
+                
+                for (;count > 0; count--) {
+                    process_map(&ptr->via.map);
+                    ptr++;
+                }
+            }
         }
-        p++;
     }
+    
+    return -1;    
+}
 
+int decode_absolute_schedule (msgpack_object *key, msgpack_object *val)
+{
+    (void ) key;
+    (void ) val;
+    return -1;
+}
+
+int decode_macs_table (msgpack_object *key, msgpack_object *val)
+{
+    (void ) key;
+    (void ) val;
+    return -1;    
+}
+
+void process_map(msgpack_object_map *map)
+{
+    uint32_t size = map->size;
+    msgpack_object *key = &map->ptr->key;
+    msgpack_object *val = &map->ptr->val;
+    msgpack_object_kv *kv = map->ptr;
+    uint32_t cnt;
+    
+    for (cnt = 0;cnt < size; cnt++) {
+        if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
+            char buf[64];
+            memset(buf, 0, 64);
+            memcpy(buf, key->via.str.ptr, key->via.str.size);
+            printf("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
+        } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_ARRAY) {
+            msgpack_object *ptr = val->via.array.ptr;
+            uint32_t array_size = 0;
+            
+            for (;array_size < (val->via.array.size); array_size++) {
+                printf("Array Element[%d] = %d\n", array_size, (uint32_t) ptr->via.u64);
+                ptr++;
+            }
+            
+            printf("\n");
+            (void ) ptr;(void ) array_size;
+        }
+        kv++;
+        key = &kv->key;
+        val = &kv->val;
+    }
+    printf("\n");
+    (void ) size; (void ) key; (void ) val;
 }
