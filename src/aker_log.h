@@ -15,8 +15,8 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-#define debug_error(...)      cimplog_error("aker", __VA_ARGS__)
-#define debug_info(...)       cimplog_info("aker", __VA_ARGS__)
-#define debug_print(...)      cimplog_debug("aker", __VA_ARGS__)
+#define debug_error(...)      cimplog_error("Aker", __VA_ARGS__)
+#define debug_info(...)       cimplog_info("Aker", __VA_ARGS__)
+#define debug_print(...)      cimplog_debug("Aker", __VA_ARGS__)
 
 #endif
