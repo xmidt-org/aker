@@ -48,10 +48,38 @@
 #define UNPACKED_BUFFER_SIZE 2048
 char unpacked_buffer[UNPACKED_BUFFER_SIZE];
 
-static int decode_schedule_table   (msgpack_object *key, msgpack_object *val, schedule_event_t *t);
-static int decode_macs_table       (msgpack_object *key, msgpack_object *val, schedule_t *t);
+static int decode_schedule_table   (msgpack_object *key, msgpack_object *val, schedule_event_t **t);
+static int decode_macs_table       (msgpack_object *key, msgpack_object *val, schedule_t **t);
 
-static void process_map(msgpack_object_map *, schedule_event_t *t);
+static int process_map(msgpack_object_map *, schedule_event_t **t);
+
+/* DEBUG ONLY */
+char test_buffer[] = {
+0x83, 0xAF, 0x77, 0x65,   0x65, 0x6B, 0x6C, 0x79,   0x2D, 0x73, 0x63, 0x68,
+0x65, 0x64, 0x75, 0x6C,   0x65, 0x93, 0x82, 0xA4,   0x74, 0x69, 0x6D, 0x65,
+0x0A, 0xA7, 0x69, 0x6E,   0x64, 0x65, 0x78, 0x65,   0x73, 0x93, 0x00, 0x01,
+0x03, 0x82, 0xA4, 0x74,   0x69, 0x6D, 0x65, 0x14,   0xA7, 0x69, 0x6E, 0x64,
+0x65, 0x78, 0x65, 0x73,   0x91, 0x00, 0x82, 0xA4,   0x74, 0x69, 0x6D, 0x65,
+0x1E, 0xA7, 0x69, 0x6E,   0x64, 0x65, 0x78, 0x65,   0x73, 0x90, 0xA4, 0x6D,
+0x61, 0x63, 0x73, 0x94,   0xB1, 0x31, 0x31, 0x3A,   0x32, 0x32, 0x3A, 0x33,
+0x33, 0x3A, 0x34, 0x34,   0x3A, 0x35, 0x35, 0x3A,   0x61, 0x61, 0xB1, 0x32,
+0x32, 0x3A, 0x33, 0x33,   0x3A, 0x34, 0x34, 0x3A,   0x35, 0x35, 0x3A, 0x36,
+0x36, 0x3A, 0x62, 0x62,   0xB1, 0x33, 0x33, 0x3A,   0x34, 0x34, 0x3A, 0x35,
+0x35, 0x3A, 0x36, 0x36,   0x3A, 0x37, 0x37, 0x3A,   0x63, 0x63, 0xB1, 0x34,
+0x34, 0x3A, 0x35, 0x35,   0x3A, 0x36, 0x36, 0x3A,   0x37, 0x37, 0x3A, 0x38,
+0x38, 0x3A, 0x64, 0x64,   0xB1, 0x61, 0x62, 0x73,   0x6F, 0x6C, 0x75, 0x74,
+0x65, 0x2D, 0x73, 0x63,   0x68, 0x65, 0x64, 0x75,   0x6C, 0x65, 0x91, 0x82,
+0xA9, 0x75, 0x6E, 0x69,   0x78, 0x2D, 0x74, 0x69,   0x6D, 0x65, 0xCE, 0x59,
+0xE5, 0x83, 0x17, 0xA7,   0x69, 0x6E, 0x64, 0x65,   0x78, 0x65, 0x73, 0x92,
+0x00, 0x02
+};
+void debug_code(void)
+{
+    schedule_t *t;
+    decode_schedule(sizeof(test_buffer), (uint8_t *) test_buffer, &t);
+}
+
+/* END DEBUG ONLY */
 
 int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
     /* buf is allocated by client. */
@@ -64,9 +92,12 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
         return -1;
     }
     
-    *t = (schedule_t *) malloc(sizeof (schedule_t));
-    memset(*t, 0, sizeof(schedule_t));
-    s = *t; // for ease of use.
+    s = create_schedule();
+    *t = s; 
+    
+    if (NULL == s) {
+        return -1;
+    }
     
     msgpack_unpacked_init(&result);
     ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
@@ -82,15 +113,16 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
             while (size-- > 0) {
             if (0 == strncmp(key->via.str.ptr, WEEKLY_SCHEDULE, key->via.str.size)) {
                 printf("Found %s\n", WEEKLY_SCHEDULE);
-                decode_schedule_table(key, val, s->weekly);
+                decode_schedule_table(key, val, &s->weekly);
+                
                 }
             else if (0 == strncmp(key->via.str.ptr, ABSOLUTE_SCHEDULE, key->via.str.size)) {
                 printf("Found %s\n", ABSOLUTE_SCHEDULE);
-                decode_schedule_table(key, val, s->absolute);
+                decode_schedule_table(key, val, &s->absolute);
                 }
             else  if (0 == strncmp(key->via.str.ptr, MACS, key->via.str.size)) {
                 printf("Found %s\n", MACS);
-                decode_macs_table(key, val, s);
+                decode_macs_table(key, val, &s);
                 } else {
                 // zztop handle_decode_error();
                 }
@@ -114,31 +146,31 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
 }
 
 
-int decode_schedule_table (msgpack_object *key, msgpack_object *val, schedule_event_t *t)
+int decode_schedule_table (msgpack_object *key, msgpack_object *val, schedule_event_t **t)
 {
-    (void ) key;
+   (void ) key;
     if (val->type == MSGPACK_OBJECT_ARRAY) {
         msgpack_object *ptr = val->via.array.ptr;
         int count = val->via.array.size; 
-       
+        int i;
+        schedule_event_t *temp = NULL;
+        
         if (count <= 0) {
             return -1;
         }
 
-        for (;count > 0; count--) {
-            if (ptr->type == MSGPACK_OBJECT_MAP) {
-                for (;count > 0; count--) {
-                    process_map(&ptr->via.map, t);
-                    ptr++;
-                }
-            }
+        if (ptr->type == MSGPACK_OBJECT_MAP) {
+            for (i = 0; i < count; i++) {
+                process_map(&ptr->via.map, &temp);
+                ptr++;
+                insert_event(t, temp);
+           }
         }
     }
-    
     return 0;    
 }
 
-int decode_macs_table (msgpack_object *key, msgpack_object *val, schedule_t *t)
+int decode_macs_table (msgpack_object *key, msgpack_object *val, schedule_t **t)
 {
     uint32_t i;
     msgpack_object *ptr = val->via.array.ptr;
@@ -149,45 +181,50 @@ int decode_macs_table (msgpack_object *key, msgpack_object *val, schedule_t *t)
         char buf[128];
         memset(buf, 0, 128);
         memcpy(buf, ptr->via.str.ptr, ptr->via.str.size);
-        printf("MAC Table index %d is %s\n", i, buf);
+        printf("MAC Table index %u is %s\n", i, buf);
         ptr++;
     }
     
     return -1;    
 }
 
-void process_map(msgpack_object_map *map, schedule_event_t *t)
+int process_map(msgpack_object_map *map, schedule_event_t **t)
 {
     uint32_t size = map->size;
     msgpack_object *key = &map->ptr->key;
     msgpack_object *val = &map->ptr->val;
     msgpack_object_kv *kv = map->ptr;
     uint32_t cnt;
-    
-    (void ) t;
+    time_t entry_time = 0;
     
     for (cnt = 0;cnt < size; cnt++) {
         if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
             char buf[64];
             memset(buf, 0, 64);
-            memcpy(buf, key->via.str.ptr, key->via.str.size);
-            printf("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
+             memcpy(buf, key->via.str.ptr, key->via.str.size);
+             entry_time = val->via.u64;
+             printf("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
         } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_ARRAY) {
             msgpack_object *ptr = val->via.array.ptr;
             uint32_t array_size = 0;
-            
+            *t = create_schedule_event(val->via.array.size);
             for (;array_size < (val->via.array.size); array_size++) {
-                printf("Array Element[%d] = %d\n", array_size, (uint32_t) ptr->via.u64);
+                (*t)->block[array_size] = ptr->via.u64;
+                printf("Array Element[%d] = %d block[] %d\n", array_size, (uint32_t) ptr->via.u64, (*t)->block[array_size]);
                 ptr++;
             }
             
             printf("\n");
             (void ) ptr;(void ) array_size;
         }
+        
         kv++;
         key = &kv->key;
         val = &kv->val;
     }
+    
+    (*t)->time = entry_time;
     printf("\n");
     (void ) size; (void ) key; (void ) val;
+    return 1;
 }
