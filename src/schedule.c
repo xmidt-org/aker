@@ -277,7 +277,7 @@ char* __convert_event_to_string( schedule_t *s, schedule_event_t *e )
 
         count = e->block_count;
 
-        rv = (char*) malloc( sizeof(char) * (count * 18 + 1) );
+        rv = (char*) malloc( sizeof(char) * (count * MAC_ADDRESS_SIZE + 1) );
         if( NULL != rv ) {
             char *p = rv;
             bool string_ok = false;
