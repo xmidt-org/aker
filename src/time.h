@@ -22,7 +22,8 @@
  *  Does the conversion from unixtime to the weekly time, dealing with
  *  things like DST changes, etc.
  *
- *  @note The relative/weekly time is seconds since Sunday midnight.
+ *  @note The relative/weekly time is seconds since Sunday midnight, i.e. 
+ *  Saturday 23:59:59 + one second
  *
  *  @param unixtime the absolute time to convert from
  *
