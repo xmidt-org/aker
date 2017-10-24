@@ -170,27 +170,39 @@ void test_simple_case( void )
     print_schedule( s );
 
     block = get_blocked_at_time( s, 1233999 );
-    CU_ASSERT(NULL == block);
+    CU_ASSERT_STRING_EQUAL("22:33:44:55:66:aa", block);
+    if( NULL != block ) free(block);
 
     block = get_blocked_at_time( s, 1234000 );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
-    free(block);
+    if( NULL != block ) free(block);
 
     block = get_blocked_at_time( s, 1234001 );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
-    free(block);
+    if( NULL != block ) free(block);
 
     block = get_blocked_at_time( s, 1234010 );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB", block);
-    free(block);
+    if( NULL != block ) free(block);
 
     block = get_blocked_at_time( s, 1234011 );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB", block);
-    free(block);
+    if( NULL != block ) free(block);
 
     block = get_blocked_at_time( s, 1234012 );
     CU_ASSERT_STRING_EQUAL("11:22:33:44:55:66", block);
-    free(block);
+    if( NULL != block ) free(block);
+
+#if 0
+    {
+        int i;
+        for( i = 1233998; i < 1234030; i++ ) {
+            block = get_blocked_at_time( s, i );
+            if( NULL != block ) free(block);
+        }
+    }
+#endif
+
     destroy_schedule( s );
 }
 
