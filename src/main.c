@@ -207,3 +207,8 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
     debug_print("End of parodus_upstream\n");
     return 0;
 }
+
+const char *rdk_logger_module_fetch(void)
+{
+    return "LOG.RDK.Aker";
+}
