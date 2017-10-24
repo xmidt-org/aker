@@ -136,7 +136,11 @@ int decode_macs_table (msgpack_object *key, msgpack_object *val, schedule_t **t)
     macs = (*t)->macs;
     
     for (i =0; i < count;i++) {
-        memcpy(macs[i].mac, ptr->via.str.ptr, ptr->via.str.size);
+        if (ptr->via.str.size < MAC_ADDRESS_SIZE) {
+            memcpy(macs[i].mac, ptr->via.str.ptr, ptr->via.str.size);
+        } else {
+            debug_error("decode_macs_table() Invalid MAC Address Length\n");
+        }
         ptr++;
     }
     

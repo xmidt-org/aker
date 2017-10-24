@@ -23,7 +23,7 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-/* none */
+#define MAC_ADDRESS_SIZE 18
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -39,7 +39,8 @@ typedef struct schedule_event {
 } schedule_event_t;
 
 typedef struct mac_address_t {
-    char mac[18];                   /* MAC addresses stored/used: "11:22:33:44:55:66" */
+    char mac[MAC_ADDRESS_SIZE];    /* MAC addresses                    */ 
+                                   /* stored/used: "11:22:33:44:55:66" */
 } mac_address;
 
 typedef struct schedule {
