@@ -139,6 +139,16 @@ int create_mac_table( schedule_t *s, size_t count );
 
 
 /**
+ *  Deep copy a schedule entry so it can be altered and used easily.
+ *
+ *  @param e the event to deep copy
+ *
+ *  @return NULL on error, valid pointer to a schedule_event_t otherwise
+ */
+schedule_event_t* copy_schedule_event( schedule_event_t *e );
+
+
+/**
  *  Validates and copies the MAC address passed in into the right location in
  *  the schedule.
  *
