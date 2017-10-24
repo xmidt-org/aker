@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <ctype.h>
 
 
@@ -81,6 +82,26 @@ schedule_event_t* create_schedule_event( size_t block_count )
     return s;
 }
 
+/* See schedule.h for details. */
+schedule_event_t* copy_schedule_event( schedule_event_t *e )
+{
+    schedule_event_t *n;
+
+    n = NULL;
+    if( NULL != e ) {
+        n = create_schedule_event( e->block_count );
+        if( NULL != n ) {
+            size_t i;
+
+            for( i = 0; i < e->block_count; i++ ) {
+                n->block[i] = e->block[i];
+            }
+        }
+    }
+
+    return n;
+}
+
 
 /* See schedule.h for details. */
 void insert_event(schedule_event_t **head, schedule_event_t *e )
@@ -112,16 +133,24 @@ int finalize_schedule( schedule_t *s )
     int rv = 0;
 
     if( NULL != s ) {
-        /* Ensure we have an empty entry to start the week. */
-        if( (NULL == s->weekly) || (0 < s->weekly->time) ) {
-            schedule_event_t *e;
+        if( NULL != s->weekly ) {
+            /* Ensure that we have the right starting point: the last event
+             * from the previous week's schedule. */
+            if( 0 < s->weekly->time ) {
+                schedule_event_t *e, *p;
 
-            e = create_schedule_event( 0 );
-            if( NULL == e ) {
-                rv = -1;
-            } else {
-                e->time = 0;
-                insert_event( &s->weekly, e );
+                p = s->weekly;
+                while( NULL != p->next ) {
+                    p = p->next;
+                }
+
+                e = copy_schedule_event( p );
+                if( NULL != e ) {
+                    e->time = p->time - SECONDS_IN_A_WEEK;
+                    insert_event( &s->weekly, e );
+                } else {
+                    rv = -1;
+                }
             }
         }
     }
@@ -198,7 +227,10 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
 
         /* Get the relative schedule */
         w_prev = s->weekly;
-        w_cur = w_prev->next;
+        w_cur = NULL;
+        if( NULL != w_prev ) {
+            w_cur = w_prev->next;
+        }
 
         while( (NULL != w_cur) && (w_cur->time <= weekly) ) {
             w_prev = w_cur;
@@ -215,6 +247,7 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
     }
 
 done:
+    printf( "Time: %ld (%ld) -> '%s'\n", unixtime, weekly, rv );
     return rv;
 }
 

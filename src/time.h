@@ -18,6 +18,8 @@
 #define __TIME_H__
 #include <time.h>
 
+#define SECONDS_IN_A_WEEK   (24 * 7 * 60 * 60)
+
 /**
  *  Does the conversion from unixtime to the weekly time, dealing with
  *  things like DST changes, etc.
