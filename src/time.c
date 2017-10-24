@@ -44,14 +44,12 @@
 /* See time.h for details. */
 time_t convert_unix_time_to_weekly(time_t unixtime)
 {
-    uint16_t number_of_days;
     time_t seconds_since_sunday_midnght;
     struct tm ts;
 
     ts = *localtime(&unixtime);
 
-    number_of_days = ts.tm_wday ? ts.tm_wday - 1 : 6;
-    seconds_since_sunday_midnght = (number_of_days * 24 * 3600) +
+    seconds_since_sunday_midnght = (ts.tm_wday * 24 * 3600) +
             (ts.tm_hour * 3600) +
             (ts.tm_min * 60) +
             ts.tm_sec;
