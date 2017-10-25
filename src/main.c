@@ -64,7 +64,7 @@ int main( int argc, char **argv)
         { 0, 0, 0, 0 }
     };
 
-    libpd_cfg_t cfg = { .service_name = "parental-control",
+    libpd_cfg_t cfg = { .service_name = "iot", //"parental-control",
                         .receive = true,
                         .keepalive_timeout_secs = 64,
                         .parodus_url = NULL,
