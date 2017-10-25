@@ -23,8 +23,13 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
+/*** Temporary until CRUD WRP messages can support binary payload ***/
+/*
 #define SET_DEST  "/parental control/schedule/set"
 #define GET_DEST  "/parental control/schedule/get"
+*/
+#define REQ_DEST  "/iot"
+#define REQ_GET   "\"command\":\"GET\""
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -104,13 +109,18 @@ int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
             resp->spans.count = req->spans.count;
             resp->payload = NULL;
             resp->payload_size = 0;
-            if( 0 == strcmp(SET_DEST, req->dest) ) {
-                process_request_set(in_msg);
-            } else if( 0 == strcmp(GET_DEST, req->dest) ) {
-                process_request_get(response);
-            } else {
-                debug_error("Request-Response message destination %s is invalid\n", req->dest);
-                break;
+            if( NULL != strstr(req->dest, REQ_DEST) ) {
+                if( (NULL != req->payload) &&
+                    (NULL != strstr(req->payload, REQ_GET)) )
+                {
+                    process_request_get(response);
+                }
+                else {
+                    process_request_set(in_msg);
+                }
+            }
+            else {
+                 debug_error("Request-Response message destination %s is invalid\n", req->dest);
             }
         }
         break;

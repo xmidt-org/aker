@@ -46,7 +46,7 @@ static test_t tests_set[] =
         .s.msg_type = WRP_MSG_TYPE__REQ,
         .s.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
         .s.u.req.source = "fake-server",
-        .s.u.req.dest = "/parental control/schedule/set",
+        .s.u.req.dest = "/iot", //"/parental control/schedule/set",
         .s.u.req.partner_ids = NULL,
         .s.u.req.headers = NULL,
         .s.u.req.metadata = NULL,
@@ -58,7 +58,7 @@ static test_t tests_set[] =
 
         .r.msg_type = WRP_MSG_TYPE__REQ,
         .r.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-        .r.u.req.source = "/parental control/schedule/set",
+        .r.u.req.source = "/iot", //"/parental control/schedule/set",
         .r.u.req.dest = "fake-server",
         .r.u.req.partner_ids = NULL,
         .r.u.req.headers = NULL,
@@ -77,19 +77,19 @@ static test_t tests_get[] =
         .s.msg_type = WRP_MSG_TYPE__REQ,
         .s.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
         .s.u.req.source = "fake-server",
-        .s.u.req.dest = "/parental control/schedule/get",
+        .s.u.req.dest = "/iot", //"/parental control/schedule/get",
         .s.u.req.partner_ids = NULL,
         .s.u.req.headers = NULL,
         .s.u.req.metadata = NULL,
         .s.u.req.include_spans = false,
         .s.u.req.spans.spans = NULL,
         .s.u.req.spans.count = 0,
-        .s.u.req.payload = NULL,
-        .s.u.req.payload_size = 0,
+        .s.u.req.payload = "\"command\":\"GET\"",
+        .s.u.req.payload_size = 19,
 
         .r.msg_type = WRP_MSG_TYPE__REQ,
         .r.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-        .r.u.req.source = "/parental control/schedule/get",
+        .r.u.req.source = "/iot", //"/parental control/schedule/get",
         .r.u.req.dest = "fake-server",
         .r.u.req.partner_ids = NULL,
         .r.u.req.headers = NULL,
@@ -97,7 +97,7 @@ static test_t tests_get[] =
         .r.u.req.include_spans = false,
         .r.u.req.spans.spans = NULL,
         .r.u.req.spans.count = 0,
-        .r.u.req.payload = "Some other binary",
+        .r.u.req.payload = "Some binary",
         .r.u.req.payload_size = 11,
     },
 };
@@ -130,9 +130,10 @@ void test_process_request_get()
     for( uint8_t i = 0; i < t_size; i++ ) {
         memset(&response, '\0', sizeof(wrp_msg_t));
         get_size = process_request_get(&response);
-//        CU_ASSERT(0 == memcmp(tests_get[i].r.u.req.payload, response.u.req.payload, response.u.req.payload_size));
+        CU_ASSERT(0 == memcmp(tests_get[i].r.u.req.payload, response.u.req.payload, response.u.req.payload_size));
         CU_ASSERT(tests_get[i].r.u.req.payload_size == response.u.req.payload_size);
         CU_ASSERT((size_t)get_size == tests_get[i].r.u.req.payload_size);
+        free(response.u.req.payload);
     }
 }
 
