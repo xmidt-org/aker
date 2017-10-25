@@ -29,7 +29,6 @@
 #define GET_DEST  "/parental control/schedule/get"
 */
 #define REQ_DEST  "/iot"
-#define REQ_GET   "\"command\":\"GET\""
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */

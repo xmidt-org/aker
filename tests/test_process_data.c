@@ -22,6 +22,7 @@
 
 #include <CUnit/Basic.h>
 
+#include "../src/wrp_interface.h"
 #include "../src/process_data.h"
 
 /*----------------------------------------------------------------------------*/
@@ -84,8 +85,8 @@ static test_t tests_get[] =
         .s.u.req.include_spans = false,
         .s.u.req.spans.spans = NULL,
         .s.u.req.spans.count = 0,
-        .s.u.req.payload = "\"command\":\"GET\"",
-        .s.u.req.payload_size = 19,
+        .s.u.req.payload = REQ_GET,
+        .s.u.req.payload_size = 44,
 
         .r.msg_type = WRP_MSG_TYPE__REQ,
         .r.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
