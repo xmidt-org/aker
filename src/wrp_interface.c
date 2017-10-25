@@ -109,14 +109,7 @@ int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
             resp->payload = NULL;
             resp->payload_size = 0;
             if( NULL != strstr(req->dest, REQ_DEST) ) {
-                if( (NULL != req->payload) &&
-                    (NULL != strstr(req->payload, REQ_GET)) )
-                {
-                    process_request_get(response);
-                }
-                else {
-                    process_request_set(in_msg);
-                }
+                process_request_set(in_msg);
             }
             else {
                  debug_error("Request-Response message destination %s is invalid\n", req->dest);
