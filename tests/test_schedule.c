@@ -96,6 +96,7 @@ void test_decoder( void )
     int rv;
 
     rv = decode_schedule( len, data, &s );
+    destroy_schedule(s);
 
     (void) rv;
 }
