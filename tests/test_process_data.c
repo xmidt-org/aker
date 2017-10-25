@@ -133,6 +133,7 @@ void test_process_request_get()
         get_size = process_request_get(&response);
         CU_ASSERT(0 == memcmp(tests_get[i].r.u.req.payload, response.u.req.payload, response.u.req.payload_size));
         CU_ASSERT(tests_get[i].r.u.req.payload_size == response.u.req.payload_size);
+        free(response.u.req.payload);
         CU_ASSERT((size_t)get_size == tests_get[i].r.u.req.payload_size);
         free(response.u.req.payload);
     }
