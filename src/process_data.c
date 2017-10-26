@@ -75,13 +75,15 @@ ssize_t process_message_ret( wrp_msg_t *msg, void **data )
 
 ssize_t process_request_set( wrp_msg_t *req )
 {
-   FILE *file_handle = NULL;
+    FILE *file_handle = NULL;
     size_t write_size = 0;
 
     pthread_mutex_lock(&schedule_file_lock);
     
     file_handle = fopen(FILE_NAME, "wb");
     if( NULL == file_handle ) {
+        debug_info("process_request_set() Failed on fopen(%s, \"wb\"\n", FILE_NAME);
+        pthread_mutex_unlock(&schedule_file_lock);
         return -1;
     }
     write_size = fwrite(req->u.req.payload, sizeof(uint8_t), req->u.req.payload_size, file_handle);
@@ -98,12 +100,17 @@ ssize_t process_request_set( wrp_msg_t *req )
 
 ssize_t process_request_get( wrp_msg_t *resp )
 {
-    uint8_t *data;
+    uint8_t *data = NULL;
     size_t read_size = read_file_from_disk(&data);
 
     resp->u.req.content_type = "application/msgpack";
+    if (read_size > 0) {
     resp->u.req.payload = data;
     resp->u.req.payload_size = read_size;
+    } else {
+    resp->u.req.payload = NULL;
+    resp->u.req.payload_size = 0;        
+    }
 
     return read_size;
 }
@@ -118,6 +125,7 @@ size_t read_file_from_disk( uint8_t **data)
     file_handle = fopen(FILE_NAME, "rb");
     if( NULL == file_handle ) {
         pthread_mutex_unlock(&schedule_file_lock);
+        debug_error("read_file_from_disk() can't read the file %s\n", FILE_NAME);
         return -1;
     }
 
