@@ -77,7 +77,7 @@ void *scheduler_thread(void *args)
     
         if (0 == clock_gettime(CLOCK_REALTIME, &tm) && current_schedule) {
             char *blocked_macs;
-            time_t unix_time = tm.tv_sec; // ignore nsec  + (tm.tv_nsec / 1000000000)
+            time_t unix_time = tm.tv_sec; // ignore?  + (tm.tv_nsec / 1000000000)
             blocked_macs = get_blocked_at_time(current_schedule, unix_time);
             
             /* TODO do something other than debug prints ;-) */
