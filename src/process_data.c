@@ -32,7 +32,7 @@
 /*                                   Variables                                */
 /*----------------------------------------------------------------------------*/
 pthread_mutex_t schedule_file_lock;
-static int32_t file_version = -1;
+static int32_t file_version = 0;
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
