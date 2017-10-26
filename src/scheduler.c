@@ -38,10 +38,9 @@ static void process_schedule_data(size_t len, uint8_t *data);
 
 void *scheduler_thread(void *args)
 {
-    int32_t file_version;
+    int32_t file_version = 0;
  
     (void ) args;
-    (void ) file_version;
     #define SLEEP_TIME 5
     
     signal(SIGTERM, sig_handler);
@@ -60,12 +59,13 @@ void *scheduler_thread(void *args)
     while (1) {
         int32_t new_file_version = get_schedule_file_version();
         uint8_t *data = NULL;
-        bool file_changed = (new_file_version >= 0) && 
+        bool file_changed = (new_file_version > 0) && 
                             (new_file_version != file_version);
         
         if (file_changed) {
             size_t data_size;
             file_version = new_file_version;
+            debug_info("scheduler_thread() File changed!\n");
             data_size = read_file_from_disk(&data);
             if (data) {
                 process_schedule_data(data_size, data);
@@ -82,19 +82,22 @@ void *scheduler_thread(void *args)
         if (0 == clock_gettime(CLOCK_REALTIME, &tm) && current_schedule) {
             static char *current_blocked_macs = NULL;
             char *blocked_macs;
-            time_t unix_time = tm.tv_sec; // ignore?  +(tm.tv_nsec / 1000000000)
+            time_t unix_time = tm.tv_sec; // ignore tm.tv_nsec
             blocked_macs = get_blocked_at_time(current_schedule, unix_time);
              
             if (NULL == current_blocked_macs) {
-                    current_blocked_macs = blocked_macs; 
+                    current_blocked_macs = strdup(blocked_macs); 
+                    free(blocked_macs);
             } else {
                 if (0 != strcmp(current_blocked_macs, blocked_macs)) {
                     free(current_blocked_macs);
-                    current_blocked_macs = blocked_macs;                
+                    current_blocked_macs = strdup(blocked_macs);  
+                    free(blocked_macs);
                 } else {/* No Change In Schedule */
                     if (0 == (info_period++ % 3)) {/* Reduce Clutter */
                         debug_info("scheduler_thread(): No Change\n");
                     }
+                    free(blocked_macs);
                     sleep(SLEEP_TIME);
                     continue;
                 }
@@ -125,6 +128,7 @@ void process_schedule_data(size_t len, uint8_t *data)
         destroy_schedule(current_schedule);
     }
     
+    debug_info("process_schedule_data()\n");
     if (0 != decode_schedule(len, data, &current_schedule)) {
          destroy_schedule(current_schedule);
          current_schedule =NULL;
