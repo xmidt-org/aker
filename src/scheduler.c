@@ -30,9 +30,11 @@
 #include "decode.h"
 
 
+/* Local Functions and file-scoped variables */
 static void sig_handler(int sig);
-void process_schedule_data(size_t len, uint8_t *data);
 static schedule_t *current_schedule = NULL;
+static void process_schedule_data(size_t len, uint8_t *data);
+
 
 void *scheduler_thread(void *args)
 {
@@ -40,6 +42,7 @@ void *scheduler_thread(void *args)
  
     (void ) args;
     (void ) file_version;
+    #define SLEEP_TIME 5
     
     signal(SIGTERM, sig_handler);
     signal(SIGINT, sig_handler);
@@ -74,20 +77,37 @@ void *scheduler_thread(void *args)
   * either file_changed or a condition in the schedule 
   */
         struct timespec tm;
+        int info_period = 3;
     
         if (0 == clock_gettime(CLOCK_REALTIME, &tm) && current_schedule) {
+            static char *current_blocked_macs = NULL;
             char *blocked_macs;
-            time_t unix_time = tm.tv_sec; // ignore?  + (tm.tv_nsec / 1000000000)
+            time_t unix_time = tm.tv_sec; // ignore?  +(tm.tv_nsec / 1000000000)
             blocked_macs = get_blocked_at_time(current_schedule, unix_time);
+             
+            if (NULL == current_blocked_macs) {
+                    current_blocked_macs = blocked_macs; 
+            } else {
+                if (0 != strcmp(current_blocked_macs, blocked_macs)) {
+                    free(current_blocked_macs);
+                    current_blocked_macs = blocked_macs;                
+                } else {/* No Change In Schedule */
+                    if (0 == (info_period++ % 3)) {/* Reduce Clutter */
+                        debug_info("scheduler_thread(): No Change\n");
+                    }
+                    sleep(SLEEP_TIME);
+                    continue;
+                }
+            }
             
             /* TODO do something other than debug prints ;-) */
             debug_info("List of MACs that need to be blocked:\n");
-            debug_info("%s\n", blocked_macs);
+            debug_info("%s\n", current_blocked_macs);
             debug_info("End of List of MACs that need to be blocked:\n");
 
         }
         
-        sleep(5);
+        sleep(SLEEP_TIME);
     }
     
     
