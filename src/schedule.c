@@ -20,10 +20,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <signal.h>
 
 
 #include "schedule.h"
 #include "time.h"
+#include "process_data.h"
+#include "aker_log.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -45,6 +48,7 @@
 /*----------------------------------------------------------------------------*/
 char* __convert_event_to_string( schedule_t *s, schedule_event_t *e );
 int __validate_mac( const char *mac, size_t len );
+
 
 
 /*----------------------------------------------------------------------------*/

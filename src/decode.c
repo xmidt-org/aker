@@ -39,7 +39,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
     size_t off = 0;
     msgpack_unpack_return ret;
     schedule_t *s;
-    
+
     if (NULL == t || NULL == buf) {
         return -1;
     }

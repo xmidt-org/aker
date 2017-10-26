@@ -79,6 +79,31 @@ ssize_t process_request_set( wrp_msg_t *req );
  */
 ssize_t process_request_get( wrp_msg_t *resp );
 
+
+/**
+ * @brief Returns file version of the schedule
+ * 
+ * @note Locks/UnLocks the mutex for acccess.
+ *
+ * @param none
+ *
+ * @return version number 
+ * 
+ */
+int32_t get_schedule_file_version(void);
+
+/**
+ * @brief reads the file.
+ * 
+ * @note Locks/UnLocks the mutex for acccess.
+ *
+ * @param pointer to be allocated by read_file_from_disk()
+ *
+ * @return size of the file 
+ * 
+ */
+size_t read_file_from_disk( uint8_t **data);
+
 #ifdef __cplusplus
 }
 #endif

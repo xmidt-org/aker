@@ -27,6 +27,7 @@
 #include "aker_log.h"
 #include "schedule.h"
 #include "wrp_interface.h"
+#include "scheduler.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -42,6 +43,11 @@
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
 /* none */
+
+/*----------------------------------------------------------------------------*/
+/*                            Global Variables                                */
+/*----------------------------------------------------------------------------*/
+
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
@@ -113,6 +119,11 @@ int main( int argc, char **argv)
         }
     }
 
+    pthread_mutex_init(&schedule_file_lock, NULL);
+    pthread_t thread_id;
+    pthread_create (&thread_id, NULL, scheduler_thread, NULL);
+    sleep(1);
+    
     if( (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
         (NULL != firewall_cli) &&
@@ -129,6 +140,8 @@ int main( int argc, char **argv)
     if( NULL != cfg.parodus_url )   free( (char*) cfg.parodus_url );
     if( NULL != cfg.client_url )    free( (char*) cfg.client_url );
 
+    pthread_mutex_destroy(&schedule_file_lock);
+    
     return rv;
 }
 
