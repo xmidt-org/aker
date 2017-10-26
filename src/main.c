@@ -44,6 +44,12 @@
 /* none */
 
 /*----------------------------------------------------------------------------*/
+/*                            Global Variables                                */
+/*----------------------------------------------------------------------------*/
+pthread_mutex_t schedule_file_lock;
+
+
+/*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 static void sig_handler(int sig);
@@ -113,6 +119,8 @@ int main( int argc, char **argv)
         }
     }
 
+    pthread_mutex_init(&schedule_file_lock, NULL);
+    
     if( (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
         (NULL != firewall_cli) &&
@@ -129,6 +137,8 @@ int main( int argc, char **argv)
     if( NULL != cfg.parodus_url )   free( (char*) cfg.parodus_url );
     if( NULL != cfg.client_url )    free( (char*) cfg.client_url );
 
+    pthread_mutex_destroy(&schedule_file_lock);
+    
     return rv;
 }
 

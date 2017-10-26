@@ -19,11 +19,15 @@
 
 #include <stdint.h>
 #include <time.h>
+#include <pthread.h>
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
 #define MAC_ADDRESS_SIZE 18
+
+extern pthread_mutex_t schedule_file_lock;
+
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -37,6 +41,7 @@ typedef struct schedule_event {
     size_t block_count;             /* Number of mac addresses to block. */
     uint32_t block[];               /* The list of mac addresses to block. */
 } schedule_event_t;
+
 
 typedef struct mac_address_t {
     char mac[MAC_ADDRESS_SIZE];    /* MAC addresses                    */ 

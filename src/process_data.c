@@ -17,14 +17,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "aker_log.h"
 #include "process_data.h"
+#include "schedule.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
 #define FILE_NAME "pcs.bin"
+
+/*----------------------------------------------------------------------------*/
+/*                                   Variables                                */
+/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -67,17 +73,25 @@ ssize_t process_message_ret( wrp_msg_t *msg, void **data )
 
 ssize_t process_request_set( wrp_msg_t *req )
 {
-    FILE *file_handle = NULL;
+   static uint32_t file_version = 1;
+   FILE *file_handle = NULL;
     size_t write_size = 0;
 
+    pthread_mutex_lock(&schedule_file_lock);
+    
     file_handle = fopen(FILE_NAME, "wb");
     if( NULL == file_handle ) {
         return -1;
     }
-
+    fseek(file_handle, 0, SEEK_SET); /* rewind() to start */
+    fwrite(&file_version, sizeof(uint32_t), 1, file_handle);
     write_size = fwrite(req->u.req.payload, sizeof(uint8_t), req->u.req.payload_size, file_handle);
     fclose(file_handle);
 
+    file_version++;
+
+    pthread_mutex_unlock(&schedule_file_lock);
+    
     /* TODO: Pass off payload to decoder */
 
     return write_size;
