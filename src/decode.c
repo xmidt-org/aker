@@ -181,9 +181,10 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
         key = &kv->key;
         val = &kv->val;
     }
-    
-    (*t)->time = entry_time;
+
+    if( NULL != *t ) {
+        (*t)->time = entry_time;
+    }
     printf("\n");
-    (void ) size; (void ) key; (void ) val;
     return 1;
 }
