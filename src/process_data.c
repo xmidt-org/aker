@@ -98,12 +98,17 @@ ssize_t process_request_set( wrp_msg_t *req )
 
 ssize_t process_request_get( wrp_msg_t *resp )
 {
-    uint8_t *data;
+    uint8_t *data = NULL;
     size_t read_size = read_file_from_disk(&data);
 
     resp->u.req.content_type = "application/msgpack";
+    if (read_size > 0) {
     resp->u.req.payload = data;
     resp->u.req.payload_size = read_size;
+    } else {
+    resp->u.req.payload = NULL;
+    resp->u.req.payload_size = 0;        
+    }
 
     return read_size;
 }
@@ -118,6 +123,7 @@ size_t read_file_from_disk( uint8_t **data)
     file_handle = fopen(FILE_NAME, "rb");
     if( NULL == file_handle ) {
         pthread_mutex_unlock(&schedule_file_lock);
+        debug_error("read_file_from_disk() can't read the file %s\n", FILE_NAME);
         return -1;
     }
 
