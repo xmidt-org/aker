@@ -33,7 +33,7 @@
 /* Local Functions and file-scoped variables */
 static void sig_handler(int sig);
 static schedule_t *current_schedule = NULL;
-static char *copy_new_mac_address_list(size_t str_size, char *old_list);
+static char *copy_new_mac_address_list(size_t str_size, char *new_list);
 static void process_schedule_data(size_t len, uint8_t *data);
 
 
@@ -85,15 +85,16 @@ void *scheduler_thread(void *args)
             char *blocked_macs;
             time_t unix_time = tm.tv_sec; // ignore?  +(tm.tv_nsec / 1000000000)
             blocked_macs = get_blocked_at_time(current_schedule, unix_time);
-            size_t str_size = strlen(blocked_macs);
              
             if (NULL == current_blocked_macs) {
-                    current_blocked_macs = copy_new_mac_address_list(str_size,
+                    current_blocked_macs = copy_new_mac_address_list(
+                                           strlen(blocked_macs),
                                            blocked_macs); 
             } else {
                 if (0 != strcmp(current_blocked_macs, blocked_macs)) {
                     free(current_blocked_macs);
-                    current_blocked_macs = copy_new_mac_address_list(str_size,
+                    current_blocked_macs = copy_new_mac_address_list(
+                                           strlen(blocked_macs),
                                            blocked_macs);                
                 } else {/* No Change In Schedule */
                     if (0 == (info_period++ % 3)) {/* Reduce Clutter */
@@ -123,13 +124,13 @@ void *scheduler_thread(void *args)
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-char *copy_new_mac_address_list(size_t str_size, char *old_list)
+char *copy_new_mac_address_list(size_t str_size, char *new_list)
 {
     char *rv;
     rv = (char *) malloc(str_size + 1);
     if (rv) {
         memset(rv, 0, str_size + 1);
-        memcpy(rv, old_list, str_size);  
+        memcpy(rv, new_list, str_size);  
     }
     return rv;
 }
