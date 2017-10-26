@@ -76,13 +76,28 @@ void *scheduler_thread(void *args)
         struct timespec tm;
     
         if (0 == clock_gettime(CLOCK_REALTIME, &tm) && current_schedule) {
+            static char *current_blocked_macs = NULL;
             char *blocked_macs;
             time_t unix_time = tm.tv_sec; // ignore?  + (tm.tv_nsec / 1000000000)
             blocked_macs = get_blocked_at_time(current_schedule, unix_time);
+            size_t str_size = strlen(blocked_macs);
+             
+            if (NULL == current_blocked_macs) {
+                current_blocked_macs = (char *) malloc(str_size + 1);
+                memset(current_blocked_macs, 0, str_size + 1);
+                memcpy(current_blocked_macs, blocked_macs, str_size);
+            } else {
+                if (0 != strcmp(current_blocked_macs, blocked_macs)) {
+                    free(current_blocked_macs);
+                    current_blocked_macs = (char *) malloc(str_size + 1);
+                    memset(current_blocked_macs, 0, str_size + 1);
+                    memcpy(current_blocked_macs, blocked_macs, str_size);                
+                }
+            }
             
             /* TODO do something other than debug prints ;-) */
             debug_info("List of MACs that need to be blocked:\n");
-            debug_info("%s\n", blocked_macs);
+            debug_info("%s\n", current_blocked_macs);
             debug_info("End of List of MACs that need to be blocked:\n");
 
         }
