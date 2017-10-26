@@ -58,7 +58,10 @@ void *scheduler_thread(void *args)
     while (1) {
         int32_t new_file_version = get_schedule_file_version();
         uint8_t *data;
-        if (new_file_version >= 0 && (new_file_version != file_version)) {
+        bool file_changed = (new_file_version >= 0) && 
+                            (new_file_version != file_version);
+        
+        if (file_changed) {
             size_t data_size;
             file_version = new_file_version;
             data_size = read_file_from_disk(&data);
@@ -69,6 +72,7 @@ void *scheduler_thread(void *args)
         }
  /*
   TODO: See if any blocking needs to be done or changed ...
+  * either file_changed or a condition in the schedule 
   */
         
         sleep(5);
