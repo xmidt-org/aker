@@ -27,6 +27,7 @@
 #include "aker_log.h"
 #include "schedule.h"
 #include "wrp_interface.h"
+#include "scheduler.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
