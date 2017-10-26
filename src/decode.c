@@ -64,16 +64,16 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
             
             while (size-- > 0) {
             if (0 == strncmp(key->via.str.ptr, WEEKLY_SCHEDULE, key->via.str.size)) {
-                printf("Found %s\n", WEEKLY_SCHEDULE);
+                debug_info("Found %s\n", WEEKLY_SCHEDULE);
                 decode_schedule_table(key, val, &s->weekly);
                 
                 }
             else if (0 == strncmp(key->via.str.ptr, ABSOLUTE_SCHEDULE, key->via.str.size)) {
-                printf("Found %s\n", ABSOLUTE_SCHEDULE);
+                debug_info("Found %s\n", ABSOLUTE_SCHEDULE);
                 decode_schedule_table(key, val, &s->absolute);
                 }
             else  if (0 == strncmp(key->via.str.ptr, MACS, key->via.str.size)) {
-                printf("Found %s\n", MACS);
+                debug_info("Found %s\n", MACS);
                 decode_macs_table(key, val, &s);
                 } else {
                     debug_error("decode_schedule() can't handle object type\n");
