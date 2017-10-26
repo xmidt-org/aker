@@ -376,3 +376,11 @@ int __validate_mac( const char *mac, size_t len )
 
     return mask;
 }
+
+void *scheduler_thread(void *args)
+{
+    (void ) args;
+    
+    
+    return NULL;    
+}

@@ -32,6 +32,7 @@
 /*                                   Variables                                */
 /*----------------------------------------------------------------------------*/
 pthread_mutex_t schedule_file_lock;
+static uint32_t file_version = 0;
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -74,7 +75,6 @@ ssize_t process_message_ret( wrp_msg_t *msg, void **data )
 
 ssize_t process_request_set( wrp_msg_t *req )
 {
-   static uint32_t file_version = 1;
    FILE *file_handle = NULL;
     size_t write_size = 0;
 
@@ -84,8 +84,6 @@ ssize_t process_request_set( wrp_msg_t *req )
     if( NULL == file_handle ) {
         return -1;
     }
-    fseek(file_handle, 0, SEEK_SET); /* rewind() to start */
-    fwrite(&file_version, sizeof(uint32_t), 1, file_handle);
     write_size = fwrite(req->u.req.payload, sizeof(uint8_t), req->u.req.payload_size, file_handle);
     fclose(file_handle);
 
@@ -100,26 +98,49 @@ ssize_t process_request_set( wrp_msg_t *req )
 
 ssize_t process_request_get( wrp_msg_t *resp )
 {
-    FILE *file_handle = NULL;
-    size_t file_size = 0, read_size = 0;
-
-    file_handle = fopen(FILE_NAME, "rb");
-    if( NULL == file_handle ) {
-        return -1;
-    }
+    uint8_t *data;
+    size_t read_size = read_file_from_disk(&data);
 
     resp->u.req.content_type = "application/msgpack";
-
-    fseek(file_handle, 0, SEEK_END);
-    file_size = ftell(file_handle);
-    fseek(file_handle, 0, SEEK_SET);
-
-    resp->u.req.payload = (uint8_t*) malloc(file_size);
-    read_size = fread(resp->u.req.payload, sizeof(uint8_t), file_size, file_handle);
-    fclose(file_handle);
-
+    resp->u.req.payload = data;
     resp->u.req.payload_size = read_size;
 
     return read_size;
 }
 
+size_t read_file_from_disk( uint8_t **data)
+{
+    FILE *file_handle = NULL;
+    size_t file_size, read_size;
+
+    pthread_mutex_lock(&schedule_file_lock);
+
+    file_handle = fopen(FILE_NAME, "rb");
+    if( NULL == file_handle ) {
+        pthread_mutex_unlock(&schedule_file_lock);
+        return -1;
+    }
+
+    fseek(file_handle, 0, SEEK_END);
+    file_size = ftell(file_handle);
+    fseek(file_handle, 0, SEEK_SET);
+
+    *data = (uint8_t*) malloc(file_size);
+    read_size = fread(*data, sizeof(uint8_t), file_size, file_handle);
+    fclose(file_handle);
+
+    pthread_mutex_unlock(&schedule_file_lock);
+
+    return read_size;
+}
+
+uint32_t get_schedule_file_version(void)
+{
+    uint32_t version;
+    
+    pthread_mutex_lock(&schedule_file_lock);
+    version = file_version;
+    pthread_mutex_unlock(&schedule_file_lock);
+    
+    return version;
+}

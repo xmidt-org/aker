@@ -27,7 +27,7 @@
 #define MAC_ADDRESS_SIZE 18
 
 extern pthread_mutex_t schedule_file_lock;
-
+extern void *scheduler_thread(void *);
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
