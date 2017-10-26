@@ -24,7 +24,6 @@
 
 
 #include "schedule.h"
-#include "time.h"
 #include "process_data.h"
 #include "aker_log.h"
 #include "scheduler.h"
@@ -37,7 +36,7 @@ static schedule_t *current_schedule = NULL;
 
 void *scheduler_thread(void *args)
 {
-    int32_t file_version = get_schedule_file_version();
+    int32_t file_version;
  
     (void ) args;
     (void ) file_version;
@@ -57,7 +56,7 @@ void *scheduler_thread(void *args)
   
     while (1) {
         int32_t new_file_version = get_schedule_file_version();
-        uint8_t *data;
+        uint8_t *data = NULL;
         bool file_changed = (new_file_version >= 0) && 
                             (new_file_version != file_version);
         
@@ -74,6 +73,19 @@ void *scheduler_thread(void *args)
   TODO: See if any blocking needs to be done or changed ...
   * either file_changed or a condition in the schedule 
   */
+        struct timespec tm;
+    
+        if (0 == clock_gettime(CLOCK_REALTIME, &tm) && current_schedule) {
+            char *blocked_macs;
+            time_t unix_time = tm.tv_sec; // ignore?  + (tm.tv_nsec / 1000000000)
+            blocked_macs = get_blocked_at_time(current_schedule, unix_time);
+            
+            /* TODO do something other than debug prints ;-) */
+            debug_info("List of MACs that need to be blocked:\n");
+            debug_info("%s\n", blocked_macs);
+            debug_info("End of List of MACs that need to be blocked:\n");
+
+        }
         
         sleep(5);
     }
@@ -99,9 +111,6 @@ void process_schedule_data(size_t len, uint8_t *data)
          debug_error("process_schedule_data() Failed to decode\n");
          return;
     }
-    /*
-     TODO: Now what? 
-     */
 }
 
 static void sig_handler(int sig)
