@@ -100,19 +100,20 @@ int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
             resp->transaction_uuid = strdup(req->transaction_uuid);
             resp->source = strdup(req->dest);
             resp->dest   = strdup(req->source);
-            resp->partner_ids = req->partner_ids;
-            resp->headers = req->headers;
+            resp->partner_ids = NULL;
+            resp->headers = NULL;
+            resp->metadata = NULL;
             resp->content_type = NULL;
-            resp->include_spans = req->include_spans;
-            resp->spans.spans = req->spans.spans;
-            resp->spans.count = req->spans.count;
+            resp->include_spans = false;
+            resp->spans.spans = NULL;
+            resp->spans.count = 0;
             resp->payload = NULL;
             resp->payload_size = 0;
             if( NULL != strstr(req->dest, REQ_DEST) ) {
                 process_request_set(in_msg);
             }
             else {
-                 debug_error("Request-Response message destination %s is invalid\n", req->dest);
+                debug_error("Request-Response message destination %s is invalid\n", req->dest);
             }
         }
         break;
