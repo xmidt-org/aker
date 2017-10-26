@@ -75,13 +75,14 @@ ssize_t process_message_ret( wrp_msg_t *msg, void **data )
 
 ssize_t process_request_set( wrp_msg_t *req )
 {
-   FILE *file_handle = NULL;
+    FILE *file_handle = NULL;
     size_t write_size = 0;
 
     pthread_mutex_lock(&schedule_file_lock);
     
     file_handle = fopen(FILE_NAME, "wb");
     if( NULL == file_handle ) {
+        debug_info("process_request_set() Failed on fopen(%s, \"wb\"\n", FILE_NAME);
         return -1;
     }
     write_size = fwrite(req->u.req.payload, sizeof(uint8_t), req->u.req.payload_size, file_handle);
