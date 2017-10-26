@@ -121,6 +121,7 @@ int main( int argc, char **argv)
     pthread_mutex_init(&schedule_file_lock, NULL);
     pthread_t thread_id;
     pthread_create (&thread_id, NULL, scheduler_thread, NULL);
+    sleep(1);
     
     if( (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&

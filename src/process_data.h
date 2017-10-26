@@ -90,7 +90,7 @@ ssize_t process_request_get( wrp_msg_t *resp );
  * @return version number 
  * 
  */
-uint32_t get_schedule_file_version(void);
+int32_t get_schedule_file_version(void);
 
 /**
  * @brief reads the file.

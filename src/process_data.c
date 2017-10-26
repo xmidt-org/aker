@@ -32,7 +32,7 @@
 /*                                   Variables                                */
 /*----------------------------------------------------------------------------*/
 pthread_mutex_t schedule_file_lock;
-static uint32_t file_version = 0;
+static int32_t file_version = -1;
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -134,9 +134,9 @@ size_t read_file_from_disk( uint8_t **data)
     return read_size;
 }
 
-uint32_t get_schedule_file_version(void)
+int32_t get_schedule_file_version(void)
 {
-    uint32_t version;
+    int32_t version;
     
     pthread_mutex_lock(&schedule_file_lock);
     version = file_version;
