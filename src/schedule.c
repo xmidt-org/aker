@@ -49,6 +49,8 @@
 char* __convert_event_to_string( schedule_t *s, schedule_event_t *e );
 int __validate_mac( const char *mac, size_t len );
 static void sig_handler(int sig);
+void process_schedule_data(size_t len, uint8_t *data);
+static schedule_t *current_schedule = NULL;
 
 
 /*----------------------------------------------------------------------------*/
@@ -410,7 +412,7 @@ void *scheduler_thread(void *args)
             file_version = new_file_version;
             data_size = read_file_from_disk(&data);
             if (data) {
-                process_data(data);
+                process_schedule_data(data_size, data);
                 free(data);
             }
         }
@@ -423,9 +425,27 @@ void *scheduler_thread(void *args)
     return NULL;    
 }
 
+
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
+void process_schedule_data(size_t len, uint8_t *data) 
+{
+    if (NULL != current_schedule) {
+        destroy_schedule(current_schedule);
+    }
+    
+    if (0 != decode_schedule(len, data, &current_schedule)) {
+         destroy_schedule(current_schedule);
+         current_schedule =NULL;
+         debug_error("process_schedule_data() Failed to decode\n");
+         return;
+    }
+    /*
+     TODO: Now what? 
+     */
+}
+
 static void sig_handler(int sig)
 {
     if( sig == SIGINT ) {
