@@ -44,6 +44,6 @@ target_link_libraries (test_wrp_interface ${AKER_COMMON_LIBS})
 #   test_process_data
 #-------------------------------------------------------------------------------
 add_test(NAME test_process_data COMMAND ${MEMORY_CHECK} ./test_process_data)
-add_executable(test_process_data test_process_data.c ../src/process_data.c)
+add_executable(test_process_data test_process_data.c ../src/process_data.c ../src/decode.c ../src/schedule.c ../src/time.c)
 target_link_libraries (test_process_data ${AKER_COMMON_LIBS})
 
