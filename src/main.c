@@ -182,14 +182,29 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
     int rv;
     wrp_msg_t *wrp_msg;
     libpd_instance_t hpd_instance;
+    int backoff_retry_time = 0;
+    int max_retry_sleep = (1 << 9) - 1;
+    int c = 2;
 
+    while( true ) {
+        rv = libparodus_init( &hpd_instance, cfg );
+        if( 0 == rv ) {
+            debug_info("Init for parodus Success..!!\n");
+            break;
+        }
+        else {
+            debug_info("Init for parodus (url %s) failed: '%s'\n", cfg->parodus_url, libparodus_strerror(rv) );
+            backoff_retry_time = (1 << c) - 1;
+            sleep(backoff_retry_time);
+            c++;
 
-    rv = libparodus_init( &hpd_instance, cfg );
-    if( 0 != rv ) {
-        debug_error("Init for parodus (url %s) failed: '%s'\n", cfg->parodus_url, libparodus_strerror(rv) );
-        return -1;
+            if( backoff_retry_time >= max_retry_sleep ) {
+                c = 2;
+                backoff_retry_time = 0;
+            }
+        }
+        libparodus_shutdown(&hpd_instance);
     }
-    debug_info("Init for parodus Success..!!\n");
 
     debug_print("starting the main loop...\n");
     while( true ) {

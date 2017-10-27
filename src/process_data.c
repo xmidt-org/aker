@@ -32,7 +32,7 @@
 /*                                   Variables                                */
 /*----------------------------------------------------------------------------*/
 pthread_mutex_t schedule_file_lock;
-static int32_t file_version = 0;
+static int32_t file_version = 1;
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -86,6 +86,7 @@ ssize_t process_request_set( wrp_msg_t *req )
         pthread_mutex_unlock(&schedule_file_lock);
         return -1;
     }
+    debug_print("req->u.req.payload_size = %d\n", req->u.req.payload_size);
     write_size = fwrite(req->u.req.payload, sizeof(uint8_t), req->u.req.payload_size, file_handle);
     fclose(file_handle);
 
