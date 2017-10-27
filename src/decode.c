@@ -35,6 +35,7 @@ static int decode_macs_table       (msgpack_object *key, msgpack_object *val, sc
 static int process_map(msgpack_object_map *, schedule_event_t **t);
 
 int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
+    int ret_val = 0;
     msgpack_unpacked result;
     size_t off = 0;
     msgpack_unpack_return ret;
@@ -85,6 +86,13 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
             }
 
         ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
+    } else {
+            debug_error("Unexpected result in decode_schedule()\n");
+            ret = MSGPACK_UNPACK_PARSE_ERROR;
+            msgpack_unpacked_destroy(&result);
+            destroy_schedule(s);
+            *t = NULL;
+            ret_val = -1;
     }
         msgpack_unpacked_destroy(&result);
 
@@ -93,9 +101,12 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
         }
         else if (ret == MSGPACK_UNPACK_PARSE_ERROR) {
             debug_error("The data in the buf is invalid format.\n");
+            destroy_schedule(s);
+            *t = NULL;
+           ret_val = -2;
         }
     }
-    return 0;
+    return ret_val;
 }
 
 
