@@ -45,6 +45,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
         return -1;
     }
     
+    debug_print("decode_schedule - calling create_schedule\n");
     s = create_schedule();
     *t = s; 
     
@@ -52,11 +53,14 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
         return -1;
     }
     
+    debug_print("decode_schedule - msgpack_unpacked_init\n");
     msgpack_unpacked_init(&result);
     ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
     while (ret == MSGPACK_UNPACK_SUCCESS) {
+        debug_print("decode_schedule - MSGPACK_UNPACK_SUCCESS\n");
         msgpack_object obj = result.data;
         if (obj.type == MSGPACK_OBJECT_MAP) {
+            debug_print("decode_schedule - MSGPACK_OBJECT_MAP\n");
             msgpack_object_map *map = &obj.via.map;
             msgpack_object_kv* p = map->ptr;
             int size = map->size;
@@ -84,16 +88,16 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
             key = &p->key;
             val = &p->val;
             }
-
+          
         ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
     } else {
             debug_error("Unexpected result in decode_schedule()\n");
-            ret = MSGPACK_UNPACK_PARSE_ERROR;
             msgpack_unpacked_destroy(&result);
             destroy_schedule(s);
             *t = NULL;
-            ret_val = -1;
+            return -1;
     }
+
         msgpack_unpacked_destroy(&result);
 
         if (ret == MSGPACK_UNPACK_CONTINUE) {

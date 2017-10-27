@@ -48,6 +48,7 @@ int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
 {
     wrp_msg_t *in_msg = msg;
 
+    memset(response, 0, sizeof(wrp_msg_t));
     switch (in_msg->msg_type) {
         case (WRP_MSG_TYPE__CREATE): 
         case (WRP_MSG_TYPE__UPDATE):
@@ -75,12 +76,6 @@ int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
             out_crud->transaction_uuid = strdup(in_crud->transaction_uuid);
             out_crud->source  = strdup(in_crud->dest);
             out_crud->dest    = strdup(in_crud->source);
-            out_crud->headers = NULL;
-            out_crud->metadata = NULL;
-            out_crud->include_spans = false;
-            out_crud->spans.spans = NULL;
-            out_crud->spans.count = 0;
-            out_crud->rdr     = 0;
             out_crud->path    = strdup(in_crud->path);
             /* TODO: once payload type is resolved */
             // process_message_ret(in_msg, &(out_crud->payload)); 
@@ -100,19 +95,11 @@ int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
             resp->transaction_uuid = strdup(req->transaction_uuid);
             resp->source = strdup(req->dest);
             resp->dest   = strdup(req->source);
-            resp->partner_ids = req->partner_ids;
-            resp->headers = req->headers;
-            resp->content_type = NULL;
-            resp->include_spans = req->include_spans;
-            resp->spans.spans = req->spans.spans;
-            resp->spans.count = req->spans.count;
-            resp->payload = NULL;
-            resp->payload_size = 0;
             if( NULL != strstr(req->dest, REQ_DEST) ) {
                 process_request_set(in_msg);
             }
             else {
-                 debug_error("Request-Response message destination %s is invalid\n", req->dest);
+                debug_error("Request-Response message destination %s is invalid\n", req->dest);
             }
         }
         break;
