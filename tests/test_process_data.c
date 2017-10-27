@@ -135,7 +135,6 @@ void test_process_request_get()
         CU_ASSERT(tests_get[i].r.u.req.payload_size == response.u.req.payload_size);
         free(response.u.req.payload);
         CU_ASSERT((size_t)get_size == tests_get[i].r.u.req.payload_size);
-        free(response.u.req.payload);
     }
 }
 
