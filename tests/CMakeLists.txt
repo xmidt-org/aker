@@ -50,7 +50,7 @@ target_link_libraries (test_process_data ${AKER_COMMON_LIBS})
 #-------------------------------------------------------------------------------
 #   test_process_data
 #-------------------------------------------------------------------------------
-add_test(NAME test_decode COMMAND ${MEMORY_CHECK} ./test_data)
+add_test(NAME test_decode COMMAND ${MEMORY_CHECK} ./test_decode)
 add_executable(test_decode test_decode.c ../src/decode.c ../src/schedule.c ../src/time.c)
 target_link_libraries (test_decode ${AKER_COMMON_LIBS})
 
