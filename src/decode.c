@@ -50,12 +50,19 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
     *t = s; 
     
     if (NULL == s) {
-        return -1;
+        return -2;
     }
     
     debug_print("decode_schedule - msgpack_unpacked_init\n");
     msgpack_unpacked_init(&result);
     ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
+    
+    if (0 == off) {
+        destroy_schedule(s);
+        *t = NULL;
+        return -7;
+    }
+    
     while (ret == MSGPACK_UNPACK_SUCCESS) {
         debug_print("decode_schedule - MSGPACK_UNPACK_SUCCESS\n");
         msgpack_object obj = result.data;
@@ -82,7 +89,8 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
                 decode_macs_table(key, val, &s);
                 } else {
                     debug_error("decode_schedule() can't handle object type\n");
-                    assert(0);
+                    destroy_schedule(s);
+                    return -3;
                 }
             p++;
             key = &p->key;
@@ -95,7 +103,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
             msgpack_unpacked_destroy(&result);
             destroy_schedule(s);
             *t = NULL;
-            return -1;
+            return -4;
     }
         msgpack_unpacked_destroy(&result);
 
@@ -106,7 +114,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
             debug_error("The data in the buf is invalid format.\n");
             destroy_schedule(s);
             *t = NULL;
-            return -2;
+            return -5;
         }
     }
     return ret_val;
