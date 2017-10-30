@@ -86,20 +86,27 @@ void *scheduler_thread(void *args)
             blocked_macs = get_blocked_at_time(current_schedule, unix_time);
              
             if (NULL == current_blocked_macs) {
+                if (NULL != blocked_macs) {
                     current_blocked_macs = strdup(blocked_macs); 
                     free(blocked_macs);
+                }
             } else {
-                if (0 != strcmp(current_blocked_macs, blocked_macs)) {
-                    free(current_blocked_macs);
-                    current_blocked_macs = strdup(blocked_macs);  
-                    free(blocked_macs);
-                } else {/* No Change In Schedule */
-                    if (0 == (info_period++ % 3)) {/* Reduce Clutter */
-                        debug_info("scheduler_thread(): No Change\n");
+                if (NULL != blocked_macs) {
+                    if (0 != strcmp(current_blocked_macs, blocked_macs)) {
+                        free(current_blocked_macs);
+                        current_blocked_macs = strdup(blocked_macs);  
+                        free(blocked_macs);
+                    } else {/* No Change In Schedule */
+                        if (0 == (info_period++ % 3)) {/* Reduce Clutter */
+                            debug_info("scheduler_thread(): No Change\n");
+                        }
+                        free(blocked_macs);
+                        sleep(SLEEP_TIME);
+                        continue;
                     }
-                    free(blocked_macs);
-                    sleep(SLEEP_TIME);
-                    continue;
+                } else {
+                    free(current_blocked_macs);
+                    current_blocked_macs = NULL;
                 }
             }
             
