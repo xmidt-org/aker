@@ -60,7 +60,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
     if (0 == off) {
         destroy_schedule(s);
         *t = NULL;
-        return -7;
+        return -3;
     }
     
     while (ret == MSGPACK_UNPACK_SUCCESS) {
@@ -89,8 +89,8 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
                 decode_macs_table(key, val, &s);
                 } else {
                     debug_error("decode_schedule() can't handle object type\n");
-                    destroy_schedule(s);
-                    return -3;
+                    ret_val = -4;
+                    break;
                 }
             p++;
             key = &p->key;
@@ -100,23 +100,28 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
         ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
     } else {
             debug_error("Unexpected result in decode_schedule()\n");
-            msgpack_unpacked_destroy(&result);
-            destroy_schedule(s);
-            *t = NULL;
-            return -4;
+            ret_val = -5;
+            break;
     }
-        msgpack_unpacked_destroy(&result);
 
         if (ret == MSGPACK_UNPACK_CONTINUE) {
             debug_info("All msgpack_object in the buffer is consumed.\n");
         }
         else if (ret == MSGPACK_UNPACK_PARSE_ERROR) {
             debug_error("The data in the buf is invalid format.\n");
-            destroy_schedule(s);
-            *t = NULL;
-            return -5;
+            ret_val = -6;
+            break;
         }
+
+        msgpack_unpacked_destroy(&result);
     }
+
+    if (0 != ret_val) {
+        msgpack_unpacked_destroy(&result);
+        destroy_schedule(s);
+       *t = NULL;
+    }
+
     return ret_val;
 }
 
