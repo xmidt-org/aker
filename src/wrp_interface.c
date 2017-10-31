@@ -96,7 +96,7 @@ int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
             resp->source = strdup(req->dest);
             resp->dest   = strdup(req->source);
             if( NULL != strstr(req->dest, REQ_DEST) ) {
-                process_request_set(in_msg);
+                process_request_set("pcs.bin", in_msg);
             }
             else {
                 debug_error("Request-Response message destination %s is invalid\n", req->dest);

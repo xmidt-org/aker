@@ -17,7 +17,22 @@
  *
  */
 
-extern pthread_mutex_t schedule_file_lock;
-extern void *scheduler_thread(void *);
+/**
+ *  Starts the scheduler thread
+ *
+ *  @param thread if not NULL the thread id is returned here, ignored otherwise
+ *
+ *  @return the result of thread creation
+ */
+int scheduler_start( pthread_t *thread );
 
+/**
+ *  Sends in data to make a new schedule and replace any existing ones.
+ *
+ *  @param len  the length of the data in bytes
+ *  @param data the schedule msgpack data
+ *
+ *  @return 0 on success error from decoding the data otherwise
+ */
+int process_schedule_data( size_t len, uint8_t *data );
 #endif

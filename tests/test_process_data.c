@@ -67,8 +67,8 @@ static test_t tests_set[] =
         .r.u.req.include_spans = false,
         .r.u.req.spans.spans = NULL,
         .r.u.req.spans.count = 0,
-        .r.u.req.payload = NULL,
-        .r.u.req.payload_size = 0,
+        .r.u.req.payload = "Some binary",
+        .r.u.req.payload_size = 11,
     },
 };
 
@@ -117,7 +117,7 @@ void test_process_request_set()
     ssize_t set_size;
 
     for( uint8_t i = 0; i < t_size; i++ ) {
-        set_size = process_request_set(&tests_set[i].s);
+        set_size = process_request_set("pcs.bin", &tests_set[i].s);
         CU_ASSERT((size_t)set_size == tests_set[i].s.u.req.payload_size);
     }
 }
@@ -130,7 +130,7 @@ void test_process_request_get()
 
     for( uint8_t i = 0; i < t_size; i++ ) {
         memset(&response, '\0', sizeof(wrp_msg_t));
-        get_size = process_request_get(&response);
+        get_size = process_request_get("pcs.bin", &response);
         CU_ASSERT(0 == memcmp(tests_get[i].r.u.req.payload, response.u.req.payload, response.u.req.payload_size));
         CU_ASSERT(tests_get[i].r.u.req.payload_size == response.u.req.payload_size);
         free(response.u.req.payload);

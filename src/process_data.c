@@ -26,13 +26,12 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-#define FILE_NAME "pcs.bin"
+/* None */
 
 /*----------------------------------------------------------------------------*/
 /*                                   Variables                                */
 /*----------------------------------------------------------------------------*/
-pthread_mutex_t schedule_file_lock;
-static int32_t file_version = 1;
+/* None */
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -73,83 +72,64 @@ ssize_t process_message_ret( wrp_msg_t *msg, void **data )
     return 0;
 }
 
-ssize_t process_request_set( wrp_msg_t *req )
+ssize_t process_request_set( const char *filename, wrp_msg_t *req )
 {
     FILE *file_handle = NULL;
     size_t write_size = 0;
 
-    pthread_mutex_lock(&schedule_file_lock);
-    
-    file_handle = fopen(FILE_NAME, "wb");
+    file_handle = fopen(filename, "wb");
     if( NULL == file_handle ) {
-        debug_info("process_request_set() Failed on fopen(%s, \"wb\"\n", FILE_NAME);
-        pthread_mutex_unlock(&schedule_file_lock);
+        debug_info("process_request_set() Failed on fopen(%s, \"wb\"\n", filename);
         return -1;
     }
     debug_print("req->u.req.payload_size = %d\n", req->u.req.payload_size);
     write_size = fwrite(req->u.req.payload, sizeof(uint8_t), req->u.req.payload_size, file_handle);
     fclose(file_handle);
 
-    file_version++;
-
-    pthread_mutex_unlock(&schedule_file_lock);
-    
     /* TODO: Pass off payload to decoder */
 
     return write_size;
 }
 
-ssize_t process_request_get( wrp_msg_t *resp )
+size_t process_request_get( const char *filename, wrp_msg_t *resp )
 {
     uint8_t *data = NULL;
-    size_t read_size = read_file_from_disk(&data);
+    size_t read_size = 0;
 
+    read_size = read_file_from_disk( filename, &data );
     resp->u.req.content_type = "application/msgpack";
-    if (read_size > 0) {
+
     resp->u.req.payload = data;
     resp->u.req.payload_size = read_size;
-    } else {
-    resp->u.req.payload = NULL;
-    resp->u.req.payload_size = 0;        
-    }
 
     return read_size;
 }
 
-size_t read_file_from_disk( uint8_t **data)
+size_t read_file_from_disk( const char *filename, uint8_t **data )
 {
     FILE *file_handle = NULL;
     size_t file_size, read_size;
 
-    pthread_mutex_lock(&schedule_file_lock);
-
-    file_handle = fopen(FILE_NAME, "rb");
+    file_handle = fopen(filename, "rb");
     if( NULL == file_handle ) {
-        pthread_mutex_unlock(&schedule_file_lock);
-        debug_error("read_file_from_disk() can't read the file %s\n", FILE_NAME);
-        return -1;
+        debug_error("read_file_from_disk() can't read the file %s\n", filename);
+        return 0;
     }
 
     fseek(file_handle, 0, SEEK_END);
     file_size = ftell(file_handle);
     fseek(file_handle, 0, SEEK_SET);
 
-    *data = (uint8_t*) malloc(file_size);
-    read_size = fread(*data, sizeof(uint8_t), file_size, file_handle);
+    read_size = 0;
+    *data = NULL;
+    if( 0 < file_size ) {
+        *data = (uint8_t*) malloc(file_size);
+
+        if( NULL != *data ) {
+            read_size = fread(*data, sizeof(uint8_t), file_size, file_handle);
+        }
+    }
     fclose(file_handle);
 
-    pthread_mutex_unlock(&schedule_file_lock);
-
     return read_size;
-}
-
-int32_t get_schedule_file_version(void)
-{
-    int32_t version;
-    
-    pthread_mutex_lock(&schedule_file_lock);
-    version = file_version;
-    pthread_mutex_unlock(&schedule_file_lock);
-    
-    return version;
 }

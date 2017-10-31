@@ -32,14 +32,71 @@
 
 /* Local Functions and file-scoped variables */
 static void sig_handler(int sig);
+static void *scheduler_thread(void *args);
+
+
 static schedule_t *current_schedule = NULL;
-static void process_schedule_data(size_t len, uint8_t *data);
+static pthread_mutex_t schedule_lock;
+
+/*----------------------------------------------------------------------------*/
+/*                             External functions                             */
+/*----------------------------------------------------------------------------*/
+
+/* See scheduler.h for details. */
+int scheduler_start( pthread_t *thread )
+{
+    pthread_t t, *p;
+    pthread_mutex_init( &schedule_lock, NULL );
+    int rv;
+
+    p = &t;
+    if( NULL != thread ) {
+        p = thread;
+    }
+
+    rv = pthread_create( p, NULL, scheduler_thread, NULL );
+    if( 0 != rv ) {
+        pthread_mutex_destroy(&schedule_lock);
+    }
+
+    return rv;
+}
 
 
+/* See scheduler.h for details. */
+int process_schedule_data( size_t len, uint8_t *data )
+{
+    schedule_t *s;
+    int rv;
+
+    debug_info("process_schedule_data()\n");
+    rv = decode_schedule( len, data, &s );
+
+    print_schedule( s );
+
+    if (0 == rv ) {
+        pthread_mutex_lock( &schedule_lock );
+        destroy_schedule(current_schedule);
+        current_schedule = s;
+        pthread_mutex_unlock( &schedule_lock );
+        debug_error( "process_schedule_data() New schedule\n" );
+    } else {
+        destroy_schedule( s );
+        debug_error( "process_schedule_data() Failed to decode\n" );
+    }
+
+    return rv;
+}
+
+/*----------------------------------------------------------------------------*/
+/*                             Internal functions                             */
+/*----------------------------------------------------------------------------*/
+
+/**
+ *  Main scheduler thread.
+ */
 void *scheduler_thread(void *args)
 {
-    int32_t file_version = 0;
- 
     (void ) args;
     #define SLEEP_TIME 5
     
@@ -55,30 +112,12 @@ void *scheduler_thread(void *args)
     signal(SIGQUIT, sig_handler);
     signal(SIGHUP, sig_handler);
     signal(SIGALRM, sig_handler);    
-  
+
     while (1) {
-        int32_t new_file_version = get_schedule_file_version();
-        uint8_t *data = NULL;
-        bool file_changed = (new_file_version > 0) && 
-                            (new_file_version != file_version);
-        
-        if (file_changed) {
-            size_t data_size;
-            file_version = new_file_version;
-            debug_info("scheduler_thread() File changed!\n");
-            data_size = read_file_from_disk(&data);
-            if (data) {
-                process_schedule_data(data_size, data);
-                free(data);
-            }
-        }
- /*
-  TODO: See if any blocking needs to be done or changed ...
-  * either file_changed or a condition in the schedule 
-  */
         struct timespec tm;
         int info_period = 3;
-    
+   
+        pthread_mutex_lock( &schedule_lock );
         if (0 == clock_gettime(CLOCK_REALTIME, &tm) && current_schedule) {
             static char *current_blocked_macs = NULL;
             char *blocked_macs;
@@ -96,53 +135,32 @@ void *scheduler_thread(void *args)
                         free(current_blocked_macs);
                         current_blocked_macs = strdup(blocked_macs);  
                         free(blocked_macs);
+            
+                        /* TODO do something other than debug prints ;-) */
+                        debug_info( "List of MACs that need to be blocked: %s\n",
+                                    current_blocked_macs );
                     } else {/* No Change In Schedule */
                         if (0 == (info_period++ % 3)) {/* Reduce Clutter */
                             debug_info("scheduler_thread(): No Change\n");
                         }
                         free(blocked_macs);
-                        sleep(SLEEP_TIME);
-                        continue;
                     }
                 } else {
                     free(current_blocked_macs);
                     current_blocked_macs = NULL;
                 }
             }
-            
-            /* TODO do something other than debug prints ;-) */
-            debug_info("List of MACs that need to be blocked:\n");
-            debug_info("%s\n", current_blocked_macs);
-            debug_info("End of List of MACs that need to be blocked:\n");
 
         }
+        pthread_mutex_unlock( &schedule_lock );
         
         sleep(SLEEP_TIME);
     }
     
-    
-    
+    pthread_mutex_destroy(&schedule_lock);
     return NULL;    
 }
 
-
-/*----------------------------------------------------------------------------*/
-/*                             Internal functions                             */
-/*----------------------------------------------------------------------------*/
-void process_schedule_data(size_t len, uint8_t *data) 
-{
-    if (NULL != current_schedule) {
-        destroy_schedule(current_schedule);
-    }
-    
-    debug_info("process_schedule_data()\n");
-    if (0 != decode_schedule(len, data, &current_schedule)) {
-         destroy_schedule(current_schedule);
-         current_schedule =NULL;
-         debug_error("process_schedule_data() Failed to decode\n");
-         return;
-    }
-}
 
 static void sig_handler(int sig)
 {
