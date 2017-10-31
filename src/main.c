@@ -28,6 +28,7 @@
 #include "schedule.h"
 #include "wrp_interface.h"
 #include "scheduler.h"
+#include "process_data.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -53,6 +54,7 @@
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 static void sig_handler(int sig);
+static void import_existing_schedule( const char *data_file, const char *md5_file );
 static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
                      char *md5_file );
 
@@ -83,6 +85,7 @@ int main( int argc, char **argv)
     int item = 0;
     int opt_index = 0;
     int rv = -1;
+    pthread_t thread_id;
 
     signal(SIGTERM, sig_handler);
     signal(SIGINT, sig_handler);
@@ -119,10 +122,10 @@ int main( int argc, char **argv)
         }
     }
 
-    pthread_mutex_init(&schedule_file_lock, NULL);
-    pthread_t thread_id;
-    pthread_create (&thread_id, NULL, scheduler_thread, NULL);
-    sleep(1);
+    scheduler_start( &thread_id );
+
+    import_existing_schedule( data_file, md5_file );
+
     
     if( (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
@@ -140,8 +143,6 @@ int main( int argc, char **argv)
     if( NULL != cfg.parodus_url )   free( (char*) cfg.parodus_url );
     if( NULL != cfg.client_url )    free( (char*) cfg.client_url );
 
-    pthread_mutex_destroy(&schedule_file_lock);
-    
     return rv;
 }
 
@@ -172,6 +173,20 @@ static void sig_handler(int sig)
     } else {
         debug_info("Signal %d received!\n", sig);
         exit(0);
+    }
+}
+
+static void import_existing_schedule( const char *data_file, const char *md5_file )
+{
+    size_t len;
+    uint8_t *data;
+
+    (void) md5_file;
+
+    len = read_file_from_disk( data_file, &data );
+    if( 0 < len ) {
+        process_schedule_data( len, data );
+        free( data );
     }
 }
 
@@ -214,7 +229,7 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
             wrp_msg_t response;
 
             debug_info("Got something from parodus.\n");
-            rv = wrp_process(wrp_msg, &response);
+            rv = wrp_process(data_file, md5_file, wrp_msg, &response);
             if( 0 == rv ) {
                 libparodus_send(hpd_instance, &response);
                 wrp_cleanup(&response);

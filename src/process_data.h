@@ -64,9 +64,9 @@ ssize_t process_message_ret( wrp_msg_t *msg, void **data);
  *
  * @param[in]  wrp REQ request
  *
- * @return size of payload, <0 otherwise.
+ * @return size of payload
  */
-ssize_t process_request_set( wrp_msg_t *req );
+ssize_t process_request_set( const char *filename, wrp_msg_t *req );
 
 /**
  * @brief Returns wrp Request-Response get response.
@@ -75,22 +75,10 @@ ssize_t process_request_set( wrp_msg_t *req );
  *
  * @param[out] wrp REQ response
  *
- * @return size of dat buffer retrieved, <0 otherwise.
+ * @return size of data buffer retrieved
  */
-ssize_t process_request_get( wrp_msg_t *resp );
+size_t process_request_get( const char *filename, wrp_msg_t *resp );
 
-
-/**
- * @brief Returns file version of the schedule
- * 
- * @note Locks/UnLocks the mutex for acccess.
- *
- * @param none
- *
- * @return version number 
- * 
- */
-int32_t get_schedule_file_version(void);
 
 /**
  * @brief reads the file.
@@ -102,7 +90,7 @@ int32_t get_schedule_file_version(void);
  * @return size of the file 
  * 
  */
-size_t read_file_from_disk( uint8_t **data);
+size_t read_file_from_disk( const char *filename, uint8_t **data );
 
 #ifdef __cplusplus
 }

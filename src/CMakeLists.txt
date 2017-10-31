@@ -14,7 +14,7 @@
 
 set(PROJ_AKER aker)
 set(SOURCES wrp_interface.c decode.c time.c schedule.c main.c
-            process_data.c scheduler.c)
+            process_data.c scheduler.c schedule_print.c)
 
 
 add_executable(aker ${SOURCES})

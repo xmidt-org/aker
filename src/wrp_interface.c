@@ -44,9 +44,12 @@ typedef struct wrp_req_msg  req_msg_t;
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
+int wrp_process(const char *data_file, const char *md5_file,
+                wrp_msg_t *msg, wrp_msg_t *response)
 {
     wrp_msg_t *in_msg = msg;
+
+    (void) md5_file;
 
     memset(response, 0, sizeof(wrp_msg_t));
     switch (in_msg->msg_type) {
@@ -96,7 +99,7 @@ int wrp_process(wrp_msg_t *msg, wrp_msg_t *response)
             resp->source = strdup(req->dest);
             resp->dest   = strdup(req->source);
             if( NULL != strstr(req->dest, REQ_DEST) ) {
-                process_request_set(in_msg);
+                process_request_set(data_file, in_msg);
             }
             else {
                 debug_error("Request-Response message destination %s is invalid\n", req->dest);
