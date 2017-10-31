@@ -22,9 +22,9 @@
 #include "aker_log.h"
 
 
-#define WEEKLY_SCHEDULE   "weekly-schedule"
+#define WEEKLY_SCHEDULE   "weekly"
 #define MACS              "macs"
-#define ABSOLUTE_SCHEDULE "absolute-schedule"
+#define ABSOLUTE_SCHEDULE "absolute"
 
 #define UNPACKED_BUFFER_SIZE 2048
 char unpacked_buffer[UNPACKED_BUFFER_SIZE];
