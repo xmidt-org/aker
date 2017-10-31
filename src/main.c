@@ -121,17 +121,16 @@ int main( int argc, char **argv)
         }
     }
 
-    scheduler_start( &thread_id, firewall_cmd );
-
-    import_existing_schedule( data_file, md5_file );
-
-    
     if( (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
         (NULL != firewall_cmd) &&
         (NULL != data_file) &&
         (NULL != md5_file) )
     {
+        scheduler_start( &thread_id, firewall_cmd );
+
+        import_existing_schedule( data_file, md5_file );
+        
         main_loop(&cfg, firewall_cmd, data_file, md5_file);
         rv = 0;
     }

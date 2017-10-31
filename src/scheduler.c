@@ -127,20 +127,19 @@ void *scheduler_thread(void *args)
             static char *current_blocked_macs = NULL;
             char *blocked_macs;
             time_t unix_time = tm.tv_sec; // ignore tm.tv_nsec
+
             blocked_macs = get_blocked_at_time(current_schedule, unix_time);
              
             if (NULL == current_blocked_macs) {
                 if (NULL != blocked_macs) {
-                    current_blocked_macs = strdup(blocked_macs); 
-                    free(blocked_macs);
+                    current_blocked_macs = blocked_macs; 
                     call_firewall( firewall_cmd, current_blocked_macs );
                 }
             } else {
                 if (NULL != blocked_macs) {
                     if (0 != strcmp(current_blocked_macs, blocked_macs)) {
                         free(current_blocked_macs);
-                        current_blocked_macs = strdup(blocked_macs);  
-                        free(blocked_macs);
+                        current_blocked_macs = blocked_macs;  
             
                         call_firewall( firewall_cmd, current_blocked_macs );
                     } else {/* No Change In Schedule */
