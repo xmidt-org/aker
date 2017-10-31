@@ -33,6 +33,7 @@
 /* Local Functions and file-scoped variables */
 static void sig_handler(int sig);
 static void *scheduler_thread(void *args);
+static void call_firewall( const char* firewall_cmd, char *blocked );
 
 
 static schedule_t *current_schedule = NULL;
@@ -43,7 +44,7 @@ static pthread_mutex_t schedule_lock;
 /*----------------------------------------------------------------------------*/
 
 /* See scheduler.h for details. */
-int scheduler_start( pthread_t *thread )
+int scheduler_start( pthread_t *thread, const char *firewall_cmd )
 {
     pthread_t t, *p;
     pthread_mutex_init( &schedule_lock, NULL );
@@ -54,7 +55,7 @@ int scheduler_start( pthread_t *thread )
         p = thread;
     }
 
-    rv = pthread_create( p, NULL, scheduler_thread, NULL );
+    rv = pthread_create( p, NULL, scheduler_thread, (void*) firewall_cmd );
     if( 0 != rv ) {
         pthread_mutex_destroy(&schedule_lock);
     }
@@ -97,7 +98,7 @@ int process_schedule_data( size_t len, uint8_t *data )
  */
 void *scheduler_thread(void *args)
 {
-    (void ) args;
+    const char *firewall_cmd;
     #define SLEEP_TIME 5
     
     signal(SIGTERM, sig_handler);
@@ -112,6 +113,10 @@ void *scheduler_thread(void *args)
     signal(SIGQUIT, sig_handler);
     signal(SIGHUP, sig_handler);
     signal(SIGALRM, sig_handler);    
+
+    firewall_cmd = (const char*) args;
+
+    call_firewall( firewall_cmd, NULL );
 
     while (1) {
         struct timespec tm;
@@ -128,6 +133,7 @@ void *scheduler_thread(void *args)
                 if (NULL != blocked_macs) {
                     current_blocked_macs = strdup(blocked_macs); 
                     free(blocked_macs);
+                    call_firewall( firewall_cmd, current_blocked_macs );
                 }
             } else {
                 if (NULL != blocked_macs) {
@@ -136,9 +142,7 @@ void *scheduler_thread(void *args)
                         current_blocked_macs = strdup(blocked_macs);  
                         free(blocked_macs);
             
-                        /* TODO do something other than debug prints ;-) */
-                        debug_info( "List of MACs that need to be blocked: %s\n",
-                                    current_blocked_macs );
+                        call_firewall( firewall_cmd, current_blocked_macs );
                     } else {/* No Change In Schedule */
                         if (0 == (info_period++ % 3)) {/* Reduce Clutter */
                             debug_info("scheduler_thread(): No Change\n");
@@ -161,6 +165,40 @@ void *scheduler_thread(void *args)
     return NULL;    
 }
 
+/**
+ *  Takes the firewall cmd and the blocked list and makes the call.
+ *
+ *  @param firewall_cmd the firewall cmd to call
+ *  @param blocked      the list of mac addresses to block
+ */
+static void call_firewall( const char* firewall_cmd, char *blocked )
+{
+    if( NULL != firewall_cmd ) {
+        char *buf;
+        size_t len;
+
+        len = strlen( firewall_cmd );
+        if( NULL != blocked ) {
+            len++; /* for space between */
+            len += strlen( blocked );
+        }
+        len++; /* For trailing '\0' */
+
+        buf = (char*) malloc( len * sizeof(char) );
+        if( NULL != buf ) {
+            if( NULL != blocked ) {
+                sprintf( buf, "%s %s", firewall_cmd, blocked );
+            } else {
+                sprintf( buf, "%s", firewall_cmd );
+            }
+            debug_info( "Firewall command: '%s'\n", buf );
+            system( buf );
+            free( buf );
+        } else {
+            debug_error( "Failed to allocate buffer needed to call firewall cmd.\n" );
+        }
+    }
+}
 
 static void sig_handler(int sig)
 {

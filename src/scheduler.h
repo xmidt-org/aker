@@ -20,11 +20,12 @@
 /**
  *  Starts the scheduler thread
  *
- *  @param thread if not NULL the thread id is returned here, ignored otherwise
+ *  @param thread       if not NULL the thread id is returned here, ignored otherwise
+ *  @param firewall_cmd the firewall command to execute via system()
  *
  *  @return the result of thread creation
  */
-int scheduler_start( pthread_t *thread );
+int scheduler_start( pthread_t *thread, const char *firewall_cmd );
 
 /**
  *  Sends in data to make a new schedule and replace any existing ones.

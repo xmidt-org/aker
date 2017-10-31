@@ -55,8 +55,7 @@
 /*----------------------------------------------------------------------------*/
 static void sig_handler(int sig);
 static void import_existing_schedule( const char *data_file, const char *md5_file );
-static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
-                     char *md5_file );
+static int main_loop(libpd_cfg_t *cfg, char *firewall_cmd, char *data_file, char *md5_file );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -66,7 +65,7 @@ int main( int argc, char **argv)
     static const struct option options[] = {
         { "parodus-url",  required_argument, 0, 'p' },
         { "client-url",   required_argument, 0, 'c' },
-        { "firewall-cli", required_argument, 0, 'w' },
+        { "firewall-cmd", required_argument, 0, 'w' },
         { "data-file",    required_argument, 0, 'd' },
         { "md5-file",     required_argument, 0, 'm' },
         { 0, 0, 0, 0 }
@@ -79,7 +78,7 @@ int main( int argc, char **argv)
                         .client_url = NULL
                       };
 
-    char *firewall_cli = NULL;
+    char *firewall_cmd = NULL;
     char *data_file = NULL;
     char *md5_file = NULL;
     int item = 0;
@@ -109,7 +108,7 @@ int main( int argc, char **argv)
                 cfg.client_url = strdup(optarg);
                 break;
             case 'w':
-                firewall_cli = strdup(optarg);
+                firewall_cmd = strdup(optarg);
                 break;
             case 'd':
                 data_file = strdup(optarg);
@@ -122,24 +121,24 @@ int main( int argc, char **argv)
         }
     }
 
-    scheduler_start( &thread_id );
+    scheduler_start( &thread_id, firewall_cmd );
 
     import_existing_schedule( data_file, md5_file );
 
     
     if( (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
-        (NULL != firewall_cli) &&
+        (NULL != firewall_cmd) &&
         (NULL != data_file) &&
         (NULL != md5_file) )
     {
-        main_loop(&cfg, firewall_cli, data_file, md5_file);
+        main_loop(&cfg, firewall_cmd, data_file, md5_file);
         rv = 0;
     }
 
     if( NULL != md5_file )          free( md5_file );
     if( NULL != data_file )         free( data_file );
-    if( NULL != firewall_cli )      free( firewall_cli );
+    if( NULL != firewall_cmd )      free( firewall_cmd );
     if( NULL != cfg.parodus_url )   free( (char*) cfg.parodus_url );
     if( NULL != cfg.client_url )    free( (char*) cfg.client_url );
 
@@ -191,8 +190,7 @@ static void import_existing_schedule( const char *data_file, const char *md5_fil
 }
 
 
-static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
-                     char *md5_file )
+static int main_loop(libpd_cfg_t *cfg, char *firewall_cmd, char *data_file, char *md5_file )
 {
     int rv;
     wrp_msg_t *wrp_msg;
