@@ -182,14 +182,18 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
     msgpack_object_kv *kv = map->ptr;
     uint32_t cnt;
     time_t entry_time = 0;
-    
+
+    *t = NULL;
+
     for (cnt = 0;cnt < size; cnt++) {
         if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
             char buf[64];
             memset(buf, 0, 64);
-             memcpy(buf, key->via.str.ptr, key->via.str.size);
-             entry_time = val->via.u64;
-             debug_info("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
+            memcpy(buf, key->via.str.ptr, key->via.str.size);
+            entry_time = val->via.u64;
+            debug_info("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
+        } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_NIL) {
+            *t = create_schedule_event(0);
         } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_ARRAY) {
             msgpack_object *ptr = val->via.array.ptr;
             uint32_t array_size = 0;
