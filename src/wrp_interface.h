@@ -43,12 +43,15 @@ extern "C" {
  *
  *  @note The response WRP message needs to be cleaned up by the caller.
  *
- *  @param msg      [in]  incoming WRP data.
- *  @param response [in]  response WRP message.
+ *  @param data_file [in] the data file name
+ *  @param md5_file  [in] the md5 file name
+ *  @param msg       [in]  incoming WRP data.
+ *  @param response  [in]  response WRP message.
  *
  *  @return 0 if success, < 0 otherwise.
  */
-int wrp_process(wrp_msg_t *msg, wrp_msg_t *response);
+int wrp_process(const char *data_file, const char *md5_file,
+                wrp_msg_t *msg, wrp_msg_t *response);
 
 /**
  *  Cleanup WRP response returned by wrp_processing.

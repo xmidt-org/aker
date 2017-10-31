@@ -54,7 +54,7 @@
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 static void sig_handler(int sig);
-static void import_existing_schedule( void );
+static void import_existing_schedule( const char *data_file, const char *md5_file );
 static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
                      char *md5_file );
 
@@ -124,7 +124,7 @@ int main( int argc, char **argv)
 
     scheduler_start( &thread_id );
 
-    import_existing_schedule();
+    import_existing_schedule( data_file, md5_file );
 
     
     if( (NULL != cfg.parodus_url) &&
@@ -176,12 +176,14 @@ static void sig_handler(int sig)
     }
 }
 
-static void import_existing_schedule( void )
+static void import_existing_schedule( const char *data_file, const char *md5_file )
 {
     size_t len;
     uint8_t *data;
 
-    len = read_file_from_disk( "pcs.bin", &data );
+    (void) md5_file;
+
+    len = read_file_from_disk( data_file, &data );
     if( 0 < len ) {
         process_schedule_data( len, data );
         free( data );
@@ -227,7 +229,7 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cli, char *data_file,
             wrp_msg_t response;
 
             debug_info("Got something from parodus.\n");
-            rv = wrp_process(wrp_msg, &response);
+            rv = wrp_process(data_file, md5_file, wrp_msg, &response);
             if( 0 == rv ) {
                 libparodus_send(hpd_instance, &response);
                 wrp_cleanup(&response);

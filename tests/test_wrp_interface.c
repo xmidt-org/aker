@@ -137,7 +137,7 @@ void test_wrp_processing()
 
     for( i = 0; i < t_size; i++ ) {
         wrp_msg_t msg;
-        int rv = wrp_process(&(tests[i].s), &msg);
+        int rv = wrp_process("data", "md5", &(tests[i].s), &msg);
         CU_ASSERT(0 == rv);
         CU_ASSERT(tests[i].r.msg_type == msg.msg_type);
         CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.transaction_uuid, msg.u.req.transaction_uuid);
