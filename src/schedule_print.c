@@ -47,6 +47,11 @@ void print_schedule( schedule_t *s )
     size_t i;
     schedule_event_t *p;
 
+    if( NULL == s ) {
+        printf( "schedule {}\n" );
+        return;
+    }
+
     printf( "schedule {\n" );
     printf( "   s->mac_count: %zd\n", s->mac_count );
     for( i = 0; i < s->mac_count; i++ ) {
