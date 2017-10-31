@@ -50,12 +50,19 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
     *t = s; 
     
     if (NULL == s) {
-        return -1;
+        return -2;
     }
     
     debug_print("decode_schedule - msgpack_unpacked_init\n");
     msgpack_unpacked_init(&result);
     ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
+    
+    if (0 == off) {
+        destroy_schedule(s);
+        *t = NULL;
+        return -3;
+    }
+    
     while (ret == MSGPACK_UNPACK_SUCCESS) {
         debug_print("decode_schedule - MSGPACK_UNPACK_SUCCESS\n");
         msgpack_object obj = result.data;
@@ -82,7 +89,8 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
                 decode_macs_table(key, val, &s);
                 } else {
                     debug_error("decode_schedule() can't handle object type\n");
-                    assert(0);
+                    ret_val = -4;
+                    break;
                 }
             p++;
             key = &p->key;
@@ -92,23 +100,28 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
         ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
     } else {
             debug_error("Unexpected result in decode_schedule()\n");
-            msgpack_unpacked_destroy(&result);
-            destroy_schedule(s);
-            *t = NULL;
-            return -1;
+            ret_val = -5;
+            break;
     }
-        msgpack_unpacked_destroy(&result);
 
         if (ret == MSGPACK_UNPACK_CONTINUE) {
             debug_info("All msgpack_object in the buffer is consumed.\n");
         }
         else if (ret == MSGPACK_UNPACK_PARSE_ERROR) {
             debug_error("The data in the buf is invalid format.\n");
-            destroy_schedule(s);
-            *t = NULL;
-            return -2;
+            ret_val = -6;
+            break;
         }
+
+        msgpack_unpacked_destroy(&result);
     }
+
+    if (0 != ret_val) {
+        msgpack_unpacked_destroy(&result);
+        destroy_schedule(s);
+       *t = NULL;
+    }
+
     return ret_val;
 }
 
