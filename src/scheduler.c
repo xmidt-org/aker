@@ -38,7 +38,7 @@ static void process_schedule_data(size_t len, uint8_t *data);
 
 void *scheduler_thread(void *args)
 {
-    int32_t file_version = 0;
+    int32_t file_version = -1;
  
     (void ) args;
     #define SLEEP_TIME 5
