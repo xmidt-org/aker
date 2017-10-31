@@ -38,7 +38,7 @@ static void process_schedule_data(size_t len, uint8_t *data);
 
 void *scheduler_thread(void *args)
 {
-    int32_t file_version = 0;
+    int32_t file_version = -1;
  
     (void ) args;
     #define SLEEP_TIME 5
@@ -62,7 +62,7 @@ void *scheduler_thread(void *args)
         bool file_changed = (new_file_version > 0) && 
                             (new_file_version != file_version);
         
-        if (file_changed) {
+        if (file_changed || (-1 == file_version)) {
             size_t data_size;
             file_version = new_file_version;
             debug_info("scheduler_thread() File changed!\n");
