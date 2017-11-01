@@ -25,6 +25,9 @@
 #define WEEKLY_SCHEDULE   "weekly"
 #define MACS              "macs"
 #define ABSOLUTE_SCHEDULE "absolute"
+#define RELATIVE_TIME_STR "time"
+#define UNIX_TIME_STR     "unix-time"
+#define INDEXES_STR       "indexes"
 
 #define UNPACKED_BUFFER_SIZE 2048
 char unpacked_buffer[UNPACKED_BUFFER_SIZE];
@@ -33,6 +36,9 @@ static int decode_schedule_table   (msgpack_object *key, msgpack_object *val, sc
 static int decode_macs_table       (msgpack_object *key, msgpack_object *val, schedule_t **t);
 
 static int process_map(msgpack_object_map *, schedule_event_t **t);
+
+/* Return true on match of key->via.str.ptr of size key->via.str.size */
+static bool name_match(msgpack_object *key, const char *name);
 
 int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
     int ret_val = 0;
@@ -186,7 +192,10 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
     *t = NULL;
 
     for (cnt = 0;cnt < size; cnt++) {
-        if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
+        if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_POSITIVE_INTEGER
+            && (name_match(key, UNIX_TIME_STR) || name_match(key, RELATIVE_TIME_STR))
+           )
+        {
             char buf[64];
             memset(buf, 0, 64);
             memcpy(buf, key->via.str.ptr, key->via.str.size);
@@ -194,18 +203,19 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
             debug_info("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
         } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_NIL) {
             *t = create_schedule_event(0);
-        } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_ARRAY) {
-            msgpack_object *ptr = val->via.array.ptr;
-            uint32_t array_size = 0;
-            *t = create_schedule_event(val->via.array.size);
-            for (;array_size < (val->via.array.size); array_size++) {
-                (*t)->block[array_size] = ptr->via.u64;
-                debug_info("Array Element[%d] = %d block[] %d\n", array_size, (uint32_t) ptr->via.u64, (*t)->block[array_size]);
-                ptr++;
-            }
-            
-            printf("\n");
-            (void ) ptr;(void ) array_size;
+        } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_ARRAY
+                  && name_match(key, INDEXES_STR)
+                  )
+               {
+                msgpack_object *ptr = val->via.array.ptr;
+                uint32_t array_size = 0;
+
+                *t = create_schedule_event(val->via.array.size);
+                for (;array_size < (val->via.array.size); array_size++) {
+                        (*t)->block[array_size] = ptr->via.u64;
+                        debug_info("Array Element[%d] = %d block[] %d\n", array_size, (uint32_t) ptr->via.u64, (*t)->block[array_size]);
+                        ptr++;
+                    }
         }
         
         kv++;
@@ -218,4 +228,12 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
     }
     printf("\n");
     return 1;
+}
+
+
+static bool name_match(msgpack_object *key, const char *name)
+{
+  bool result = (0 == strncmp(key->via.str.ptr, name, key->via.str.size));
+
+  return result;
 }
