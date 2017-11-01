@@ -58,6 +58,12 @@ time_t convert_unix_time_to_weekly(time_t unixtime)
     return seconds_since_sunday_midnght;
 }
 
+/* See time.h for details. */
+time_t convert_weekly_time_to_unix(time_t weekly_time)
+{
+    return weekly_time;
+}
+
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/

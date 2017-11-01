@@ -190,7 +190,7 @@ void destroy_schedule( schedule_t *s )
 
 
 /* See schedule.h for details. */
-char* get_blocked_at_time( schedule_t *s, time_t unixtime )
+char* get_blocked_at_time( schedule_t *s, time_t unixtime, time_t *next_unixtime )
 {
     schedule_event_t *abs_prev, *abs_cur, *w_prev, *w_cur;
     char *rv;
@@ -220,6 +220,7 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
             if( (NULL != abs_cur) && (abs_prev->time <= unixtime) ) {
                 /* In the absolute schedule */
                 rv = __convert_event_to_string( s, abs_prev );
+                *next_unixtime = abs_cur->time;
                 goto done;
             }
    
@@ -245,13 +246,19 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
          * as it's in the past.  Otherwise use the weekly schedule. */
         if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
             rv = __convert_event_to_string( s, abs_prev );
+            *next_unixtime = s->absolute->time;
         } else {
             rv = __convert_event_to_string( s, w_prev );
+            if( NULL != w_cur ) {
+                *next_unixtime = convert_weekly_time_to_unix(w_cur->time);
+            } else {
+                *next_unixtime = convert_weekly_time_to_unix(s->weekly->time);
+            }
         }
     }
 
 done:
-    printf( "Time: %ld (%ld) -> '%s'\n", unixtime, weekly, rv );
+    debug_print( "Time: %ld (%ld) -> '%s'\n", unixtime, weekly, rv );
     return rv;
 }
 
