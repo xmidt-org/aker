@@ -123,7 +123,8 @@ void destroy_schedule( schedule_t *s );
  *
  *  @param s             [in]  the schedule to apply
  *  @param unixtime      [in]  the unixtime representation
- *  @param next_unixtime [out] the next timestamp, in unixtime representation, from the schedule that is imminent.
+ *  @param next_unixtime [out] the next imminent timestamp 
+ *                             in unixtime representation from the schedule.
  *
  *  @return the string with the list of blocked addresses (may be NULL and valid)
  */
