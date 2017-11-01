@@ -33,4 +33,15 @@
  */
 time_t convert_unix_time_to_weekly( time_t unixtime );
 
+/**
+ *  Does the conversion from weekly time, seconds since Sunday midnight
+ *  to unixtime.
+ *
+ *  @param weekly_time the relative/weekly time in seconds since Sunday midnight, 
+ *                     i.e. Saturday 23:59:59 + one second, to convert from
+ *
+ *  @return the time since Epoch in seconds
+ */
+time_t convert_weekly_time_to_unix( time_t weekly_time );
+
 #endif

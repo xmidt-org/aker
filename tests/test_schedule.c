@@ -107,6 +107,12 @@ time_t convert_unix_time_to_weekly( time_t unixtime )
     return unixtime - 1234000 + 11;
 }
 
+time_t convert_weekly_time_to_unix( time_t weekly_time )
+{
+    //printf( "unix: %ld -> rel: %ld\n", unixtime, (unixtime - 1234000 + 11) );
+    return weekly_time + 1234000 + 11;
+}
+
 void test_mac_validator( void )
 {
     CU_ASSERT( 0 == __validate_mac("11:22:33:aa:bb:CC", 17) );
@@ -123,6 +129,7 @@ void test_simple_case( void )
     schedule_event_t *e;
     char *block;
     int rv;
+    time_t next_unixtime;
 
     s = create_schedule();
     CU_ASSERT( NULL != s );
@@ -170,27 +177,27 @@ void test_simple_case( void )
 
     print_schedule( s );
 
-    block = get_blocked_at_time( s, 1233999 );
+    block = get_blocked_at_time( s, 1233999, &next_unixtime );
     CU_ASSERT_STRING_EQUAL("22:33:44:55:66:aa", block);
     if( NULL != block ) free(block);
 
-    block = get_blocked_at_time( s, 1234000 );
+    block = get_blocked_at_time( s, 1234000, &next_unixtime );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
     if( NULL != block ) free(block);
 
-    block = get_blocked_at_time( s, 1234001 );
+    block = get_blocked_at_time( s, 1234001, &next_unixtime );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
     if( NULL != block ) free(block);
 
-    block = get_blocked_at_time( s, 1234010 );
+    block = get_blocked_at_time( s, 1234010, &next_unixtime );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB", block);
     if( NULL != block ) free(block);
 
-    block = get_blocked_at_time( s, 1234011 );
+    block = get_blocked_at_time( s, 1234011, &next_unixtime );
     CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB", block);
     if( NULL != block ) free(block);
 
-    block = get_blocked_at_time( s, 1234012 );
+    block = get_blocked_at_time( s, 1234012, &next_unixtime );
     CU_ASSERT_STRING_EQUAL("11:22:33:44:55:66", block);
     if( NULL != block ) free(block);
 

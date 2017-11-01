@@ -58,6 +58,27 @@ time_t convert_unix_time_to_weekly(time_t unixtime)
     return seconds_since_sunday_midnght;
 }
 
+/* See time.h for details. */
+time_t convert_weekly_time_to_unix(time_t weekly_time)
+{
+    struct timespec tm;
+    time_t current_unix_time = 0, current_weekly_time = 0, unix_time = 0;
+
+    if( 0 == clock_gettime(CLOCK_REALTIME, &tm) ) {
+        current_unix_time = tm.tv_sec;
+
+        /* Find current time in seconds since past Saturday 23:59:59 + one second */
+        current_weekly_time = convert_unix_time_to_weekly(current_unix_time);
+
+        /* Deduct current weekly time to determine time at Saturday 23:59:59 + one second since Epoch,
+         * add weekly time to convert weekly time to seconds since Epoch.
+         */
+        unix_time = current_unix_time - current_weekly_time + weekly_time;
+    }
+
+    return unix_time;
+}
+
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
