@@ -71,7 +71,7 @@ int main( int argc, char **argv)
         { 0, 0, 0, 0 }
     };
 
-    libpd_cfg_t cfg = { .service_name = "iot", //"parental-control",
+    libpd_cfg_t cfg = { .service_name = "parental-control",
                         .receive = true,
                         .keepalive_timeout_secs = 64,
                         .parodus_url = NULL,
@@ -232,7 +232,7 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cmd, char *data_file, char
                 wrp_cleanup(&response);
             }
         } else if( 1 == rv || 2 == rv ) {
-            debug_info("Timed out or message closed.\n");
+            debug_print("Timed out or message closed.\n");
             continue;
         } else {
             debug_info("Libparodus failed to receive message: '%s'\n",libparodus_strerror(rv));
