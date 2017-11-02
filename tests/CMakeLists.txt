@@ -48,9 +48,16 @@ add_executable(test_process_data test_process_data.c ../src/process_data.c)
 target_link_libraries (test_process_data ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
-#   test_process_data
+#   test_decode
 #-------------------------------------------------------------------------------
 add_test(NAME test_decode COMMAND ${MEMORY_CHECK} ./test_decode)
 add_executable(test_decode test_decode.c ../src/decode.c ../src/schedule.c ../src/time.c)
 target_link_libraries (test_decode ${AKER_COMMON_LIBS})
+
+#-------------------------------------------------------------------------------
+#   test_md5
+#-------------------------------------------------------------------------------
+add_test(NAME test_md5 COMMAND ${MEMORY_CHECK} ./test_md5)
+add_executable(test_md5 test_md5.c ../src/process_data.c ../src/aker_md5.c ../src/md5.c)
+target_link_libraries (test_md5 ${AKER_COMMON_LIBS})
 
