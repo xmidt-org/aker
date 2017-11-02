@@ -144,7 +144,7 @@ void *scheduler_thread(void *args)
                         call_firewall( firewall_cmd, current_blocked_macs );
                     } else {/* No Change In Schedule */
                         if (0 == (info_period++ % 3)) {/* Reduce Clutter */
-                            debug_info("scheduler_thread(): No Change\n");
+                            debug_print("scheduler_thread(): No Change\n");
                         }
                         free(blocked_macs);
                     }
