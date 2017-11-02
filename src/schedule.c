@@ -246,14 +246,20 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime, time_t *next_unixtime
          * as it's in the past.  Otherwise use the weekly schedule. */
         if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
             rv = __convert_event_to_string( s, abs_prev );
-            *next_unixtime = s->absolute->time;
         } else {
             rv = __convert_event_to_string( s, w_prev );
             if( NULL != w_cur ) {
-                *next_unixtime = convert_weekly_time_to_unix(w_cur->time);
-            } else {
-                *next_unixtime = convert_weekly_time_to_unix(s->weekly->time);
+                *next_unixtime = (unixtime - weekly) + w_cur->time;
+                goto done;
             }
+        }
+
+        /* Either the last absolute event or the last weekly event was just processed. 
+         * The next event is either the first absolute event or first weekly event */
+        time_t first_weekly = (unixtime - weekly) + s->weekly->time + (7 * 24 * 3600);
+        *next_unixtime = s->absolute->time;
+        if( s->absolute->time > first_weekly ) {
+            *next_unixtime = first_weekly;
         }
     }
 

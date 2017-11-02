@@ -102,7 +102,6 @@ void *scheduler_thread(void *args)
     struct timespec tm;
     time_t unix_time = 0;
     pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
-    #define SLEEP_TIME 5
     
     signal(SIGTERM, sig_handler);
     signal(SIGINT, sig_handler);
@@ -126,7 +125,6 @@ void *scheduler_thread(void *args)
             unix_time = tm.tv_sec; // ignore tm.tv_nsec
             break;
         }
-        sleep(SLEEP_TIME);
     }
 
     while( true ) {
