@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-
+#include <limits.h>
 
 #include "schedule.h"
 #include "time.h"
@@ -48,7 +48,7 @@
 /*----------------------------------------------------------------------------*/
 char* __convert_event_to_string( schedule_t *s, schedule_event_t *e );
 int __validate_mac( const char *mac, size_t len );
-
+time_t __get_next_unixtime(schedule_t *s, time_t unixtime, time_t weekly);
 
 
 /*----------------------------------------------------------------------------*/
@@ -248,19 +248,9 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime, time_t *next_unixtime
             rv = __convert_event_to_string( s, abs_prev );
         } else {
             rv = __convert_event_to_string( s, w_prev );
-            if( NULL != w_cur ) {
-                *next_unixtime = (unixtime - weekly) + w_cur->time;
-                goto done;
-            }
         }
 
-        /* Either the last absolute event or the last weekly event was just processed. 
-         * The next event is either the first absolute event or first weekly event */
-        time_t first_weekly = (unixtime - weekly) + s->weekly->time + (7 * 24 * 3600);
-        *next_unixtime = s->absolute->time;
-        if( s->absolute->time > first_weekly ) {
-            *next_unixtime = first_weekly;
-        }
+        *next_unixtime = __get_next_unixtime( s, unixtime, weekly);
     }
 
 done:
@@ -392,4 +382,56 @@ int __validate_mac( const char *mac, size_t len )
     }
 
     return mask;
+}
+
+
+/**
+ * Helper to find the next imminent schedule event and return its time since Epoch.
+ *
+ * @param s        schedule
+ * @param unixtime the unixtime representation.
+ * @param weekly   the same time represented in seconds since Saturday 23:59:59 + one second
+ *
+ * @return the Epoch time of next imminent schedule event
+ */
+time_t __get_next_unixtime(schedule_t *s, time_t unixtime, time_t weekly)
+{
+    schedule_event_t *abs_prev, *abs_cur, *w_prev, *w_cur;
+    time_t next_unixtime = 0;
+
+    if( NULL != s ) {
+        next_unixtime = INT_MAX;
+        /* Check absolute schedule first */
+        abs_prev = s->absolute;
+        abs_cur = NULL;
+        if( NULL != abs_prev ) {
+            abs_cur = abs_prev->next;
+        }
+
+        while( (NULL != abs_cur) ) {
+            if( (abs_cur->time > unixtime) && (abs_cur->time < next_unixtime) ) {
+                next_unixtime = abs_cur->time;
+            }
+            abs_prev = abs_cur;
+            abs_cur = abs_cur->next;
+        }
+
+        /* Check the relative schedule next */
+        time_t w_cur_unixtime;
+        w_prev = s->weekly;
+        w_cur = NULL;
+        if( NULL != w_prev ) {
+            w_cur = w_prev->next;
+        }
+
+        while( NULL != w_cur ) {
+            w_cur_unixtime = (unixtime - weekly) + w_cur->time;
+            if( (w_cur->time > weekly) && (w_cur_unixtime < next_unixtime) ) {
+                next_unixtime = w_cur_unixtime;
+            }
+            w_prev = w_cur;
+            w_cur = w_cur->next;
+        }
+    }
+    return next_unixtime;
 }
