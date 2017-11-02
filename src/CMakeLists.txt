@@ -14,7 +14,7 @@
 
 set(PROJ_AKER aker)
 set(SOURCES wrp_interface.c decode.c time.c schedule.c main.c
-            process_data.c scheduler.c schedule_print.c)
+            process_data.c scheduler.c schedule_print.c aker_md5.c md5.c)
 
 
 add_executable(aker ${SOURCES})
@@ -30,5 +30,6 @@ target_link_libraries (aker
     -lcimplog
     -lpthread
     -lrt
+    -lcrypt
     )
 install (TARGETS aker DESTINATION bin)
