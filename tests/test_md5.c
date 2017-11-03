@@ -75,16 +75,15 @@ void md5_test3()
     if (size > 0) {
         CU_ASSERT(0 == compute_byte_stream_md5(data, size, &md5_sig_2[0]));
         CU_ASSERT(0 == memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
-        data[size >> 1] ^= data[size >> 1];
+        data[size >> 1] = ~data[size >> 1];
         compute_byte_stream_md5(data, size, &md5_sig_2[0]);
+        CU_ASSERT(0 != memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
     }
 
     if (NULL != data) {
         free(data);
     }
     
-    CU_ASSERT(0 != memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
-
 }
 
 void add_suites( CU_pSuite *suite )
