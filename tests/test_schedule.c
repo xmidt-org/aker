@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include <CUnit/Basic.h>
 
@@ -34,7 +35,28 @@
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
-/* none */
+typedef struct schedule_input {
+    time_t   time;
+    uint8_t  block_count;
+    uint32_t block[2];
+} input_t;
+
+typedef struct get_blocked_at_time_test {
+    time_t   unixtime;
+    char     *macs;
+    time_t   next_unixtime;
+} block_test_t;
+
+typedef struct schedule_test {
+    char         **macs;
+    size_t       macs_size;
+    input_t      *absolute;
+    size_t       absolute_size;
+    input_t      *weekly;
+    size_t       weekly_size;
+    block_test_t *block_test;
+    size_t       block_test_size;
+} schedule_test_t;
 
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
@@ -117,94 +139,237 @@ void test_mac_validator( void )
     CU_ASSERT( 0 != __validate_mac(NULL, 17) );
 }
 
-void test_simple_case( void )
+void run_schedule_test( schedule_test_t *t )
 {
     schedule_t *s;
     schedule_event_t *e;
     char *block;
     int rv;
+    uint8_t i, j;
+    time_t next_unixtime;
 
     s = create_schedule();
     CU_ASSERT( NULL != s );
 
-    rv = create_mac_table( s, 3 );
+    rv = create_mac_table( s, 5 );
     CU_ASSERT( 0 == rv );
 
-    CU_ASSERT( 0 != set_mac_index(s, NULL, 17, 0) );
-    CU_ASSERT( 0 != set_mac_index(s, "11:22:33:44:55:66", 17, 12) );
-    CU_ASSERT( 0 == set_mac_index(s, "11:22:33:44:55:66", 17, 0) );
-    CU_ASSERT( 0 == set_mac_index(s, "22:33:44:55:66:aa", 17, 1) );
-    CU_ASSERT( 0 == set_mac_index(s, "33:44:55:66:aa:BB", 17, 2) );
+    for( i = 0; i < t->macs_size/sizeof(char *); i++ ) {
+        CU_ASSERT( 0 == set_mac_index(s, t->macs[i], 17, i) );
+    }
 
+    /* Add absolute entries */
+    for( i = 0; i < t->absolute_size/sizeof(input_t); i++ ) {
+        e = create_schedule_event( t->absolute[i].block_count );
+        CU_ASSERT( NULL != e );
+        e->time = t->absolute[i].time;
+        for( j = 0; j < t->absolute[i].block_count; j++) {
+            e->block[j] = t->absolute[i].block[j];
+        }
+        insert_event( &s->absolute, e );
+    }
 
-    /* Add an entry */
-    e = create_schedule_event( 2 );
-    CU_ASSERT( NULL != e );
-    e->time = 1234000;
-    e->block[0] = 2;
-    e->block[1] = 1;
-    insert_event( &s->absolute, e );
-
-    /* Add an entry */
-    e = create_schedule_event( 1 );
-    CU_ASSERT( NULL != e );
-    e->time = 1234010;
-    e->block[0] = 2;
-    insert_event( &s->absolute, e );
-
-    /* Add an entry */
-    e = create_schedule_event( 1 );
-    CU_ASSERT( NULL != e );
-    e->time = 23;
-    e->block[0] = 0;
-    insert_event( &s->weekly, e );
-
-    /* Add an entry */
-    e = create_schedule_event( 1 );
-    CU_ASSERT( NULL != e );
-    e->time = 24;
-    e->block[0] = 1;
-    insert_event( &s->weekly, e );
+    /* Add weekly entry */
+    for( i = 0; i < t->weekly_size/sizeof(input_t); i++ ) {
+        e = create_schedule_event( t->weekly[i].block_count );
+        CU_ASSERT( NULL != e );
+        e->time = t->weekly[i].time;
+        for( j = 0; j < t->weekly[i].block_count; j++) {
+            e->block[j] = t->weekly[i].block[j];
+        }
+        insert_event( &s->weekly, e );
+    }
 
     finalize_schedule( s );
 
     print_schedule( s );
 
-    block = get_blocked_at_time( s, 1233999 );
-    CU_ASSERT_STRING_EQUAL("22:33:44:55:66:aa", block);
-    if( NULL != block ) free(block);
-
-    block = get_blocked_at_time( s, 1234000 );
-    CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
-    if( NULL != block ) free(block);
-
-    block = get_blocked_at_time( s, 1234001 );
-    CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB 22:33:44:55:66:aa", block);
-    if( NULL != block ) free(block);
-
-    block = get_blocked_at_time( s, 1234010 );
-    CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB", block);
-    if( NULL != block ) free(block);
-
-    block = get_blocked_at_time( s, 1234011 );
-    CU_ASSERT_STRING_EQUAL("33:44:55:66:aa:BB", block);
-    if( NULL != block ) free(block);
-
-    block = get_blocked_at_time( s, 1234012 );
-    CU_ASSERT_STRING_EQUAL("11:22:33:44:55:66", block);
-    if( NULL != block ) free(block);
-
-#if 0
-    {
-        int i;
-        for( i = 1233998; i < 1234030; i++ ) {
-            block = get_blocked_at_time( s, i );
-            if( NULL != block ) free(block);
+    for( i = 0; i < t->block_test_size/sizeof(block_test_t); i++ ) {
+        block = get_blocked_at_time( s, t->block_test[i].unixtime );
+        if( NULL != t->block_test[i].macs && NULL != block ) {
+            CU_ASSERT_STRING_EQUAL(t->block_test[i].macs, block);
         }
+        else if( NULL == t->block_test[i].macs && NULL == block ) {
+            CU_PASS("Both expected and observed are NULL.");
+        }
+        else if( (NULL != t->block_test[i].macs && NULL == block) ||
+                 (NULL == t->block_test[i].macs && NULL != block) )
+        {
+            CU_FAIL("Both expected and observed are NOT EQUAL! One is NULL and the other NOT NULL!!");
+        }
+        next_unixtime = get_next_unixtime(s, t->block_test[i].unixtime);
+        CU_ASSERT(t->block_test[i].next_unixtime == next_unixtime);
+        if( NULL != block ) free(block);
     }
-#endif
 
     destroy_schedule( s );
+}
+
+void test_simple_case( void )
+{
+    char *mac_id[] = { "11:22:33:44:55:66", "22:33:44:55:66:aa", "33:44:55:66:aa:BB", };
+
+    input_t absolute[] = { 
+        { .time = 1234000, .block_count = 2, .block = { 2, 1 }, },
+        { .time = 1234010, .block_count = 1, .block = { 2 }, },
+    };
+    
+    input_t weekly[] = {
+        { .time = 23, .block_count = 1, .block = { 0 }, },
+        { .time = 24, .block_count = 1, .block = { 1 }, },
+    };
+    
+    block_test_t b_test[] = {
+        { .unixtime = 1233999, .macs = "22:33:44:55:66:aa",                   .next_unixtime = 1234000, },
+        { .unixtime = 1234000, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
+        { .unixtime = 1234001, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
+        { .unixtime = 1234010, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 1234012, },
+        { .unixtime = 1234011, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 1234012, },
+        { .unixtime = 1234012, .macs = "11:22:33:44:55:66",                   .next_unixtime = 1234013, },
+    };
+    
+    schedule_test_t test = { .macs = mac_id,       .macs_size = sizeof(mac_id),
+                             .absolute = absolute, .absolute_size = sizeof(absolute),
+                             .weekly = weekly,     .weekly_size = sizeof(weekly),
+                             .block_test = b_test, .block_test_size = sizeof(b_test),
+    };
+    
+    run_schedule_test(&test);
+}
+
+void test_another_usecase( void )
+{   
+    char *mac_id[] = { "11:22:33:44:55:66", "22:33:44:55:66:aa", "33:44:55:66:aa:BB", "44:55:66:aa:BB:cc", "55:66:aa:BB:cc:DD", };
+
+    input_t absolute[] = { 
+        { .time = 0,       .block_count = 2, .block = { 2, 1 }, },
+        { .time = 1234010, .block_count = 1, .block = { 2 }, },
+    };
+
+    input_t weekly[] = {
+        { .time = 23, .block_count = 1, .block = { 0 }, },
+        { .time = 24, .block_count = 1, .block = { 1 }, },
+    };
+
+    block_test_t b_test[] = {
+        { .unixtime = 1233999, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
+        { .unixtime = 1234000, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
+        { .unixtime = 1234001, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
+        { .unixtime = 1234010, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 1234012, },
+        { .unixtime = 1234011, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 1234012, },
+        { .unixtime = 1234012, .macs = "11:22:33:44:55:66",                   .next_unixtime = 1234013, },
+    };
+
+    schedule_test_t test = { .macs = mac_id,       .macs_size = sizeof(mac_id),
+                             .absolute = absolute, .absolute_size = sizeof(absolute),
+                             .weekly = weekly,     .weekly_size = sizeof(weekly),
+                             .block_test = b_test, .block_test_size = sizeof(b_test),
+    };
+
+    run_schedule_test(&test);
+}
+
+void test_no_schedule( void )
+{
+    char *mac_id[] = { "11:22:33:44:55:66", "22:33:44:55:66:aa", "33:44:55:66:aa:BB", "44:55:66:aa:BB:cc", "55:66:aa:BB:cc:DD", };
+
+    input_t absolute[] = {{0}};
+
+    input_t weekly[] = {{0}};
+
+    block_test_t b_test[] = {
+        { .unixtime = 1233999, .macs = NULL, .next_unixtime = INT_MAX, },
+        { .unixtime = 1234000, .macs = NULL, .next_unixtime = INT_MAX, },
+        { .unixtime = 1234001, .macs = NULL, .next_unixtime = INT_MAX, },
+        { .unixtime = 1234010, .macs = NULL, .next_unixtime = INT_MAX, },
+        { .unixtime = 1234011, .macs = NULL, .next_unixtime = INT_MAX, },
+        { .unixtime = 1234012, .macs = NULL, .next_unixtime = INT_MAX, },
+    };
+
+    schedule_test_t test = { .macs = mac_id,       .macs_size = sizeof(mac_id),
+                             .absolute = absolute, .absolute_size = sizeof(absolute),
+                             .weekly = weekly,     .weekly_size = sizeof(weekly),
+                             .block_test = b_test, .block_test_size = sizeof(b_test),
+    };
+
+    run_schedule_test(&test);
+}
+
+void test_only_one_absolute( void )
+{
+    char *mac_id[] = { "11:22:33:44:55:66", "22:33:44:55:66:aa", "33:44:55:66:aa:BB", "44:55:66:aa:BB:cc", "55:66:aa:BB:cc:DD", };
+
+    input_t absolute1[] = {
+        { .time = 0,       .block_count = 2, .block = { 2, 1 }, },
+    };
+
+    input_t absolute2[] = {
+        { .time = 1234010, .block_count = 1, .block = { 2 }, },
+    };
+
+    input_t weekly[] = {{0}};
+
+    block_test_t b_test1[] = {
+        { .unixtime = 1233999, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234000, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234001, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234010, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234011, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234012, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = INT_MAX, },
+    };
+
+    block_test_t b_test2[] = {
+        { .unixtime = 1233999, .macs = NULL,                .next_unixtime = INT_MAX, },
+        { .unixtime = 1234000, .macs = NULL,                .next_unixtime = INT_MAX, },
+        { .unixtime = 1234001, .macs = NULL,                .next_unixtime = INT_MAX, },
+        { .unixtime = 1234010, .macs = "33:44:55:66:aa:BB", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234011, .macs = "33:44:55:66:aa:BB", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234012, .macs = "33:44:55:66:aa:BB", .next_unixtime = INT_MAX, },
+    };
+
+    schedule_test_t test = { .macs = mac_id,        .macs_size = sizeof(mac_id),
+                             .absolute = absolute1, .absolute_size = sizeof(absolute1),
+                             .weekly = weekly,      .weekly_size = sizeof(weekly),
+                             .block_test = b_test1, .block_test_size = sizeof(b_test1),
+    };
+
+    run_schedule_test(&test);
+
+    test.absolute = absolute2;
+    test.absolute_size = sizeof(absolute2);
+    test.block_test = b_test2;
+    test.block_test_size = sizeof(b_test2);
+
+    run_schedule_test(&test);
+}
+
+void test_only_one_weekly( void )
+{
+    char *mac_id[] = { "11:22:33:44:55:66", "22:33:44:55:66:aa", "33:44:55:66:aa:BB", "44:55:66:aa:BB:cc", "55:66:aa:BB:cc:DD", };
+
+    input_t absolute[] = {{0}};
+
+    input_t weekly[] = {
+        { .time = 23, .block_count = 1, .block = { 0 }, },
+    };
+
+    block_test_t b_test[] = {
+        { .unixtime = 1233999, .macs = "11:22:33:44:55:66", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234000, .macs = "11:22:33:44:55:66", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234001, .macs = "11:22:33:44:55:66", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234010, .macs = "11:22:33:44:55:66", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234011, .macs = "11:22:33:44:55:66", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234012, .macs = "11:22:33:44:55:66", .next_unixtime = INT_MAX, },
+        { .unixtime = 1234013, .macs = "11:22:33:44:55:66", .next_unixtime = INT_MAX, },
+    };
+
+    schedule_test_t test = { .macs = mac_id,       .macs_size = sizeof(mac_id),
+                             .absolute = absolute, .absolute_size = sizeof(absolute),
+                             .weekly = weekly,     .weekly_size = sizeof(weekly),
+                             .block_test = b_test, .block_test_size = sizeof(b_test),
+    };
+
+    run_schedule_test(&test);
 }
 
 void add_suites( CU_pSuite *suite )
@@ -214,6 +379,10 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "Test decoder", test_decoder );
     CU_add_test( *suite, "Test MAC validator", test_mac_validator );
     CU_add_test( *suite, "Test simple case", test_simple_case );
+    CU_add_test( *suite, "Test another usecase", test_another_usecase);
+    CU_add_test( *suite, "Test no schedule", test_no_schedule);
+    //CU_add_test( *suite, "Test only one absolute event", test_only_one_absolute);
+    //CU_add_test( *suite, "Test only one weekly event", test_only_one_weekly);
 }
 
 /*----------------------------------------------------------------------------*/
