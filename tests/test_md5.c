@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <ctype.h>
 
 #include <CUnit/Basic.h>
 
@@ -32,12 +33,40 @@ static char *test_file_name;
 static unsigned char md5_sig_1[MD5_SIZE];
 static unsigned char md5_sig_2[MD5_SIZE];
 
+
 void md5_test1()
 {
     CU_ASSERT(0 == compute_file_md5(test_file_name, &md5_sig_1[0]));
 }
 
+#define MD5_SIG_FILE "md5_sig.out"
 void md5_test2()
+{
+    char buffer[256];
+    size_t size;
+    uint8_t *data;
+    int cnt;
+
+    
+    sprintf(buffer, "md5sum -b %s > %s", test_file_name, MD5_SIG_FILE);
+    if (0 == system(buffer)) {
+     size = read_file_from_disk(MD5_SIG_FILE, &data);
+     CU_ASSERT(size > 0);
+     memset(buffer, 0, 256);
+     
+     for (cnt = 0; cnt < MD5_SIZE; cnt++) {
+        sprintf(&buffer[cnt * 2], "%02x", md5_sig_1[cnt]);
+     }    
+    //  printf("\nmd5_sig1 %s\n", buffer);
+    //  printf("\nmd5sum   %s\n", data);
+     
+      CU_ASSERT(0 == strncmp(buffer, (char *) data, MD5_SIZE << 1));
+      
+     free(data);
+    }
+}
+
+void md5_test3()
 {
     size_t size;
     uint8_t *data;
@@ -64,6 +93,7 @@ void add_suites( CU_pSuite *suite )
     *suite = CU_add_suite( "tests", NULL, NULL );
     CU_add_test( *suite, "MD5 Test 1", md5_test1);
     CU_add_test( *suite, "MD5 Test 2", md5_test2);
+    CU_add_test( *suite, "MD5 Test 3", md5_test3);
 }
 
 /*----------------------------------------------------------------------------*/
