@@ -121,12 +121,14 @@ void destroy_schedule( schedule_t *s );
 /**
  *  Gets the string with the blocked MAC addresses at this time.
  *
- *  @param s       the schedule to apply
- *  @param unitime the unixtime representation
+ *  @param s             [in]  the schedule to apply
+ *  @param unixtime      [in]  the unixtime representation
+ *  @param next_unixtime [out] the next imminent timestamp 
+ *                             in unixtime representation from the schedule.
  *
  *  @return the string with the list of blocked addresses (may be NULL and valid)
  */
-char* get_blocked_at_time( schedule_t *s, time_t unixtime );
+char* get_blocked_at_time( schedule_t *s, time_t unixtime, time_t *next_unixtime );
 
 
 /**

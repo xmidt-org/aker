@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-
+#include <limits.h>
 
 #include "schedule.h"
 #include "time.h"
@@ -48,8 +48,7 @@
 /*----------------------------------------------------------------------------*/
 char* __convert_event_to_string( schedule_t *s, schedule_event_t *e );
 int __validate_mac( const char *mac, size_t len );
-
-
+time_t __get_next_unixtime(schedule_t *s, time_t unixtime, time_t weekly);
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -190,14 +189,14 @@ void destroy_schedule( schedule_t *s )
 
 
 /* See schedule.h for details. */
-char* get_blocked_at_time( schedule_t *s, time_t unixtime )
+char* get_blocked_at_time( schedule_t *s, time_t unixtime, time_t *next_unixtime )
 {
     schedule_event_t *abs_prev, *abs_cur, *w_prev, *w_cur;
     char *rv;
-    time_t weekly, last_abs;
+    time_t weekly, last_abs, event_unixtime = 0;
 
     weekly = convert_unix_time_to_weekly( unixtime );
-
+    debug_print("gbat - weekly = %ld\n", weekly);
     rv = NULL;
 
     if( NULL != s ) {
@@ -220,9 +219,11 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
             if( (NULL != abs_cur) && (abs_prev->time <= unixtime) ) {
                 /* In the absolute schedule */
                 rv = __convert_event_to_string( s, abs_prev );
+                event_unixtime = abs_prev->time;
+                debug_print("    #1 event_unixtime = %ld\n", event_unixtime);
                 goto done;
             }
-   
+
             last_abs = convert_unix_time_to_weekly( abs_prev->time );
         }
 
@@ -245,13 +246,22 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
          * as it's in the past.  Otherwise use the weekly schedule. */
         if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
             rv = __convert_event_to_string( s, abs_prev );
+            event_unixtime = abs_prev->time;
+            debug_print("    #2 event_unixtime = %ld\n", event_unixtime);
         } else {
             rv = __convert_event_to_string( s, w_prev );
+            event_unixtime = (unixtime - weekly) + w_prev->time;
+            debug_print("    #3 event_unixtime = %ld, w_prev - time = %ld\n", event_unixtime, w_prev->time);
         }
     }
 
 done:
-    printf( "Time: %ld (%ld) -> '%s'\n", unixtime, weekly, rv );
+    *next_unixtime = __get_next_unixtime( s, unixtime, weekly);
+    if( event_unixtime == *next_unixtime ) {
+        *next_unixtime = INT_MAX;
+    }
+
+    debug_info( "Time: %ld (%ld) -> '%s', %ld\n", unixtime, weekly, rv, *next_unixtime );
     return rv;
 }
 
@@ -380,3 +390,46 @@ int __validate_mac( const char *mac, size_t len )
 
     return mask;
 }
+
+
+/**
+ * Helper to find the next imminent schedule event and return its time since Epoch.
+ *
+ * @param s        schedule
+ * @param unixtime the unixtime representation.
+ * @param weekly   the same time represented in seconds since Saturday 23:59:59 + one second
+ *
+ * @return the Epoch time of next imminent schedule event
+ */
+time_t __get_next_unixtime(schedule_t *s, time_t unixtime, time_t weekly)
+{
+    schedule_event_t *abs_event, *w_event;
+    time_t next_unixtime = INT_MAX;
+
+    if( NULL != s ) {
+        /* Check absolute schedule first */
+        abs_event = s->absolute;
+        while( NULL != abs_event ) {
+            debug_print("_gnu - abs_event->time = %ld, unixtime = %ld, next_unixtime = %ld\n", abs_event->time, unixtime, next_unixtime);
+            if( (abs_event->time > unixtime) && (abs_event->time < next_unixtime) ) {
+                next_unixtime = abs_event->time;
+                debug_print("    next_unixtime #1 = %ld\n", next_unixtime);
+            }
+            abs_event = abs_event->next;
+        }
+
+        /* Check the relative schedule next */
+        w_event = s->weekly;
+        while( NULL != w_event ) {
+            time_t w_event_unixtime = (unixtime - weekly) + w_event->time;
+            debug_print("w_event->time = %ld, weekly = %ld, w_event_unixtime = %ld, next_unixtime = %ld\n", w_event->time, weekly, w_event_unixtime, next_unixtime);
+            if( (w_event->time > weekly) && (w_event_unixtime < next_unixtime) ) {
+                next_unixtime = w_event_unixtime;
+                debug_print("    next_unixtime #2 = %ld\n", next_unixtime);
+            }
+            w_event = w_event->next;
+        }
+    }
+    return next_unixtime;
+}
+

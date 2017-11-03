@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-
+#include <limits.h>
 
 #include "schedule.h"
 #include "process_data.h"
@@ -99,7 +99,9 @@ int process_schedule_data( size_t len, uint8_t *data )
 void *scheduler_thread(void *args)
 {
     const char *firewall_cmd;
-    #define SLEEP_TIME 5
+    struct timespec tm;
+    time_t unix_time = 0;
+    pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
     
     signal(SIGTERM, sig_handler);
     signal(SIGINT, sig_handler);
@@ -118,29 +120,35 @@ void *scheduler_thread(void *args)
 
     call_firewall( firewall_cmd, NULL );
 
-    while (1) {
-        struct timespec tm;
+    while( true ) {
+        if( 0 == clock_gettime(CLOCK_REALTIME, &tm) ) {
+            unix_time = tm.tv_sec; // ignore tm.tv_nsec
+            break;
+        }
+    }
+
+    while( true ) {
         int info_period = 3;
    
         pthread_mutex_lock( &schedule_lock );
-        if (0 == clock_gettime(CLOCK_REALTIME, &tm) && current_schedule) {
+        if( current_schedule ) {
             static char *current_blocked_macs = NULL;
             char *blocked_macs;
-            time_t unix_time = tm.tv_sec; // ignore tm.tv_nsec
+            time_t next_unixtime = INT_MAX;
 
-            blocked_macs = get_blocked_at_time(current_schedule, unix_time);
-             
+            blocked_macs = get_blocked_at_time(current_schedule, unix_time, &next_unixtime);
+
             if (NULL == current_blocked_macs) {
                 if (NULL != blocked_macs) {
-                    current_blocked_macs = blocked_macs; 
+                    current_blocked_macs = blocked_macs;
                     call_firewall( firewall_cmd, current_blocked_macs );
                 }
             } else {
                 if (NULL != blocked_macs) {
                     if (0 != strcmp(current_blocked_macs, blocked_macs)) {
                         free(current_blocked_macs);
-                        current_blocked_macs = blocked_macs;  
-            
+                        current_blocked_macs = blocked_macs;
+
                         call_firewall( firewall_cmd, current_blocked_macs );
                     } else {/* No Change In Schedule */
                         if (0 == (info_period++ % 3)) {/* Reduce Clutter */
@@ -153,11 +161,11 @@ void *scheduler_thread(void *args)
                     current_blocked_macs = NULL;
                 }
             }
-
+            tm.tv_sec = next_unixtime;
+            tm.tv_nsec = 0;
         }
+        pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
         pthread_mutex_unlock( &schedule_lock );
-        
-        sleep(SLEEP_TIME);
     }
     
     pthread_mutex_destroy(&schedule_lock);
