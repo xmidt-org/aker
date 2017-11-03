@@ -34,7 +34,7 @@
 static void sig_handler(int sig);
 static void *scheduler_thread(void *args);
 static void call_firewall( const char* firewall_cmd, char *blocked );
-
+static time_t get_unixtime(void);
 
 static schedule_t *current_schedule = NULL;
 static pthread_mutex_t schedule_lock;
@@ -120,12 +120,7 @@ void *scheduler_thread(void *args)
 
     call_firewall( firewall_cmd, NULL );
 
-    while( true ) {
-        if( 0 == clock_gettime(CLOCK_REALTIME, &tm) ) {
-            unix_time = tm.tv_sec; // ignore tm.tv_nsec
-            break;
-        }
-    }
+    unix_time = get_unixtime();
 
     while( true ) {
         int info_period = 3;
@@ -134,9 +129,8 @@ void *scheduler_thread(void *args)
         if( current_schedule ) {
             static char *current_blocked_macs = NULL;
             char *blocked_macs;
-            time_t next_unixtime = INT_MAX;
 
-            blocked_macs = get_blocked_at_time(current_schedule, unix_time, &next_unixtime);
+            blocked_macs = get_blocked_at_time(current_schedule, unix_time);
 
             if (NULL == current_blocked_macs) {
                 if (NULL != blocked_macs) {
@@ -161,10 +155,12 @@ void *scheduler_thread(void *args)
                     current_blocked_macs = NULL;
                 }
             }
-            tm.tv_sec = next_unixtime;
-            tm.tv_nsec = 0;
         }
+
+        tm.tv_sec = get_next_unixtime(current_schedule, unix_time);
+        tm.tv_nsec = 0;
         pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
+
         pthread_mutex_unlock( &schedule_lock );
     }
     
@@ -234,3 +230,19 @@ static void sig_handler(int sig)
     }
 }
 
+static time_t get_unixtime(void)
+{
+    #define SLEEP_TIME 5
+    struct timespec tm;
+    time_t unix_time = 0;
+
+    while( true ) {
+        if( 0 == clock_gettime(CLOCK_REALTIME, &tm) ) {
+            unix_time = tm.tv_sec; // ignore tm.tv_nsec
+            break;
+        }
+        sleep(SLEEP_TIME);
+    }
+
+    return unix_time;
+}

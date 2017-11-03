@@ -121,14 +121,12 @@ void destroy_schedule( schedule_t *s );
 /**
  *  Gets the string with the blocked MAC addresses at this time.
  *
- *  @param s             [in]  the schedule to apply
- *  @param unixtime      [in]  the unixtime representation
- *  @param next_unixtime [out] the next imminent timestamp 
- *                             in unixtime representation from the schedule.
+ *  @param s        the schedule to apply
+ *  @param unixtime the unixtime representation
  *
  *  @return the string with the list of blocked addresses (may be NULL and valid)
  */
-char* get_blocked_at_time( schedule_t *s, time_t unixtime, time_t *next_unixtime );
+char* get_blocked_at_time( schedule_t *s, time_t unixtime );
 
 
 /**
@@ -172,5 +170,15 @@ int set_mac_index( schedule_t *s, const char *mac, size_t len, uint32_t index );
  *  @param s the schedule to print
  */
 void print_schedule( schedule_t *s );
+
+/**
+ * Find the next imminent event and return its time since Epoch.
+ *
+ * @param s        schedule
+ * @param unixtime the unixtime representation.
+ *
+ * @return the Epoch time of next imminent schedule event
+ */
+time_t get_next_unixtime(schedule_t *s, time_t unixtime);
 
 #endif
