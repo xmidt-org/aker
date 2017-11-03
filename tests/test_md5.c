@@ -28,16 +28,34 @@
 #include "../src/aker_md5.h"
 #include "../src/process_data.h"
 
+static char *test_file_name;
+static unsigned char md5_sig_1[MD5_SIZE];
+static unsigned char md5_sig_2[MD5_SIZE];
 
 void md5_test1()
 {
- /* ToDo: Do something ;-) */   
+    CU_ASSERT(0 == compute_file_md5(test_file_name, &md5_sig_1[0]));
 }
 
 void md5_test2()
 {
-  /* ToDo: Do something else ;-) */   
-   
+    size_t size;
+    uint8_t *data;
+
+    size = read_file_from_disk(test_file_name, &data);
+    if (size > 0) {
+        CU_ASSERT(0 == compute_byte_stream_md5(data, size, &md5_sig_2[0]));
+        CU_ASSERT(0 == memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
+        data[size >> 1] ^= data[size >> 1];
+        compute_byte_stream_md5(data, size, &md5_sig_2[0]);
+    }
+
+    if (NULL != data) {
+        free(data);
+    }
+    
+    CU_ASSERT(0 != memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
+
 }
 
 void add_suites( CU_pSuite *suite )
@@ -51,11 +69,14 @@ void add_suites( CU_pSuite *suite )
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-int main( void )
+int main( int argc, char *argv[] )
 {
     unsigned rv = 1;
     CU_pSuite suite = NULL;
-
+ 
+    (void ) argc;
+    test_file_name = argv[0];
+    
     if( CUE_SUCCESS == CU_initialize_registry() ) {
         add_suites( &suite );
 
