@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <ctype.h>
 
 #include <CUnit/Basic.h>
 
@@ -28,16 +29,62 @@
 #include "../src/aker_md5.h"
 #include "../src/process_data.h"
 
+static char *test_file_name;
+static unsigned char md5_sig_1[MD5_SIZE];
+static unsigned char md5_sig_2[MD5_SIZE];
+
 
 void md5_test1()
 {
- /* ToDo: Do something ;-) */   
+    CU_ASSERT(0 == compute_file_md5(test_file_name, &md5_sig_1[0]));
 }
 
+#define MD5_SIG_FILE "md5_sig.out"
 void md5_test2()
 {
-  /* ToDo: Do something else ;-) */   
-   
+    char buffer[256];
+    size_t size;
+    uint8_t *data;
+    int cnt;
+
+    
+    sprintf(buffer, "md5sum -b %s > %s", test_file_name, MD5_SIG_FILE);
+    if (0 == system(buffer)) {
+     size = read_file_from_disk(MD5_SIG_FILE, &data);
+     CU_ASSERT(size > 0);
+     memset(buffer, 0, 256);
+     
+     for (cnt = 0; cnt < MD5_SIZE; cnt++) {
+        sprintf(&buffer[cnt * 2], "%02x", md5_sig_1[cnt]);
+     }    
+    //  printf("\nmd5_sig1 %s\n", buffer);
+    //  printf("\nmd5sum   %s\n", data);
+     
+      CU_ASSERT(0 == strncmp(buffer, (char *) data, MD5_SIZE << 1));
+      
+     free(data);
+    }
+}
+
+void md5_test3()
+{
+    size_t size;
+    uint8_t *data;
+
+    size = read_file_from_disk(test_file_name, &data);
+    if (size > 0) {
+        CU_ASSERT(0 == compute_byte_stream_md5(data, size, &md5_sig_2[0]));
+        CU_ASSERT(0 == memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
+        data[size >> 1] ^= data[size >> 1];
+        compute_byte_stream_md5(data, size, &md5_sig_2[0]);
+    }
+
+    if (NULL != data) {
+        free(data);
+    }
+    
+    CU_ASSERT(0 != memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
+
 }
 
 void add_suites( CU_pSuite *suite )
@@ -46,16 +93,20 @@ void add_suites( CU_pSuite *suite )
     *suite = CU_add_suite( "tests", NULL, NULL );
     CU_add_test( *suite, "MD5 Test 1", md5_test1);
     CU_add_test( *suite, "MD5 Test 2", md5_test2);
+    CU_add_test( *suite, "MD5 Test 3", md5_test3);
 }
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-int main( void )
+int main( int argc, char *argv[] )
 {
     unsigned rv = 1;
     CU_pSuite suite = NULL;
-
+ 
+    (void ) argc;
+    test_file_name = argv[0];
+    
     if( CUE_SUCCESS == CU_initialize_registry() ) {
         add_suites( &suite );
 

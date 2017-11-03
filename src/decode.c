@@ -95,8 +95,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
                 decode_macs_table(key, val, &s);
                 } else {
                     debug_error("decode_schedule() can't handle object type\n");
-                    ret_val = -4;
-                    break;
+                    // ret_val = -4;
                 }
             p++;
             key = &p->key;
@@ -147,9 +146,10 @@ int decode_schedule_table (msgpack_object *key, msgpack_object *val, schedule_ev
 
         if (ptr->type == MSGPACK_OBJECT_MAP) {
             for (i = 0; i < count; i++) {
-                process_map(&ptr->via.map, &temp);
+                if (0 == process_map(&ptr->via.map, &temp)) {
+                    insert_event(t, temp);
+                }
                 ptr++;
-                insert_event(t, temp);
            }
         }
     }
@@ -188,6 +188,7 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
     msgpack_object_kv *kv = map->ptr;
     uint32_t cnt;
     time_t entry_time = 0;
+    int ret_val = 0;
 
     *t = NULL;
 
@@ -196,11 +197,13 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
             && (name_match(key, UNIX_TIME_STR) || name_match(key, RELATIVE_TIME_STR))
            )
         {
-            char buf[64];
-            memset(buf, 0, 64);
-            memcpy(buf, key->via.str.ptr, key->via.str.size);
+           // char buf[64];
+           // memset(buf, 0, 64);
+           // memcpy(buf, key->via.str.ptr, key->via.str.size);
+           // debug_info("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
+            
             entry_time = val->via.u64;
-            debug_info("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
+            
         } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_NIL) {
             *t = create_schedule_event(0);
         } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_ARRAY
@@ -213,9 +216,15 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
                 *t = create_schedule_event(val->via.array.size);
                 for (;array_size < (val->via.array.size); array_size++) {
                         (*t)->block[array_size] = ptr->via.u64;
-                        debug_info("Array Element[%d] = %d block[] %d\n", array_size, (uint32_t) ptr->via.u64, (*t)->block[array_size]);
+                        debug_info("Array Element[%d] = %d block[] %d\n",
+                                array_size, (uint32_t) ptr->via.u64, 
+                                (*t)->block[array_size]);
                         ptr++;
                     }
+        } else {
+            debug_error("Unexpected Item in msgpack_object_map\n");
+            ret_val = -1;
+            break;
         }
         
         kv++;
@@ -227,7 +236,7 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
         (*t)->time = entry_time;
     }
     printf("\n");
-    return 1;
+    return ret_val;
 }
 
 
