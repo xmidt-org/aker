@@ -1,5 +1,3 @@
-#ifndef __SCHEDULER_H__
-#define __SCHEDULER_H__
 /**
  * Copyright 2017 Comcast Cable Communications Management, LLC
  *
@@ -15,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- */
+*/
+#ifndef __SCHEDULER_H__
+#define __SCHEDULER_H__
 
 /**
  *  Starts the scheduler thread
