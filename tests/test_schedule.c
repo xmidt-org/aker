@@ -374,9 +374,9 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "Test MAC validator", test_mac_validator );
     CU_add_test( *suite, "Test simple case", test_simple_case );
     CU_add_test( *suite, "Test another usecase", test_another_usecase);
-    //CU_add_test( *suite, "Test no schedule", test_no_schedule);
-    //CU_add_test( *suite, "Test only one absolute event", test_only_one_absolute);
-    //CU_add_test( *suite, "Test only one weekly event", test_only_one_weekly);
+    CU_add_test( *suite, "Test no schedule", test_no_schedule);
+    CU_add_test( *suite, "Test only one absolute event", test_only_one_absolute);
+    CU_add_test( *suite, "Test only one weekly event", test_only_one_weekly);
 }
 
 /*----------------------------------------------------------------------------*/
