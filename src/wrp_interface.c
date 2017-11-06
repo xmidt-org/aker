@@ -49,8 +49,6 @@ int wrp_process(const char *data_file, const char *md5_file,
 {
     wrp_msg_t *in_msg = msg;
 
-    (void) md5_file;
-
     memset(response, 0, sizeof(wrp_msg_t));
     switch (in_msg->msg_type) {
         case (WRP_MSG_TYPE__CREATE): 
@@ -99,7 +97,7 @@ int wrp_process(const char *data_file, const char *md5_file,
             resp->source = strdup(req->dest);
             resp->dest   = strdup(req->source);
             if( NULL != strstr(req->dest, REQ_DEST) ) {
-                process_request_set(data_file, in_msg);
+                process_request_set(data_file, in_msg, md5_file);
             }
             else {
                 debug_error("Request-Response message destination %s is invalid\n", req->dest);

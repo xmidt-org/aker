@@ -28,6 +28,8 @@ extern int compute_file_md5(const char *filename, unsigned char result[MD5_SIZE]
 extern int compute_byte_stream_md5(uint8_t *data, size_t length,
                                    unsigned char result[MD5_SIZE]); 
 
+extern int verify_md5_signatures(const char *data_file, const char *md5_file);
+
 #ifdef __cplusplus
 }
 #endif
