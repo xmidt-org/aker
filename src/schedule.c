@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-
+#include <limits.h>
 
 #include "schedule.h"
 #include "time.h"
@@ -222,7 +222,7 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
                 rv = __convert_event_to_string( s, abs_prev );
                 goto done;
             }
-   
+
             last_abs = convert_unix_time_to_weekly( abs_prev->time );
         }
 
@@ -251,7 +251,7 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
     }
 
 done:
-    printf( "Time: %ld (%ld) -> '%s'\n", unixtime, weekly, rv );
+    debug_info( "Time: %ld (%ld) -> '%s'\n", unixtime, weekly, rv );
     return rv;
 }
 
@@ -287,6 +287,45 @@ int set_mac_index( schedule_t *s, const char *mac, size_t len, uint32_t index )
     }
 
     return rv;
+}
+
+
+/* See schedule.h for details. */
+time_t get_next_unixtime(schedule_t *s, time_t unixtime)
+{
+    schedule_event_t *p;
+    time_t next_unixtime = INT_MAX;
+    uint32_t num_events = 0;
+
+    if( NULL != s ) {
+        time_t weekly;
+
+        /* Check absolute schedule first */
+        for( p = s->absolute; NULL != p; p = p->next, num_events++ ) {
+            if( (p->time > unixtime) && (p->time < next_unixtime) ) {
+                next_unixtime = p->time;
+            }
+        }
+
+        /* Check the relative schedule next */
+        weekly = convert_unix_time_to_weekly( unixtime );
+
+        for( p = s->weekly; NULL != p; p = p->next ) {
+            time_t t = (unixtime - weekly) + p->time;
+
+            if( (p->time > weekly) && (t < next_unixtime) ) {
+                next_unixtime = t;
+            }
+
+            if( 0 < p->time ) {
+                num_events++;
+            }
+        }
+
+        if( 1 >= num_events ) next_unixtime = INT_MAX;
+    }
+    debug_info( "Next unix time: %ld\n", next_unixtime );
+    return next_unixtime;
 }
 
 
