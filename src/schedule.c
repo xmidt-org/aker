@@ -206,9 +206,6 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
         abs_cur = NULL;
         if( NULL != abs_prev ) {
             abs_cur = abs_prev->next;
-        } else if( NULL == s->weekly ) {
-            /* No absolute nor weekly schedule. */
-            goto done;
         }
 
         while( (NULL != abs_cur) && (abs_cur->time <= unixtime) ) {
@@ -227,14 +224,6 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
             }
 
             last_abs = convert_unix_time_to_weekly( abs_prev->time );
-            if( NULL == s->weekly ) {
-                /* If there is no weekly schedule, then bring forward check 
-                 * if abs time is in the past. */
-                if( last_abs <= weekly ) {
-                    rv = __convert_event_to_string( s, abs_prev );
-                }
-                goto done;
-            }
         }
 
         /* Either we're not in the abs schedule or it just ended
@@ -254,10 +243,16 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
 
         /* If the abs time event is the most recent, use it as long
          * as it's in the past.  Otherwise use the weekly schedule. */
-        if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
-            rv = __convert_event_to_string( s, abs_prev );
+        if( NULL != w_prev) {
+            if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
+                rv = __convert_event_to_string( s, abs_prev );
+            } else {
+                rv = __convert_event_to_string( s, w_prev );
+            }
         } else {
-            rv = __convert_event_to_string( s, w_prev );
+            if( last_abs <= weekly ) {
+                rv = __convert_event_to_string( s, abs_prev );
+            }
         }
     }
 
@@ -323,7 +318,6 @@ time_t get_next_unixtime(schedule_t *s, time_t unixtime)
 
         for( p = s->weekly; NULL != p; p = p->next ) {
             time_t t = (unixtime - weekly) + p->time;
-
             if( (p->time > weekly) && (t < next_unixtime) ) {
                 next_unixtime = t;
             }
