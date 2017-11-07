@@ -242,6 +242,7 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cmd, char *data_file, char
 
         if( NULL != wrp_msg ) {
             free(wrp_msg);
+            wrp_msg = NULL;
         }
     }
 
