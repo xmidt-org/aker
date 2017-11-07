@@ -66,7 +66,7 @@ ssize_t process_message_ret( wrp_msg_t *msg, void **data);
  *
  * @return size of payload
  */
-ssize_t process_request_set( const char *filename, wrp_msg_t *req );
+ssize_t process_request_set( const char *filename, wrp_msg_t *req, const char *md5_file );
 
 /**
  * @brief Returns wrp Request-Response get response.

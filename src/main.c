@@ -29,7 +29,7 @@
 #include "wrp_interface.h"
 #include "scheduler.h"
 #include "process_data.h"
-
+#include "aker_md5.h"
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -177,9 +177,11 @@ static void sig_handler(int sig)
 static void import_existing_schedule( const char *data_file, const char *md5_file )
 {
     size_t len;
-    uint8_t *data;
+    uint8_t *data = NULL;
 
-    (void) md5_file;
+    if (0 != verify_md5_signatures(data_file, md5_file)) {
+        debug_error("import_existing_schedule() data or md5 corruption\n");
+    }
 
     len = read_file_from_disk( data_file, &data );
     if( 0 < len ) {
