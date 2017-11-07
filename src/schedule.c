@@ -243,10 +243,16 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
 
         /* If the abs time event is the most recent, use it as long
          * as it's in the past.  Otherwise use the weekly schedule. */
-        if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
-            rv = __convert_event_to_string( s, abs_prev );
+        if( NULL != w_prev) {
+            if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
+                rv = __convert_event_to_string( s, abs_prev );
+            } else {
+                rv = __convert_event_to_string( s, w_prev );
+            }
         } else {
-            rv = __convert_event_to_string( s, w_prev );
+            if( last_abs <= weekly ) {
+                rv = __convert_event_to_string( s, abs_prev );
+            }
         }
     }
 
@@ -312,7 +318,6 @@ time_t get_next_unixtime(schedule_t *s, time_t unixtime)
 
         for( p = s->weekly; NULL != p; p = p->next ) {
             time_t t = (unixtime - weekly) + p->time;
-
             if( (p->time > weekly) && (t < next_unixtime) ) {
                 next_unixtime = t;
             }
