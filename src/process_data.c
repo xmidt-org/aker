@@ -18,11 +18,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <errno.h>
 
 #include "aker_log.h"
 #include "process_data.h"
 #include "schedule.h"
 #include "aker_md5.h"
+
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -126,21 +128,34 @@ size_t process_request_get( const char *filename, wrp_msg_t *resp )
 size_t read_file_from_disk( const char *filename, uint8_t **data )
 {
     FILE *file_handle = NULL;
-    size_t file_size, read_size;
+    size_t read_size;
+    int local_errno;
+    int32_t file_size;
 
+    errno = 0;
     file_handle = fopen(filename, "rb");
+    local_errno = errno;
     if( NULL == file_handle ) {
-        debug_error("read_file_from_disk() can't read the file %s\n", filename);
+        debug_error("read_file_from_disk() can't read the file %s err %s\n",
+                     filename, strerror(local_errno));
         return 0;
     }
 
     fseek(file_handle, 0, SEEK_END);
+    errno = 0;
     file_size = ftell(file_handle);
+    local_errno = errno;
+    if (file_size < 0) {
+        debug_error("read_file_from_disk() ftell() error on %s err %s\n",
+                     filename, strerror(local_errno));
+        fclose(file_handle);
+        return 0;
+    }
     fseek(file_handle, 0, SEEK_SET);
 
     read_size = 0;
     *data = NULL;
-    if( 0 < file_size ) {
+    if( file_size > 0 ) {
         *data = (uint8_t*) malloc(file_size);
 
         if( NULL != *data ) {
