@@ -22,6 +22,7 @@
 #include <ctype.h>
 #include <signal.h>
 #include <limits.h>
+#include <errno.h>
 
 #include "schedule.h"
 #include "process_data.h"
@@ -99,9 +100,10 @@ int process_schedule_data( size_t len, uint8_t *data )
 void *scheduler_thread(void *args)
 {
     const char *firewall_cmd;
-    struct timespec tm;
+    struct timespec tm = { INT_MAX, 0 };
     time_t unix_time = 0;
     pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
+    int rv = ETIMEDOUT;
     
     signal(SIGTERM, sig_handler);
     signal(SIGINT, sig_handler);
@@ -158,8 +160,10 @@ void *scheduler_thread(void *args)
         }
 
         tm.tv_sec = get_next_unixtime(current_schedule, unix_time);
-        tm.tv_nsec = 0;
-        pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
+        rv = pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
+        if( ETIMEDOUT != rv) {
+            debug_error("pthread_cond_timedwait: %d(%s)\n", rv, strerror(rv));
+        }
 
         pthread_mutex_unlock( &schedule_lock );
     }

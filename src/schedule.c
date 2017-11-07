@@ -243,10 +243,16 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
 
         /* If the abs time event is the most recent, use it as long
          * as it's in the past.  Otherwise use the weekly schedule. */
-        if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
-            rv = __convert_event_to_string( s, abs_prev );
+        if( NULL != w_prev) {
+            if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
+                rv = __convert_event_to_string( s, abs_prev );
+            } else {
+                rv = __convert_event_to_string( s, w_prev );
+            }
         } else {
-            rv = __convert_event_to_string( s, w_prev );
+            if( last_abs <= weekly ) {
+                rv = __convert_event_to_string( s, abs_prev );
+            }
         }
     }
 
@@ -294,16 +300,17 @@ int set_mac_index( schedule_t *s, const char *mac, size_t len, uint32_t index )
 time_t get_next_unixtime(schedule_t *s, time_t unixtime)
 {
     schedule_event_t *p;
-    time_t next_unixtime = INT_MAX;
+    time_t next_unixtime = INT_MAX, first_weekly = INT_MAX;
     uint32_t num_events = 0;
 
     if( NULL != s ) {
         time_t weekly;
 
         /* Check absolute schedule first */
-        for( p = s->absolute; NULL != p; p = p->next, num_events++ ) {
+        for( p = s->absolute; NULL != p; p = p->next ) {
             if( (p->time > unixtime) && (p->time < next_unixtime) ) {
                 next_unixtime = p->time;
+                goto done;
             }
         }
 
@@ -312,18 +319,26 @@ time_t get_next_unixtime(schedule_t *s, time_t unixtime)
 
         for( p = s->weekly; NULL != p; p = p->next ) {
             time_t t = (unixtime - weekly) + p->time;
-
             if( (p->time > weekly) && (t < next_unixtime) ) {
                 next_unixtime = t;
             }
 
             if( 0 < p->time ) {
+                if( 0 == num_events ) {
+                    first_weekly = p->time;
+                }
                 num_events++;
             }
         }
 
-        if( 1 >= num_events ) next_unixtime = INT_MAX;
+        if( 0 == num_events ) {
+            next_unixtime = INT_MAX;
+        } else if ( INT_MAX == next_unixtime ) {
+            next_unixtime = (unixtime - weekly) + first_weekly + (7 * 24 * 3600);
+        }
     }
+
+done:
     debug_info( "Next unix time: %ld\n", next_unixtime );
     return next_unixtime;
 }
