@@ -246,7 +246,7 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cmd, char *data_file, char
         }
     }
 
-    libparodus_shutdown(&hpd_instance);
+    (void ) libparodus_shutdown(&hpd_instance);
     debug_print("End of parodus_upstream\n");
     return 0;
 }
