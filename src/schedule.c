@@ -300,16 +300,17 @@ int set_mac_index( schedule_t *s, const char *mac, size_t len, uint32_t index )
 time_t get_next_unixtime(schedule_t *s, time_t unixtime)
 {
     schedule_event_t *p;
-    time_t next_unixtime = INT_MAX;
+    time_t next_unixtime = INT_MAX, first_weekly = INT_MAX;
     uint32_t num_events = 0;
 
     if( NULL != s ) {
         time_t weekly;
 
         /* Check absolute schedule first */
-        for( p = s->absolute; NULL != p; p = p->next, num_events++ ) {
+        for( p = s->absolute; NULL != p; p = p->next ) {
             if( (p->time > unixtime) && (p->time < next_unixtime) ) {
                 next_unixtime = p->time;
+                goto done;
             }
         }
 
@@ -323,12 +324,21 @@ time_t get_next_unixtime(schedule_t *s, time_t unixtime)
             }
 
             if( 0 < p->time ) {
+                if( 0 == num_events ) {
+                    first_weekly = p->time;
+                }
                 num_events++;
             }
         }
 
-        if( 1 >= num_events ) next_unixtime = INT_MAX;
+        if( 0 == num_events ) {
+            next_unixtime = INT_MAX;
+        } else if ( INT_MAX == next_unixtime ) {
+            next_unixtime = (unixtime - weekly) + first_weekly + (7 * 24 * 3600);
+        }
     }
+
+done:
     debug_info( "Next unix time: %ld\n", next_unixtime );
     return next_unixtime;
 }
