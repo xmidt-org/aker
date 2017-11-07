@@ -29,6 +29,8 @@
 #include "../src/aker_md5.h"
 #include "../src/process_data.h"
 
+#define MD5_SIG_FILE "md5_sig.out"
+
 static char *test_file_name;
 static unsigned char md5_sig_1[MD5_SIZE];
 static unsigned char md5_sig_2[MD5_SIZE];
@@ -36,10 +38,17 @@ static unsigned char md5_sig_2[MD5_SIZE];
 
 void md5_test1()
 {
-    CU_ASSERT(0 == compute_file_md5(test_file_name, &md5_sig_1[0]));
+    unsigned char *result;
+    
+    result = compute_file_md5(test_file_name, &md5_sig_1[0]);
+    
+    CU_ASSERT(NULL != result);
+    
+    if (result) {
+        free(result);
+    }
 }
 
-#define MD5_SIG_FILE "md5_sig.out"
 void md5_test2()
 {
     char buffer[256];
@@ -60,7 +69,7 @@ void md5_test2()
     //  printf("\nmd5_sig1 %s\n", buffer);
     //  printf("\nmd5sum   %s\n", data);
      
-      CU_ASSERT(0 == strncmp(buffer, (char *) data, MD5_SIZE << 1));
+     CU_ASSERT(0 == strncmp(buffer, (char *) data, MD5_SIZE << 1));
       
      free(data);
     }
@@ -68,15 +77,30 @@ void md5_test2()
 
 void md5_test3()
 {
+    CU_ASSERT(0 == verify_md5_signatures(test_file_name, MD5_SIG_FILE));
+}
+
+void md5_test4()
+{
     size_t size;
     uint8_t *data;
-
+    unsigned char *result;
+    
     size = read_file_from_disk(test_file_name, &data);
     if (size > 0) {
-        CU_ASSERT(0 == compute_byte_stream_md5(data, size, &md5_sig_2[0]));
+        result = compute_byte_stream_md5(data, size, &md5_sig_2[0]);
+        CU_ASSERT(NULL != result);
+        if (result) {
+            free(result);
+        }
         CU_ASSERT(0 == memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
         data[size >> 1] = ~data[size >> 1];
-        compute_byte_stream_md5(data, size, &md5_sig_2[0]);
+
+        result = compute_byte_stream_md5(data, size, &md5_sig_2[0]);
+        CU_ASSERT(NULL != result);
+        if (result) {
+            free(result);
+        }
         CU_ASSERT(0 != memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
     }
 
@@ -93,6 +117,7 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "MD5 Test 1", md5_test1);
     CU_add_test( *suite, "MD5 Test 2", md5_test2);
     CU_add_test( *suite, "MD5 Test 3", md5_test3);
+    CU_add_test( *suite, "MD5 Test 4", md5_test4);
 }
 
 /*----------------------------------------------------------------------------*/

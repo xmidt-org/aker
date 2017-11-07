@@ -120,7 +120,7 @@ void test_process_request_set_and_get()
     wrp_msg_t response;
 
     for( uint8_t i = 0; i < t_size; i++ ) {
-        set_size = process_request_set("pcs.bin", &tests_set[i].s);
+        set_size = process_request_set("pcs.bin", &tests_set[i].s, "pcs_md5.bin");
         CU_ASSERT((size_t)set_size == tests_set[i].s.u.req.payload_size);
 
         memset(&response, '\0', sizeof(wrp_msg_t));

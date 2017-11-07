@@ -22,10 +22,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define MD5_SIZE 16    // 4 uint32_t passed as a char *
-extern int compute_file_md5(const char *filename, unsigned char result[MD5_SIZE]); 
+#define MD5_SIZE 16    /* 4 uint32_t passed as a char * */
+    
+/* Returns null terminated ASCII md5 on success, NULL on failure, */
+/* "result" will contain binary md5 */
+/* Returned string must be freed by the caller. */
+extern unsigned char *compute_file_md5(const char *filename, unsigned char result[MD5_SIZE]); 
 
-extern int compute_byte_stream_md5(uint8_t *data, size_t length,
+/* Returns null terminated ASCII md5 on success, NULL on failure, */
+/* "result" will contain binary md5 */
+/* Returned string must be freed by the caller. */
+extern unsigned char *compute_byte_stream_md5(uint8_t *data, size_t length,
                                    unsigned char result[MD5_SIZE]); 
 
 extern int verify_md5_signatures(const char *data_file, const char *md5_file);
