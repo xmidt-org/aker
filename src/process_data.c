@@ -23,6 +23,7 @@
 #include "aker_log.h"
 #include "process_data.h"
 #include "schedule.h"
+#include "scheduler.h"
 #include "aker_md5.h"
 
 
@@ -92,21 +93,20 @@ ssize_t process_request_set( const char *filename, wrp_msg_t *req, const char *m
     fclose(file_handle);
     if (NULL != (md5_string = compute_byte_stream_md5(req->u.req.payload, req->u.req.payload_size, result)))
     {
-        file_handle = fopen(md5, "wb");
-        if (file_handle) {
-            size_t cnt = fwrite(md5_string, sizeof(uint8_t), MD5_SIZE * 2, file_handle);
-            if (cnt <= 0) {
-                debug_error("process_request_set failed to write %s\n", md5);
+        if (0 == process_schedule_data(req->u.req.payload_size, req->u.req.payload))  {
+            file_handle = fopen(md5, "wb");
+            if (file_handle) {
+                size_t cnt = fwrite(md5_string, sizeof(uint8_t), MD5_SIZE * 2, file_handle);
+                if (cnt <= 0) {
+                    debug_error("process_request_set failed to write %s\n", md5);
+                }
+                fclose(file_handle);
             }
-            fclose(file_handle);
+            free(md5_string);
         }
-        free(md5_string);
     } else {
         debug_error("process_request_set()->compute_byte_stream_md5() Failed\n");
     }
-
-
-    /* TODO: Pass off payload to decoder */
 
     return write_size;
 }

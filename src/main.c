@@ -200,6 +200,9 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cmd, char *data_file, char
     int max_retry_sleep = (1 << 9) - 1;
     int c = 2;
 
+    // ToDo: Whhy id firewall_cmd not used here?
+    (void ) firewall_cmd;
+
     while( true ) {
         rv = libparodus_init( &hpd_instance, cfg );
         if( 0 == rv ) {
