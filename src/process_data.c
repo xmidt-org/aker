@@ -98,11 +98,12 @@ ssize_t process_request_set( const char *filename, wrp_msg_t *req, const char *m
             size_t cnt = fwrite(md5_string, sizeof(uint8_t), MD5_SIZE * 2, file_handle);
             if (cnt <= 0) {
                 debug_error("process_request_set failed to write %s\n", md5);
+            } else {
+                process_schedule_data(req->u.req.payload_size, req->u.req.payload);
             }
             fclose(file_handle);
         }
         free(md5_string);
-        process_schedule_data(req->u.req.payload_size, req->u.req.payload);
     } else {
         debug_error("process_request_set()->compute_byte_stream_md5() Failed\n");
     }
