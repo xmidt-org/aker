@@ -102,8 +102,8 @@ ssize_t process_request_set( const char *filename, wrp_msg_t *req, const char *m
                 }
                 fclose(file_handle);
             }
-            free(md5_string);
         }
+        free(md5_string);
     } else {
         debug_error("process_request_set()->compute_byte_stream_md5() Failed\n");
     }
