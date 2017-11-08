@@ -23,6 +23,7 @@
 #include "aker_log.h"
 #include "process_data.h"
 #include "schedule.h"
+#include "scheduler.h"
 #include "aker_md5.h"
 
 
@@ -101,12 +102,10 @@ ssize_t process_request_set( const char *filename, wrp_msg_t *req, const char *m
             fclose(file_handle);
         }
         free(md5_string);
+        process_schedule_data(req->u.req.payload_size, req->u.req.payload);
     } else {
         debug_error("process_request_set()->compute_byte_stream_md5() Failed\n");
     }
-
-
-    /* TODO: Pass off payload to decoder */
 
     return write_size;
 }
