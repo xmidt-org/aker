@@ -30,15 +30,19 @@ link_directories ( ${LIBRARY_DIR} )
 #-------------------------------------------------------------------------------
 add_test(NAME test_schedule COMMAND ${MEMORY_CHECK} ./test_schedule)
 add_executable(test_schedule test_schedule.c ../src/schedule_print.c 
-                ../src/schedule.c ../src/decode.c ../src/process_data.c
-                ../src/aker_md5.c ../src/md5.c)
+               ../src/schedule.c ../src/decode.c ../src/process_data.c
+               ../src/aker_md5.c ../src/md5.c
+               ../src/scheduler.c)
 target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
 #   test_wrp_interface
 #-------------------------------------------------------------------------------
 add_test(NAME test_wrp_interface COMMAND ${MEMORY_CHECK} ./test_wrp_interface)
-add_executable(test_wrp_interface test_wrp_interface.c ../src/wrp_interface.c)
+add_executable(test_wrp_interface test_wrp_interface.c ../src/wrp_interface.c
+               ../src/process_data.c ../src/aker_md5.c ../src/md5.c
+               ../src/schedule_print.c ../src/schedule.c ../src/decode.c
+               ../src/time.c ../src/scheduler.c)
 target_link_libraries (test_wrp_interface ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
@@ -46,7 +50,9 @@ target_link_libraries (test_wrp_interface ${AKER_COMMON_LIBS})
 #-------------------------------------------------------------------------------
 add_test(NAME test_process_data COMMAND ${MEMORY_CHECK} ./test_process_data)
 add_executable(test_process_data test_process_data.c ../src/process_data.c
-               ../src/aker_md5.c ../src/md5.c)
+               ../src/aker_md5.c ../src/md5.c ../src/schedule_print.c
+               ../src/schedule.c ../src/decode.c ../src/time.c ../src/scheduler.c)
+
 target_link_libraries (test_process_data ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
@@ -60,6 +66,8 @@ target_link_libraries (test_decode ${AKER_COMMON_LIBS})
 #   test_md5
 #-------------------------------------------------------------------------------
 add_test(NAME test_md5 COMMAND ${MEMORY_CHECK} ./test_md5)
-add_executable(test_md5 test_md5.c ../src/process_data.c ../src/aker_md5.c ../src/md5.c)
+add_executable(test_md5 test_md5.c ../src/process_data.c ../src/aker_md5.c 
+               ../src/md5.c ../src/scheduler.c ../src/time.c ../src/schedule.c
+               ../src/decode.c ../src/schedule_print.c)
 target_link_libraries (test_md5 ${AKER_COMMON_LIBS})
 

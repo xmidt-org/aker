@@ -102,31 +102,7 @@ static uint8_t i;
 /*----------------------------------------------------------------------------*/
 /*                                   Mocks                                    */
 /*----------------------------------------------------------------------------*/
-int process_message_cu( wrp_msg_t *msg, wrp_msg_t *object )
-{
-    (void) msg; (void) object;
-    return 0;
-}
 
-ssize_t process_message_ret( wrp_msg_t *msg, void **data )
-{
-    (void) msg; (void) data;
-    return 0;
-}
-
-ssize_t process_request_set( wrp_msg_t *msg )
-{
-    (void) msg;
-    return 0;
-}
-
-ssize_t process_request_get( wrp_msg_t *resp )
-{
-    resp->u.req.payload = malloc(tests[i].r.u.req.payload_size);
-    memcpy(resp->u.req.payload, tests[i].r.u.req.payload, tests[i].r.u.req.payload_size);
-    resp->u.req.payload_size = tests[i].r.u.req.payload_size;
-    return resp->u.req.payload_size;
-}
 
 /*----------------------------------------------------------------------------*/
 /*                                   Tests                                    */
