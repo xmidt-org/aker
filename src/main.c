@@ -55,7 +55,7 @@
 /*----------------------------------------------------------------------------*/
 static void sig_handler(int sig);
 static void import_existing_schedule( const char *data_file, const char *md5_file );
-static int main_loop(libpd_cfg_t *cfg, char *firewall_cmd, char *data_file, char *md5_file );
+static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -131,7 +131,7 @@ int main( int argc, char **argv)
 
         import_existing_schedule( data_file, md5_file );
         
-        main_loop(&cfg, firewall_cmd, data_file, md5_file);
+        main_loop(&cfg, data_file, md5_file);
         rv = 0;
     }
 
@@ -191,7 +191,7 @@ static void import_existing_schedule( const char *data_file, const char *md5_fil
 }
 
 
-static int main_loop(libpd_cfg_t *cfg, char *firewall_cmd, char *data_file, char *md5_file )
+static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
 {
     int rv;
     wrp_msg_t *wrp_msg;
@@ -199,9 +199,6 @@ static int main_loop(libpd_cfg_t *cfg, char *firewall_cmd, char *data_file, char
     int backoff_retry_time = 0;
     int max_retry_sleep = (1 << 9) - 1;
     int c = 2;
-
-    // ToDo: Whhy id firewall_cmd not used here?
-    (void ) firewall_cmd;
 
     while( true ) {
         rv = libparodus_init( &hpd_instance, cfg );
