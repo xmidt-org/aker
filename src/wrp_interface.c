@@ -68,6 +68,10 @@ int wrp_process(const char *data_file, const char *md5_file,
             if( 0 < rv ) {
                 out_crud->status = 200;
             }
+            in_crud->transaction_uuid = NULL;
+            in_crud->source = NULL;
+            in_crud->dest   = NULL;
+            in_crud->path   = NULL;
         }
         break;
 
@@ -93,6 +97,10 @@ int wrp_process(const char *data_file, const char *md5_file,
             if( 0 < rv ) {
                 out_crud->status = 200;
             }
+            in_crud->transaction_uuid = NULL;
+            in_crud->source = NULL;
+            in_crud->dest   = NULL;
+            in_crud->path   = NULL;
         }
         break;
             
