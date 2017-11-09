@@ -104,10 +104,8 @@ void test_process_request_cu_and_ret()
         memset(&response, '\0', sizeof(wrp_msg_t));
         ret_size = process_message_ret("pcs.bin", &response);
         CU_ASSERT(0 == memcmp(tests_ret[i].m.u.crud.payload, response.u.crud.payload, response.u.crud.payload_size));
-        printf("tests_CRUD[%u].m.u.crud.payload_size = %ld, response.u.crud.payload_size = %ld\n", i, tests_ret[i].m.u.crud.payload_size, response.u.crud.payload_size);
         CU_ASSERT(tests_ret[i].m.u.crud.payload_size == response.u.crud.payload_size);
         free(response.u.crud.payload);
-        printf("ret_size = %ld, tests_ret[%u].m.u.crud.payload_size = %ld\n", ret_size, i, tests_ret[i].m.u.crud.payload_size);
         CU_ASSERT((size_t)ret_size == tests_ret[i].m.u.crud.payload_size);
     }
 }
