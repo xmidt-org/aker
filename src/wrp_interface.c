@@ -108,7 +108,10 @@ int wrp_cleanup(wrp_msg_t *message)
 {
     int rv = -1;
 
-    if( WRP_MSG_TYPE__RETREIVE == message->msg_type ) {
+    if( (WRP_MSG_TYPE__RETREIVE == message->msg_type) ||
+        (WRP_MSG_TYPE__CREATE   == message->msg_type) ||
+        (WRP_MSG_TYPE__UPDATE   == message->msg_type) )
+    {
         crud_msg_t *msg = &(message->u.crud);
         if( msg->transaction_uuid )
             free(msg->transaction_uuid);
