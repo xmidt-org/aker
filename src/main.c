@@ -240,8 +240,8 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
             debug_info("Libparodus failed to receive message: '%s'\n",libparodus_strerror(rv));
         }
 
-        if( NULL != wrp_msg ) {
-            free(wrp_msg);
+        if( NULL != wrp_msg  && 2 != rv ) {
+            wrp_free_struct(wrp_msg);
             wrp_msg = NULL;
         }
     }
