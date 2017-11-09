@@ -40,45 +40,25 @@ extern "C" {
 /**
  * @brief Processes wrp CRUD message for Create and Update.
  *
- * @param[in]  wrp CRUD message
- * @param[out] wrp CRUD message
+ * @param filename to write payload into
+ * @param md5_file
+ * @param cu       CRUD message
  *
  * @return size of payload, <0 otherwise.
  */
-int process_message_cu( wrp_msg_t *msg, wrp_msg_t *resp );
+ssize_t process_message_cu( const char *filename, const char *md5_file, wrp_msg_t *cu );
 
 /**
- * @brief Returns a data for the service the wrp CRUD message.
+ * @brief Returns data through the wrp CRUD message.
  * 
  * @note return data buffer needs to be free()-ed by caller.
  *
- * @param[in]  wrp CRUD message
- * @param[out] data buffer
+ * @param filename to read payload from
+ * @param ret CRUD message
  *
  * @return size of data retrieved, <0 otherwise.
  */
-ssize_t process_message_ret( wrp_msg_t *msg, void **data);
-
-/** 
- * @brief Processes wrp Request-Response set.
- *
- * @param[in]  wrp REQ request
- *
- * @return size of payload
- */
-ssize_t process_request_set( const char *filename, wrp_msg_t *req, const char *md5_file );
-
-/**
- * @brief Returns wrp Request-Response get response.
- * 
- * @note return data buffer needs to be free()-ed by caller.
- *
- * @param[out] wrp REQ response
- *
- * @return size of data buffer retrieved
- */
-size_t process_request_get( const char *filename, wrp_msg_t *resp );
-
+ssize_t process_message_ret( const char *filename, wrp_msg_t *ret );
 
 /**
  * @brief reads the file.

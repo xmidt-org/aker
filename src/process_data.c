@@ -50,33 +50,7 @@
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-int process_message_cu( wrp_msg_t *msg, wrp_msg_t *object )
-{
-    if( 0 != strcmp("/parental control/schedule", msg->u.crud.dest) ) {
-        return -1;
-    }
-
-    /* TODO: Process msg */
-    (void) object;
-
-    return 0;
-}
-
-ssize_t process_message_ret( wrp_msg_t *msg, void **data )
-{
-    if( 0 != strcmp("/parental control/schedule", msg->u.crud.dest) &&
-        0 != strcmp("/parental control/md5", msg->u.crud.dest) )
-    {   
-        return -1;
-    }
-
-    /* TODO: Retrieve schedule info and return. */
-    (void) data;
-
-    return 0;
-}
-
-ssize_t process_request_set( const char *filename, wrp_msg_t *req, const char *md5 )
+ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu )
 {
     FILE *file_handle = NULL;
     size_t write_size = 0;
@@ -85,42 +59,42 @@ ssize_t process_request_set( const char *filename, wrp_msg_t *req, const char *m
 
     file_handle = fopen(filename, "wb");
     if( NULL == file_handle ) {
-        debug_info("process_request_set() Failed on fopen(%s, \"wb\"\n", filename);
+        debug_error("process_message_cu() Failed on fopen(%s, \"wb\"\n", filename);
         return -1;
     }
-    debug_print("req->u.req.payload_size = %d\n", req->u.req.payload_size);
-    write_size = fwrite(req->u.req.payload, sizeof(uint8_t), req->u.req.payload_size, file_handle);
+    debug_print("cu->u.crud.payload_size = %d\n", cu->u.crud.payload_size);
+    write_size = fwrite(cu->u.crud.payload, sizeof(uint8_t), cu->u.crud.payload_size, file_handle);
     fclose(file_handle);
-    if (NULL != (md5_string = compute_byte_stream_md5(req->u.req.payload, req->u.req.payload_size, result)))
+    if (NULL != (md5_string = compute_byte_stream_md5(cu->u.crud.payload, cu->u.crud.payload_size, result)))
     {
-        if (0 == process_schedule_data(req->u.req.payload_size, req->u.req.payload))  {
+        if (0 == process_schedule_data(cu->u.crud.payload_size, cu->u.crud.payload))  {
             file_handle = fopen(md5, "wb");
             if (file_handle) {
                 size_t cnt = fwrite(md5_string, sizeof(uint8_t), MD5_SIZE * 2, file_handle);
                 if (cnt <= 0) {
-                    debug_error("process_request_set failed to write %s\n", md5);
+                    debug_error("process_message_cu failed to write %s\n", md5);
                 }
                 fclose(file_handle);
             }
         }
         free(md5_string);
     } else {
-        debug_error("process_request_set()->compute_byte_stream_md5() Failed\n");
+        debug_error("process_message_cu()->compute_byte_stream_md5() Failed\n");
     }
 
     return write_size;
 }
 
-size_t process_request_get( const char *filename, wrp_msg_t *resp )
+ssize_t process_message_ret( const char *filename, wrp_msg_t *ret )
 {
     uint8_t *data = NULL;
     size_t read_size = 0;
 
     read_size = read_file_from_disk( filename, &data );
-    resp->u.req.content_type = "application/msgpack";
+    ret->u.crud.content_type = "application/msgpack";
 
-    resp->u.req.payload = data;
-    resp->u.req.payload_size = read_size;
+    ret->u.crud.payload = data;
+    ret->u.crud.payload_size = read_size;
 
     return read_size;
 }
