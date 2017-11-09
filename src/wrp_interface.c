@@ -56,10 +56,10 @@ int wrp_process(const char *data_file, const char *md5_file,
             /* Not as per WRP spec - Response to Update */
             response->msg_type = in_msg->msg_type;
 
-            out_crud->transaction_uuid = strdup(in_crud->transaction_uuid);
-            out_crud->source  = strdup(in_crud->dest);
-            out_crud->dest    = strdup(in_crud->source);
-            out_crud->path    = strdup(in_crud->path);
+            out_crud->transaction_uuid = in_crud->transaction_uuid;
+            out_crud->source  = in_crud->dest;
+            out_crud->dest    = in_crud->source;
+            out_crud->path    = in_crud->path;
             if( 0 == strcmp("/parental-control/schedule", in_crud->dest) ) {
                 rv = process_message_cu(data_file, md5_file, in_msg);
             } else {
@@ -79,10 +79,10 @@ int wrp_process(const char *data_file, const char *md5_file,
             out_crud->status = 400; // default to failed
             response->msg_type = WRP_MSG_TYPE__RETREIVE;
 
-            out_crud->transaction_uuid = strdup(in_crud->transaction_uuid);
-            out_crud->source  = strdup(in_crud->dest);
-            out_crud->dest    = strdup(in_crud->source);
-            out_crud->path    = strdup(in_crud->path);
+            out_crud->transaction_uuid = in_crud->transaction_uuid;
+            out_crud->source  = in_crud->dest;
+            out_crud->dest    = in_crud->source;
+            out_crud->path    = in_crud->path;
             if( (0 == strcmp("/parental-control/schedule", in_crud->dest)) ||
                 (0 == strcmp("/parental-control/md5",      in_crud->dest)) )
             {
@@ -108,19 +108,8 @@ int wrp_cleanup(wrp_msg_t *message)
 {
     int rv = -1;
 
-    if( (WRP_MSG_TYPE__RETREIVE == message->msg_type) ||
-        (WRP_MSG_TYPE__CREATE   == message->msg_type) ||
-        (WRP_MSG_TYPE__UPDATE   == message->msg_type) )
-    {
+    if( WRP_MSG_TYPE__RETREIVE == message->msg_type ) {
         crud_msg_t *msg = &(message->u.crud);
-        if( msg->transaction_uuid )
-            free(msg->transaction_uuid);
-        if( msg->source )
-            free(msg->source);
-        if( msg->dest )
-            free(msg->dest);
-        if( msg->path )
-            free(msg->path);
         if( msg->payload )
             free(msg->payload);
         rv = 0;
