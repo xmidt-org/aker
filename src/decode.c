@@ -26,7 +26,7 @@
 #define MACS              "macs"
 #define ABSOLUTE_SCHEDULE "absolute"
 #define RELATIVE_TIME_STR "time"
-#define UNIX_TIME_STR     "unix-time"
+#define UNIX_TIME_STR     "unix_time"
 #define INDEXES_STR       "indexes"
 
 #define UNPACKED_BUFFER_SIZE 2048
