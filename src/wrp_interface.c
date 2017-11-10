@@ -23,18 +23,12 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-/*** Temporary until CRUD WRP messages can support binary payload ***/
-/*
-#define SET_DEST  "/parental control/schedule/set"
-#define GET_DEST  "/parental control/schedule/get"
-*/
-#define REQ_DEST  "/iot"
+/* None */
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 typedef struct wrp_crud_msg crud_msg_t;
-typedef struct wrp_req_msg  req_msg_t;
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
@@ -48,24 +42,39 @@ int wrp_process(const char *data_file, const char *md5_file,
                 wrp_msg_t *msg, wrp_msg_t *response)
 {
     wrp_msg_t *in_msg = msg;
+    ssize_t rv = -1;
 
     memset(response, 0, sizeof(wrp_msg_t));
     switch (in_msg->msg_type) {
-        case (WRP_MSG_TYPE__CREATE): 
+        case (WRP_MSG_TYPE__CREATE):
         case (WRP_MSG_TYPE__UPDATE):
         {
+            crud_msg_t *in_crud  = &(in_msg->u.crud);
             crud_msg_t *out_crud = &(response->u.crud);
 
             out_crud->status = 400; // default to failed
             /* Not as per WRP spec - Response to Update */
             response->msg_type = in_msg->msg_type;
 
-            if( 0 == process_message_cu(in_msg, response) ) {
-                out_crud->status =200;
+            out_crud->transaction_uuid = in_crud->transaction_uuid;
+            out_crud->source  = in_crud->dest;
+            out_crud->dest    = in_crud->source;
+            out_crud->path    = in_crud->path;
+            if( 0 == strcmp("/parental-control/schedule", in_crud->dest) ) {
+                rv = process_message_cu(data_file, md5_file, in_msg);
+            } else {
+                debug_error("CREATE/UPDATE message destination %s is invalid\n", in_crud->dest);
             }
+            if( 0 < rv ) {
+                out_crud->status = 200;
+            }
+            in_crud->transaction_uuid = NULL;
+            in_crud->source = NULL;
+            in_crud->dest   = NULL;
+            in_crud->path   = NULL;
         }
         break;
-        
+
         case (WRP_MSG_TYPE__RETREIVE):
         {
             crud_msg_t *in_crud  = &(in_msg->u.crud);
@@ -74,34 +83,24 @@ int wrp_process(const char *data_file, const char *md5_file,
             out_crud->status = 400; // default to failed
             response->msg_type = WRP_MSG_TYPE__RETREIVE;
 
-            out_crud->transaction_uuid = strdup(in_crud->transaction_uuid);
-            out_crud->source  = strdup(in_crud->dest);
-            out_crud->dest    = strdup(in_crud->source);
-            out_crud->path    = strdup(in_crud->path);
-            /* TODO: once payload type is resolved */
-            // process_message_ret(in_msg, &(out_crud->payload)); 
-            if( NULL != out_crud->payload ) {
+            out_crud->transaction_uuid = in_crud->transaction_uuid;
+            out_crud->source  = in_crud->dest;
+            out_crud->dest    = in_crud->source;
+            out_crud->path    = in_crud->path;
+            if( (0 == strcmp("/parental-control/schedule", in_crud->dest)) ||
+                (0 == strcmp("/parental-control/md5",      in_crud->dest)) )
+            {
+                rv = process_message_ret(data_file, response);
+            } else {
+                debug_error("RETRIEVE message destination %s is invalid\n", in_crud->dest);
+            }
+            if( 0 < rv ) {
                 out_crud->status = 200;
             }
-        }
-        break;
-
-        case (WRP_MSG_TYPE__REQ):
-        {
-            req_msg_t *req = &(in_msg->u.req);
-            req_msg_t *resp = &(response->u.req);
-
-            response->msg_type = WRP_MSG_TYPE__REQ;
-            
-            resp->transaction_uuid = strdup(req->transaction_uuid);
-            resp->source = strdup(req->dest);
-            resp->dest   = strdup(req->source);
-            if( NULL != strstr(req->dest, REQ_DEST) ) {
-                process_request_set(data_file, in_msg, md5_file);
-            }
-            else {
-                debug_error("Request-Response message destination %s is invalid\n", req->dest);
-            }
+            in_crud->transaction_uuid = NULL;
+            in_crud->source = NULL;
+            in_crud->dest   = NULL;
+            in_crud->path   = NULL;
         }
         break;
             
@@ -110,22 +109,16 @@ int wrp_process(const char *data_file, const char *md5_file,
         break;
     }
 
-    return 0;
+    return rv;
 }
 
 int wrp_cleanup(wrp_msg_t *message)
 {
     int rv = -1;
 
-    if( WRP_MSG_TYPE__REQ == message->msg_type ) {
-        req_msg_t *msg = &(message->u.req);
-        if( msg->transaction_uuid )
-            free(msg->transaction_uuid);
-        if( msg->source )          
-            free(msg->source);
-        if( msg->dest )             
-            free(msg->dest);
-        if( msg->payload )         
+    if( WRP_MSG_TYPE__RETREIVE == message->msg_type ) {
+        crud_msg_t *msg = &(message->u.crud);
+        if( msg->payload )
             free(msg->payload);
         rv = 0;
     }

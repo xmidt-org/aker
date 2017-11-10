@@ -34,8 +34,7 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 typedef struct {
-    wrp_msg_t s;
-    wrp_msg_t r;
+    wrp_msg_t m;
 } test_t;
 
 /*----------------------------------------------------------------------------*/
@@ -51,84 +50,63 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 /*                                   Tests                                    */
 /*----------------------------------------------------------------------------*/
-void test_process_request_set_and_get()
-{
-    test_t tests_set[] =
+void test_process_request_cu_and_ret()
+{   
+    test_t tests_cu[] =
     {
         {
-            .s.msg_type = WRP_MSG_TYPE__REQ,
-            .s.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .s.u.req.source = "fake-server",
-            .s.u.req.dest = "/iot", //"/parental control/schedule/set",
-            .s.u.req.partner_ids = NULL,
-            .s.u.req.headers = NULL,
-            .s.u.req.metadata = NULL,
-            .s.u.req.include_spans = false,
-            .s.u.req.spans.spans = NULL,
-            .s.u.req.spans.count = 0,
-            .s.u.req.payload = "Some binary",
-            .s.u.req.payload_size = 11,
-
-            .r.msg_type = WRP_MSG_TYPE__REQ,
-            .r.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .r.u.req.source = "/iot", //"/parental control/schedule/set",
-            .r.u.req.dest = "fake-server",
-            .r.u.req.partner_ids = NULL,
-            .r.u.req.headers = NULL,
-            .r.u.req.metadata = NULL,
-            .r.u.req.include_spans = false,
-            .r.u.req.spans.spans = NULL,
-            .r.u.req.spans.count = 0,
-            .r.u.req.payload = "Some binary",
-            .r.u.req.payload_size = 11,
+            .m.msg_type = WRP_MSG_TYPE__CREATE,
+            .m.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .m.u.crud.source = "fake-server",
+            .m.u.crud.dest = "/parental-control/schedule",
+            .m.u.crud.partner_ids = NULL,
+            .m.u.crud.headers = NULL,
+            .m.u.crud.metadata = NULL,
+            .m.u.crud.include_spans = false,
+            .m.u.crud.spans.spans = NULL,
+            .m.u.crud.spans.count = 0,
+            .m.u.crud.payload = "Some binary",
+            .m.u.crud.payload_size = 11,
         },
     };
 
-    test_t tests_get[] =
+    test_t tests_ret[] =
     {
         {
-            .s.msg_type = WRP_MSG_TYPE__REQ,
-            .s.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .s.u.req.source = "fake-server",
-            .s.u.req.dest = "/iot", //"/parental control/schedule/get",
-            .s.u.req.partner_ids = NULL,
-            .s.u.req.headers = NULL,
-            .s.u.req.metadata = NULL,
-            .s.u.req.include_spans = false,
-            .s.u.req.spans.spans = NULL,
-            .s.u.req.spans.count = 0,
-            .s.u.req.payload = REQ_GET,
-            .s.u.req.payload_size = 44,
-
-            .r.msg_type = WRP_MSG_TYPE__REQ,
-            .r.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .r.u.req.source = "/iot", //"/parental control/schedule/get",
-            .r.u.req.dest = "fake-server",
-            .r.u.req.partner_ids = NULL,
-            .r.u.req.headers = NULL,
-            .r.u.req.metadata = NULL,
-            .r.u.req.include_spans = false,
-            .r.u.req.spans.spans = NULL,
-            .r.u.req.spans.count = 0,
-            .r.u.req.payload = "Some binary",
-            .r.u.req.payload_size = 11,
+            .m.msg_type = WRP_MSG_TYPE__RETREIVE,
+            .m.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .m.u.crud.source = "/parental-control/schedule",
+            .m.u.crud.dest = "fake-server",
+            .m.u.crud.partner_ids = NULL,
+            .m.u.crud.headers = NULL,
+            .m.u.crud.metadata = NULL,
+            .m.u.crud.include_spans = false,
+            .m.u.crud.spans.spans = NULL,
+            .m.u.crud.spans.count = 0,
+            .m.u.crud.path = "Some path",
+            .m.u.crud.payload = "Some binary",
+            .m.u.crud.payload_size = 11,
         },
     };
 
-    size_t t_size = sizeof(tests_set)/sizeof(test_t);
-    ssize_t set_size, get_size;
+    size_t t_size = sizeof(tests_cu)/sizeof(test_t);
+    ssize_t cu_size, ret_size;
     wrp_msg_t response;
+    uint8_t i;
 
-    for( uint8_t i = 0; i < t_size; i++ ) {
-        set_size = process_request_set("pcs.bin", &tests_set[i].s, "pcs_md5.bin");
-        CU_ASSERT((size_t)set_size == tests_set[i].s.u.req.payload_size);
+    for( i = 0; i < t_size; i++ ) {
+        cu_size = process_message_cu("pcs.bin", "pcs_md5.bin", &tests_cu[i].m);
+        CU_ASSERT((size_t)cu_size == tests_cu[i].m.u.crud.payload_size);
+    }
 
+    t_size = sizeof(tests_ret)/sizeof(test_t);
+    for( i = 0; i < t_size; i++ ) {
         memset(&response, '\0', sizeof(wrp_msg_t));
-        get_size = process_request_get("pcs.bin", &response);
-        CU_ASSERT(0 == memcmp(tests_get[i].r.u.req.payload, response.u.req.payload, response.u.req.payload_size));
-        CU_ASSERT(tests_get[i].r.u.req.payload_size == response.u.req.payload_size);
-        free(response.u.req.payload);
-        CU_ASSERT((size_t)get_size == tests_get[i].r.u.req.payload_size);
+        ret_size = process_message_ret("pcs.bin", &response);
+        CU_ASSERT(0 == memcmp(tests_ret[i].m.u.crud.payload, response.u.crud.payload, response.u.crud.payload_size));
+        CU_ASSERT(tests_ret[i].m.u.crud.payload_size == response.u.crud.payload_size);
+        free(response.u.crud.payload);
+        CU_ASSERT((size_t)ret_size == tests_ret[i].m.u.crud.payload_size);
     }
 }
 
@@ -136,7 +114,7 @@ void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "Test 1", test_process_request_set_and_get );
+    CU_add_test( *suite, "Test 1", test_process_request_cu_and_ret );
 }
 
 /*----------------------------------------------------------------------------*/

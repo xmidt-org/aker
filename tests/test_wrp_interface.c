@@ -40,87 +40,101 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-static test_t tests[] = {
-    {
-        .s.msg_type = WRP_MSG_TYPE__REQ,
-        .s.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-        .s.u.req.source = "fake-server",
-        .s.u.req.dest = "/iot", //"/parental control/schedule/set",
-        .s.u.req.partner_ids = NULL,
-        .s.u.req.headers = NULL,
-        .s.u.req.metadata = NULL,
-        .s.u.req.include_spans = false,
-        .s.u.req.spans.spans = NULL,
-        .s.u.req.spans.count = 0,
-        .s.u.req.payload = "Some binary",
-        .s.u.req.payload_size = 11,
-
-        .r.msg_type = WRP_MSG_TYPE__REQ,
-        .r.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-        .r.u.req.source = "/iot", //"/parental control/schedule/set",
-        .r.u.req.dest = "fake-server",
-        .r.u.req.partner_ids = NULL,
-        .r.u.req.headers = NULL,
-        .r.u.req.metadata = NULL,
-        .r.u.req.include_spans = false,
-        .r.u.req.spans.spans = NULL,
-        .r.u.req.spans.count = 0,
-        .r.u.req.payload = NULL,
-        .r.u.req.payload_size = 0,
-    },
-
-    {
-        .s.msg_type = WRP_MSG_TYPE__REQ,
-        .s.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-        .s.u.req.source = "fake-server",
-        .s.u.req.dest = "/iot", //"/parental control/schedule/get",
-        .s.u.req.partner_ids = NULL,
-        .s.u.req.headers = NULL,
-        .s.u.req.metadata = NULL,
-        .s.u.req.include_spans = false,
-        .s.u.req.spans.spans = NULL,
-        .s.u.req.spans.count = 0,
-        .s.u.req.payload = REQ_GET,
-        .s.u.req.payload_size = 44,
-
-        .r.msg_type = WRP_MSG_TYPE__REQ,
-        .r.u.req.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-        .r.u.req.source = "/iot", //"/parental control/schedule/get",
-        .r.u.req.dest = "fake-server",
-        .r.u.req.partner_ids = NULL,
-        .r.u.req.headers = NULL,
-        .r.u.req.metadata = NULL,
-        .r.u.req.include_spans = false,
-        .r.u.req.spans.spans = NULL,
-        .r.u.req.spans.count = 0,
-        .r.u.req.payload = "Some other binary",
-        .r.u.req.payload_size = 16,
-    },
-};
-static uint8_t i;
+/* None */
 
 /*----------------------------------------------------------------------------*/
 /*                                   Mocks                                    */
 /*----------------------------------------------------------------------------*/
+ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu )
+{
+    (void) filename; (void) md5; (void) cu;
+    return 1;
+}
 
+ssize_t process_message_ret( const char *filename, wrp_msg_t *ret )
+{
+    (void) filename; (void) ret;
+    return 1;
+}
 
 /*----------------------------------------------------------------------------*/
 /*                                   Tests                                    */
 /*----------------------------------------------------------------------------*/
 void test_wrp_processing()
 {
+    test_t tests[] = {
+        {
+            .s.msg_type = WRP_MSG_TYPE__CREATE,
+            .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .s.u.crud.source = "fake-server",
+            .s.u.crud.dest = "/parental-control/schedule",
+            .s.u.crud.partner_ids = NULL,
+            .s.u.crud.headers = NULL,
+            .s.u.crud.metadata = NULL,
+            .s.u.crud.include_spans = false,
+            .s.u.crud.spans.spans = NULL,
+            .s.u.crud.spans.count = 0,
+            .s.u.crud.path = "Some path",
+            .s.u.crud.payload = "Some binary",
+            .s.u.crud.payload_size = 11,
+
+            .r.msg_type = WRP_MSG_TYPE__CREATE,
+            .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .r.u.crud.source = "/parental-control/schedule",
+            .r.u.crud.dest = "fake-server",
+            .r.u.crud.partner_ids = NULL,
+            .r.u.crud.headers = NULL,
+            .r.u.crud.metadata = NULL,
+            .r.u.crud.include_spans = false,
+            .r.u.crud.spans.spans = NULL,
+            .r.u.crud.spans.count = 0,
+            .r.u.crud.path = "Some path",
+            .r.u.crud.payload = NULL,
+            .r.u.crud.payload_size = 0,
+        },
+
+        {
+            .s.msg_type = WRP_MSG_TYPE__RETREIVE,
+            .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .s.u.crud.source = "fake-server",
+            .s.u.crud.dest = "/parental-control/schedule",
+            .s.u.crud.partner_ids = NULL,
+            .s.u.crud.headers = NULL,
+            .s.u.crud.metadata = NULL,
+            .s.u.crud.include_spans = false,
+            .s.u.crud.spans.spans = NULL,
+            .s.u.crud.spans.count = 0,
+            .s.u.crud.path = "Some path",
+            .s.u.crud.payload = NULL,
+            .s.u.crud.payload_size = 0,
+
+            .r.msg_type = WRP_MSG_TYPE__RETREIVE,
+            .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .r.u.crud.source = "/parental-control/schedule",
+            .r.u.crud.dest = "fake-server",
+            .r.u.crud.partner_ids = NULL,
+            .r.u.crud.headers = NULL,
+            .r.u.crud.metadata = NULL,
+            .r.u.crud.include_spans = false,
+            .r.u.crud.spans.spans = NULL,
+            .r.u.crud.spans.count = 0,
+            .r.u.crud.path = "Some path",
+            .r.u.crud.payload = "Some other binary",
+            .r.u.crud.payload_size = 16,
+        },
+    };
     size_t t_size = sizeof(tests)/sizeof(test_t);
+    uint8_t i;
 
     for( i = 0; i < t_size; i++ ) {
         wrp_msg_t msg;
         int rv = wrp_process("data", "md5", &(tests[i].s), &msg);
-        CU_ASSERT(0 == rv);
+        CU_ASSERT(0 < rv);
         CU_ASSERT(tests[i].r.msg_type == msg.msg_type);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.transaction_uuid, msg.u.req.transaction_uuid);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.source, msg.u.req.source);
-        CU_ASSERT_STRING_EQUAL(tests[i].r.u.req.dest, msg.u.req.dest);
-        CU_ASSERT(0 == memcmp(tests[i].r.u.req.payload, msg.u.req.payload, msg.u.req.payload_size));
-        //CU_ASSERT(tests[i].r.u.req.payload_size == msg.u.req.payload_size);
+        CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.transaction_uuid, msg.u.crud.transaction_uuid);
+        CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.source, msg.u.crud.source);
+        CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.dest, msg.u.crud.dest);
+        CU_ASSERT(0 == strcmp(tests[i].r.u.crud.path, msg.u.crud.path));
         wrp_cleanup(&msg);
     }
 }

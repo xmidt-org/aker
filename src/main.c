@@ -33,7 +33,7 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-/* none */
+#define LIBPD_CLOSED_MSG_RECEIVED 2
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -233,15 +233,15 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
                 libparodus_send(hpd_instance, &response);
                 wrp_cleanup(&response);
             }
-        } else if( 1 == rv || 2 == rv ) {
+        } else if( 1 == rv || LIBPD_CLOSED_MSG_RECEIVED == rv ) {
             debug_print("Timed out or message closed.\n");
             continue;
         } else {
             debug_info("Libparodus failed to receive message: '%s'\n",libparodus_strerror(rv));
         }
 
-        if( NULL != wrp_msg ) {
-            free(wrp_msg);
+        if( (NULL != wrp_msg) && (LIBPD_CLOSED_MSG_RECEIVED != rv) ) {
+            wrp_free_struct(wrp_msg);
             wrp_msg = NULL;
         }
     }
