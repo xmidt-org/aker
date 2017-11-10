@@ -60,7 +60,7 @@ int wrp_process(const char *data_file, const char *md5_file,
             out_crud->source  = in_crud->dest;
             out_crud->dest    = in_crud->source;
             out_crud->path    = in_crud->path;
-            if( 0 == strcmp("/aker/schedule", in_crud->dest) ) {
+            if( 0 == strcmp(WRP_DEST_CUR, in_crud->dest) ) {
                 rv = process_message_cu(data_file, md5_file, in_msg);
             } else {
                 debug_error("CREATE/UPDATE message destination %s is invalid\n", in_crud->dest);
@@ -87,8 +87,8 @@ int wrp_process(const char *data_file, const char *md5_file,
             out_crud->source  = in_crud->dest;
             out_crud->dest    = in_crud->source;
             out_crud->path    = in_crud->path;
-            if( (0 == strcmp("/aker/schedule", in_crud->dest)) ||
-                (0 == strcmp("/aker/md5",      in_crud->dest)) )
+            if( (0 == strcmp(WRP_DEST_CUR, in_crud->dest)) ||
+                (0 == strcmp(WRP_DEST_RET, in_crud->dest)) )
             {
                 rv = process_message_ret(data_file, response);
             } else {

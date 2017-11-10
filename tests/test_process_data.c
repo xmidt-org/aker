@@ -58,7 +58,7 @@ void test_process_request_cu_and_ret()
             .m.msg_type = WRP_MSG_TYPE__CREATE,
             .m.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
             .m.u.crud.source = "fake-server",
-            .m.u.crud.dest = "/aker/schedule",
+            .m.u.crud.dest = WRP_DEST_CUR,
             .m.u.crud.partner_ids = NULL,
             .m.u.crud.headers = NULL,
             .m.u.crud.metadata = NULL,
@@ -75,7 +75,7 @@ void test_process_request_cu_and_ret()
         {
             .m.msg_type = WRP_MSG_TYPE__RETREIVE,
             .m.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .m.u.crud.source = "/aker/schedule",
+            .m.u.crud.source = WRP_DEST_CUR,
             .m.u.crud.dest = "fake-server",
             .m.u.crud.partner_ids = NULL,
             .m.u.crud.headers = NULL,
