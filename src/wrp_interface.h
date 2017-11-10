@@ -33,8 +33,8 @@ extern "C" {
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-#define WRP_DEST_CUR "/aker/schedule"
-#define WRP_DEST_RET "/aker/md5"
+#define SCHEDULE_ENDPOINT "/aker/schedule"
+#define MD5_ENDPOINT      "/aker/md5"
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
