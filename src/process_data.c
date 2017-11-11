@@ -25,6 +25,7 @@
 #include "schedule.h"
 #include "scheduler.h"
 #include "aker_md5.h"
+#include "time.h"
 
 
 /*----------------------------------------------------------------------------*/
@@ -56,6 +57,7 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
     size_t write_size = 0;
     unsigned char result[MD5_SIZE];
     unsigned char *md5_string = NULL;
+    time_t process_time = 0;
 
     file_handle = fopen(filename, "wb");
     if( NULL == file_handle ) {
@@ -67,6 +69,7 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
     fclose(file_handle);
     if (NULL != (md5_string = compute_byte_stream_md5(cu->u.crud.payload, cu->u.crud.payload_size, result)))
     {
+        process_time = get_unix_time();
         if (0 == process_schedule_data(cu->u.crud.payload_size, cu->u.crud.payload))  {
             file_handle = fopen(md5, "wb");
             if (file_handle) {
@@ -78,6 +81,9 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
             }
         }
         free(md5_string);
+        process_time = get_unix_time() - process_time;
+        debug_info("Time to process schedule file of size %zu bytes is %ld seconds\n", write_size, process_time);
+
     } else {
         debug_error("process_message_cu()->compute_byte_stream_md5() Failed\n");
     }

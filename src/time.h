@@ -33,4 +33,13 @@
  */
 time_t convert_unix_time_to_weekly( time_t unixtime );
 
+/**
+ * Utility wrapper for unixtime.
+ *
+ * @note Will block until system call is successful
+ *
+ * @return the current Epoch time.
+ */
+time_t get_unix_time(void);
+
 #endif

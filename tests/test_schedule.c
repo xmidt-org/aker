@@ -123,10 +123,23 @@ void test_decoder( void )
     (void) rv;
 }
 
+
 time_t convert_unix_time_to_weekly( time_t unixtime )
 {
     //printf( "unix: %ld -> rel: %ld\n", unixtime, (unixtime - 1234000 + 11) );
     return unixtime - 1234000 + 11;
+}
+
+
+time_t get_unix_time(void)
+{
+    struct timespec tm;
+    time_t unix_time = 0;
+
+    clock_gettime(CLOCK_REALTIME, &tm);
+    unix_time = tm.tv_sec; // ignore tm.tv_nsec
+
+    return unix_time;
 }
 
 void test_mac_validator( void )
