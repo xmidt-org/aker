@@ -31,8 +31,8 @@
 
 unsigned char *compute_file_md5(const char *filename, unsigned char *md5_sig)
 {
-    size_t size;
-    uint8_t *data;
+    size_t size = 0;
+    uint8_t *data = NULL;
     unsigned char *md5_string = NULL;
     
     size = read_file_from_disk(filename, &data);
