@@ -15,6 +15,8 @@
  *
  */
 #include <stdint.h>
+#include <unistd.h>
+
 #include "time.h"
 
 /*----------------------------------------------------------------------------*/
@@ -56,6 +58,24 @@ time_t convert_unix_time_to_weekly(time_t unixtime)
 
 
     return seconds_since_sunday_midnght;
+}
+
+/* See time.h for details. */
+time_t get_unix_time(void)
+{
+    #define SLEEP_TIME 5
+    struct timespec tm;
+    time_t unix_time = 0;
+
+    while( 1 ) {
+        if( 0 == clock_gettime(CLOCK_REALTIME, &tm) ) {
+            unix_time = tm.tv_sec; // ignore tm.tv_nsec
+            break;
+        }
+        sleep(SLEEP_TIME);
+    }
+
+    return unix_time;
 }
 
 /*----------------------------------------------------------------------------*/
