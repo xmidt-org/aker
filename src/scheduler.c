@@ -132,8 +132,9 @@ void *scheduler_thread(void *args)
             static char *current_blocked_macs = NULL;
             char *blocked_macs;
 
+            process_time = get_unix_time();
             blocked_macs = get_blocked_at_time(current_schedule, unix_time);
-            process_time = get_unix_time() - unix_time;
+            process_time = get_unix_time() - process_time;
             debug_info("Time to process current schedule event is %ld seconds\n", process_time);
 
             if (NULL == current_blocked_macs) {
