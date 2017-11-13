@@ -161,16 +161,16 @@ int decode_macs_table (msgpack_object *key, msgpack_object *val, schedule_t **t)
     uint32_t i;
     uint32_t count;
     msgpack_object *ptr = val->via.array.ptr;
-    mac_address *macs;
     (void ) key;
     
     count = val->via.array.size;
     create_mac_table( *t, count );
-    macs = (*t)->macs;
     
     for (i =0; i < count;i++) {
         if (ptr->via.str.size < MAC_ADDRESS_SIZE) {
-            memcpy(macs[i].mac, ptr->via.str.ptr, ptr->via.str.size);
+            if (0 != set_mac_index( *t, ptr->via.str.ptr, ptr->via.str.size, i )) {
+                debug_error("decode_macs_table(): Invalid MAC address\n");
+            }
         } else {
             debug_error("decode_macs_table() Invalid MAC Address Length\n");
         }
