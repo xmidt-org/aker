@@ -379,6 +379,10 @@ char* __convert_event_to_string( schedule_t *s, schedule_event_t *e )
                     string_ok = true;
                     memcpy( p, &s->macs[e->block[i]], 17 );
                     p[17] = ' ';
+                } else {
+                    debug_error("__convert_event_to_string():Invalid mac index\n");
+                    string_ok = false;
+                    break;
                 }
                 p = &p[18];
             }
