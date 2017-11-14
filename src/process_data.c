@@ -192,6 +192,17 @@ size_t read_file_from_disk( const char *filename, uint8_t **data )
     return read_size;
 }
 
+/*----------------------------------------------------------------------------*/
+/*                             Internal functions                             */
+/*----------------------------------------------------------------------------*/
+
+/**
+ *  Helper to encode string.
+ *
+ *  @param pk     object
+ *  @param string to be encoded
+ *  @param n      size of string
+ */
 void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n )
 {
     msgpack_pack_str( pk, n );
