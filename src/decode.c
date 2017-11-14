@@ -171,12 +171,6 @@ int decode_macs_table (msgpack_object *key, msgpack_object *val, schedule_t **t)
     
     count = val->via.array.size;
 
-    if (count > MAXIMUM_BLOCKED_MAC_LIST) {
-        debug_error("decode_macs_table(): MACs count %d exceeds max(%d)\n",
-                     count, MAXIMUM_BLOCKED_MAC_LIST);
-        return -1;
-    }
-
     if (0 != create_mac_table( *t, count )) {
         debug_error("decode_macs_table(): create_mac_table() failed\n");
         return -2;
