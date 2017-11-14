@@ -26,7 +26,7 @@
 #define MACS              "macs"
 #define ABSOLUTE_SCHEDULE "absolute"
 #define RELATIVE_TIME_STR "time"
-#define UNIX_TIME_STR     "unix-time"
+#define UNIX_TIME_STR     "unix_time"
 #define INDEXES_STR       "indexes"
 
 #define UNPACKED_BUFFER_SIZE 2048
@@ -91,8 +91,14 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
                 decode_schedule_table(key, val, &s->absolute);
                 }
             else  if (0 == strncmp(key->via.str.ptr, MACS, key->via.str.size)) {
-                debug_info("Found %s\n", MACS);
-                decode_macs_table(key, val, &s);
+                    debug_info("Found %s\n", MACS);
+                    if (0 != decode_macs_table(key, val, &s)) {
+                        debug_error("decode_schedule():decode_macs_table() failed\n");
+                        if (s->macs) {
+                            free(s->macs);
+                            s->macs = NULL;
+                        }
+                    }
                 } else {
                     debug_error("decode_schedule() can't handle object type\n");
                     // ret_val = -4;
@@ -161,23 +167,29 @@ int decode_macs_table (msgpack_object *key, msgpack_object *val, schedule_t **t)
     uint32_t i;
     uint32_t count;
     msgpack_object *ptr = val->via.array.ptr;
-    mac_address *macs;
     (void ) key;
     
     count = val->via.array.size;
-    create_mac_table( *t, count );
-    macs = (*t)->macs;
+
+    if (0 != create_mac_table( *t, count )) {
+        debug_error("decode_macs_table(): create_mac_table() failed\n");
+        return -2;
+    }
     
     for (i =0; i < count;i++) {
         if (ptr->via.str.size < MAC_ADDRESS_SIZE) {
-            memcpy(macs[i].mac, ptr->via.str.ptr, ptr->via.str.size);
+            if (0 != set_mac_index( *t, ptr->via.str.ptr, ptr->via.str.size, i )) {
+                debug_error("decode_macs_table(): Invalid MAC address\n");
+                return -3;
+            }
         } else {
             debug_error("decode_macs_table() Invalid MAC Address Length\n");
+            return -4;
         }
         ptr++;
     }
     
-    return -1;    
+    return 0;    
 }
 
 int process_map(msgpack_object_map *map, schedule_event_t **t)
@@ -197,13 +209,7 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
             && (name_match(key, UNIX_TIME_STR) || name_match(key, RELATIVE_TIME_STR))
            )
         {
-           // char buf[64];
-           // memset(buf, 0, 64);
-           // memcpy(buf, key->via.str.ptr, key->via.str.size);
-           // debug_info("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
-            
-            entry_time = val->via.u64;
-            
+          entry_time = val->via.u64;
         } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_NIL) {
             *t = create_schedule_event(0);
         } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_ARRAY
@@ -214,13 +220,18 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
                 uint32_t array_size = 0;
 
                 *t = create_schedule_event(val->via.array.size);
-                for (;array_size < (val->via.array.size); array_size++) {
-                        (*t)->block[array_size] = ptr->via.u64;
-                        debug_info("Array Element[%d] = %d block[] %d\n",
-                                array_size, (uint32_t) ptr->via.u64, 
-                                (*t)->block[array_size]);
-                        ptr++;
-                    }
+
+                if (NULL != (*t)) {
+                    for (; array_size < (val->via.array.size); array_size++) {
+                            (*t)->block[array_size] = ptr->via.u64;
+                            debug_info("Array Element[%d] = %d block[] %d\n",
+                                    array_size, (uint32_t) ptr->via.u64,
+                                    (*t)->block[array_size]);
+                            ptr++;
+                        }
+                }   else {
+                    ret_val = -2;
+                }
         } else {
             debug_error("Unexpected Item in msgpack_object_map\n");
             ret_val = -1;

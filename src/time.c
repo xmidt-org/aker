@@ -47,9 +47,10 @@
 time_t convert_unix_time_to_weekly(time_t unixtime)
 {
     time_t seconds_since_sunday_midnght;
+    time_t t = unixtime;
     struct tm ts;
 
-    ts = *localtime(&unixtime);
+    ts = *localtime(&t);
 
     seconds_since_sunday_midnght = (ts.tm_wday * 24 * 3600) +
             (ts.tm_hour * 3600) +
