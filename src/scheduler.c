@@ -38,6 +38,7 @@ static void *scheduler_thread(void *args);
 static void call_firewall( const char* firewall_cmd, char *blocked );
 
 static schedule_t *current_schedule = NULL;
+static char *current_blocked_macs = NULL;
 static pthread_mutex_t schedule_lock;
 
 /*----------------------------------------------------------------------------*/
@@ -90,6 +91,25 @@ int process_schedule_data( size_t len, uint8_t *data )
     return rv;
 }
 
+
+/* See scheduler.h for details. */
+char *get_current_blocked_macs( void )
+{
+    char *macs = NULL;
+    int rv;
+
+    rv = pthread_mutex_lock( &schedule_lock );
+    if( (0 == rv) && current_blocked_macs ) {
+        size_t sz = strlen(current_blocked_macs);
+        macs = (char *) malloc(sz + 1);
+        memcpy(macs, current_blocked_macs, (sz + 1));
+    }
+    pthread_mutex_unlock( &schedule_lock );
+
+    return macs;
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
@@ -129,7 +149,6 @@ void *scheduler_thread(void *args)
    
         pthread_mutex_lock( &schedule_lock );
         if( current_schedule ) {
-            static char *current_blocked_macs = NULL;
             char *blocked_macs;
 
             process_time = get_unix_time();

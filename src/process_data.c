@@ -19,10 +19,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <errno.h>
+#include <msgpack.h>
 
 #include "aker_log.h"
 #include "process_data.h"
-#include "schedule.h"
 #include "scheduler.h"
 #include "aker_md5.h"
 #include "time.h"
@@ -46,11 +46,12 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-/* None */
+void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
+/* See process_data.h for details. */
 ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu )
 {
     FILE *file_handle = NULL;
@@ -91,7 +92,9 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
     return write_size;
 }
 
-ssize_t process_message_ret( const char *filename, wrp_msg_t *ret )
+
+/* See process_data.h for details. */
+ssize_t process_message_ret_all( const char *filename, wrp_msg_t *ret )
 {
     uint8_t *data = NULL;
     size_t read_size = 0;
@@ -105,6 +108,48 @@ ssize_t process_message_ret( const char *filename, wrp_msg_t *ret )
     return read_size;
 }
 
+
+/* See process_data.h for details. */
+ssize_t process_message_ret_now( wrp_msg_t *ret )
+{
+    const char cstr_active[] = "active";
+    const char cstr_time[] = "time";
+    time_t current = 0;
+    char *macs = NULL;
+    size_t macs_size = 0;
+    msgpack_sbuffer sbuf;
+    msgpack_packer pk;
+
+    current = get_unix_time();
+    macs = get_current_blocked_macs();
+    if( macs ) macs_size = strlen(macs);
+
+    msgpack_sbuffer_init(&sbuf);
+    msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
+    msgpack_pack_map(&pk, 2);
+
+    __msgpack_pack_string(&pk, cstr_active, sizeof(cstr_active));
+    __msgpack_pack_string(&pk, macs, macs_size);
+
+    __msgpack_pack_string(&pk, cstr_time, sizeof(cstr_time));
+    msgpack_pack_int32(&pk, current);
+
+    ret->u.crud.content_type = "application/msgpack";
+    if( sbuf.data ) {
+        ret->u.crud.payload = malloc(sizeof(char) * sbuf.size);
+        if( ret->u.crud.payload ) {
+            memcpy(ret->u.crud.payload, sbuf.data, sbuf.size);
+            ret->u.crud.payload_size = sbuf.size;
+        }
+    }
+    if( macs ) free(macs);
+    msgpack_sbuffer_destroy(&sbuf);
+
+    return ret->u.crud.payload_size;
+}
+
+
+/* See process_data.h for details. */
 size_t read_file_from_disk( const char *filename, uint8_t **data )
 {
     FILE *file_handle = NULL;
@@ -146,3 +191,10 @@ size_t read_file_from_disk( const char *filename, uint8_t **data )
 
     return read_size;
 }
+
+void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n )
+{
+    msgpack_pack_str( pk, n );
+    msgpack_pack_str_body( pk, string, n );
+}
+

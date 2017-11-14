@@ -51,9 +51,15 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
     return 1;
 }
 
-ssize_t process_message_ret( const char *filename, wrp_msg_t *ret )
+ssize_t process_message_ret_all( const char *filename, wrp_msg_t *ret )
 {
     (void) filename; (void) ret;
+    return 1;
+}
+
+ssize_t process_message_ret_now( wrp_msg_t *ret )
+{
+    (void) ret;
     return 1;
 }
 

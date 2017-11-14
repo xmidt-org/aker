@@ -33,7 +33,17 @@ int scheduler_start( pthread_t *thread, const char *firewall_cmd );
  *  @param len  the length of the data in bytes
  *  @param data the schedule msgpack data
  *
- *  @return 0 on success error from decoding the data otherwise
+ *  @return 0 on success, error from decoding the data otherwise
  */
 int process_schedule_data( size_t len, uint8_t *data );
+
+/**
+ *  Retreives data generated the last time the scheduler was run.
+ *
+ *  @note Makes new copy of string and returns, caller to free returned string
+ *
+ *  @return the string with the list of blocked addresses (may be NULL and valid)
+ */
+char *get_current_blocked_macs( void );
+
 #endif
