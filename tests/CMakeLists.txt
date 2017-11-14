@@ -75,14 +75,14 @@ add_custom_target(coverage
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_md5.dir/__/src --output-file md5.info
 COMMAND lcov -q --capture --directory 
-${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_decode.dir/__/src --output-file md5.info
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_decode.dir/__/src --output-file decode.info
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_schedule.dir/__/src --output-file schedule.info
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_process_data.dir/__/src --output-file process.info
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_wrp_interface.dir/__/src --output-file wrp.info
-COMMAND lcov -a md5.info -a md5.info -a schedule.info -a process.info -a wrp.info --output-file coverage.info
+COMMAND lcov -a md5.info -a decode.info -a schedule.info -a process.info -a wrp.info --output-file coverage.info
 COMMAND genhtml coverage.info
 WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
