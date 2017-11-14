@@ -68,10 +68,11 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
     debug_print("cu->u.crud.payload_size = %d\n", cu->u.crud.payload_size);
     write_size = fwrite(cu->u.crud.payload, sizeof(uint8_t), cu->u.crud.payload_size, file_handle);
     fclose(file_handle);
-    if (NULL != (md5_string = compute_byte_stream_md5(cu->u.crud.payload, cu->u.crud.payload_size, result)))
-    {
+    md5_string = compute_byte_stream_md5(cu->u.crud.payload, cu->u.crud.payload_size, result);
+    debug_print("md5_string = %s\n", md5_string);
+    if( NULL != md5_string ) {
         process_time = get_unix_time();
-        if (0 == process_schedule_data(cu->u.crud.payload_size, cu->u.crud.payload))  {
+        if( 0 == process_schedule_data(cu->u.crud.payload_size, cu->u.crud.payload) ) {
             file_handle = fopen(md5, "wb");
             if (file_handle) {
                 size_t cnt = fwrite(md5_string, sizeof(uint8_t), MD5_SIZE * 2, file_handle);
@@ -87,6 +88,7 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
 
     } else {
         debug_error("process_message_cu()->compute_byte_stream_md5() Failed\n");
+        return -2;
     }
 
     return write_size;
