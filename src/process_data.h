@@ -49,7 +49,7 @@ extern "C" {
 ssize_t process_message_cu( const char *filename, const char *md5_file, wrp_msg_t *cu );
 
 /**
- * @brief Returns data through the wrp CRUD message.
+ * @brief Returns current schedule through the wrp CRUD message.
  * 
  * @note return data buffer needs to be free()-ed by caller.
  *
@@ -58,7 +58,18 @@ ssize_t process_message_cu( const char *filename, const char *md5_file, wrp_msg_
  *
  * @return size of data retrieved, <0 otherwise.
  */
-ssize_t process_message_ret( const char *filename, wrp_msg_t *ret );
+ssize_t process_message_ret_all( const char *filename, wrp_msg_t *ret );
+
+/**
+ * @brief Returns list of the currently blocked MAC IDs through the wrp CRUD message.
+ * 
+ * @note return data buffer needs to be free()-ed by caller.
+ *
+ * @param ret CRUD message
+ *
+ * @return size of data retrieved, <0 otherwise.
+ */
+ssize_t process_message_ret_now( wrp_msg_t *ret );
 
 /**
  * @brief reads the file.

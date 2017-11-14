@@ -65,7 +65,7 @@ int wrp_process(const char *data_file, const char *md5_file,
             } else {
                 debug_error("CREATE/UPDATE message destination %s is invalid\n", in_crud->dest);
             }
-            if( 0 < rv ) {
+            if( 0 <= rv ) {
                 out_crud->status = 200;
             }
             in_crud->transaction_uuid = NULL;
@@ -90,11 +90,13 @@ int wrp_process(const char *data_file, const char *md5_file,
             if( (0 == strcmp(SCHEDULE_ENDPOINT, in_crud->dest)) ||
                 (0 == strcmp(MD5_ENDPOINT,      in_crud->dest)) )
             {
-                rv = process_message_ret(data_file, response);
+                rv = process_message_ret_all(data_file, response);
+            } else if( 0 == strcmp(NOW_ENDPOINT, in_crud->dest) ) {
+                rv = process_message_ret_now(response);
             } else {
                 debug_error("RETRIEVE message destination %s is invalid\n", in_crud->dest);
             }
-            if( 0 < rv ) {
+            if( 0 <= rv ) {
                 out_crud->status = 200;
             }
             in_crud->transaction_uuid = NULL;

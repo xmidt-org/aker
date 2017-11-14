@@ -50,7 +50,7 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 /*                                   Tests                                    */
 /*----------------------------------------------------------------------------*/
-void test_process_request_cu_and_ret()
+void test_process_cu_and_ret()
 {   
     test_t tests_cu[] =
     {
@@ -102,7 +102,7 @@ void test_process_request_cu_and_ret()
     t_size = sizeof(tests_ret)/sizeof(test_t);
     for( i = 0; i < t_size; i++ ) {
         memset(&response, '\0', sizeof(wrp_msg_t));
-        ret_size = process_message_ret("pcs.bin", &response);
+        ret_size = process_message_ret_all("pcs.bin", &response);
         CU_ASSERT(0 == memcmp(tests_ret[i].m.u.crud.payload, response.u.crud.payload, response.u.crud.payload_size));
         CU_ASSERT(tests_ret[i].m.u.crud.payload_size == response.u.crud.payload_size);
         free(response.u.crud.payload);
@@ -114,7 +114,7 @@ void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "Test 1", test_process_request_cu_and_ret );
+    CU_add_test( *suite, "Test 1", test_process_cu_and_ret );
 }
 
 /*----------------------------------------------------------------------------*/

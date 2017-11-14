@@ -35,6 +35,7 @@ extern "C" {
 /*----------------------------------------------------------------------------*/
 #define SCHEDULE_ENDPOINT "/aker/schedule"
 #define MD5_ENDPOINT      "/aker/md5"
+#define NOW_ENDPOINT      "/aker/now"
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
