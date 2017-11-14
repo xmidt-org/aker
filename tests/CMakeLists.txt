@@ -96,8 +96,10 @@ ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_schedule.dir/__/src --output-file sc
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_process_data.dir/__/src --output-file process.info
 COMMAND lcov -q --capture --directory 
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_process_ret_now.dir/__/src --output-file process_now.info
+COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_wrp_interface.dir/__/src --output-file wrp.info
-COMMAND lcov -a md5.info -a decode.info -a schedule.info -a process.info -a time.info -a wrp.info --output-file coverage.info
+COMMAND lcov -a md5.info -a decode.info -a schedule.info -a process.info -a time.info -a wrp.info -a process_now.info --output-file coverage.info
 COMMAND genhtml coverage.info
 WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
