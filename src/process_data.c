@@ -128,10 +128,10 @@ ssize_t process_message_ret_now( wrp_msg_t *ret )
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
     msgpack_pack_map(&pk, 2);
 
-    __msgpack_pack_string(&pk, cstr_active, sizeof(cstr_active));
+    __msgpack_pack_string(&pk, cstr_active, strlen(cstr_active));
     __msgpack_pack_string(&pk, macs, macs_size);
 
-    __msgpack_pack_string(&pk, cstr_time, sizeof(cstr_time));
+    __msgpack_pack_string(&pk, cstr_time, strlen(cstr_time));
     msgpack_pack_int32(&pk, current);
 
     ret->u.crud.content_type = "application/msgpack";
