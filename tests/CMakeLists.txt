@@ -53,6 +53,14 @@ add_executable(test_process_data test_process_data.c ../src/process_data.c
 target_link_libraries (test_process_data ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
+#   test_process_ret_now
+#-------------------------------------------------------------------------------
+add_test(NAME test_process_ret_now COMMAND ${MEMORY_CHECK} ./test_process_ret_now)
+add_executable(test_process_ret_now test_process_ret_now.c ../src/process_data.c)
+
+target_link_libraries (test_process_ret_now ${AKER_COMMON_LIBS})
+
+#-------------------------------------------------------------------------------
 #   test_decode
 #-------------------------------------------------------------------------------
 add_test(NAME test_decode COMMAND ${MEMORY_CHECK} ./test_decode)
