@@ -100,9 +100,7 @@ char *get_current_blocked_macs( void )
 
     rv = pthread_mutex_lock( &schedule_lock );
     if( (0 == rv) && current_blocked_macs ) {
-        size_t sz = strlen(current_blocked_macs);
-        macs = (char *) malloc(sz + 1);
-        memcpy(macs, current_blocked_macs, (sz + 1));
+        macs = strdup(current_blocked_macs);
     }
     pthread_mutex_unlock( &schedule_lock );
 
