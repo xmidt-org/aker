@@ -209,13 +209,7 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
             && (name_match(key, UNIX_TIME_STR) || name_match(key, RELATIVE_TIME_STR))
            )
         {
-           // char buf[64];
-           // memset(buf, 0, 64);
-           // memcpy(buf, key->via.str.ptr, key->via.str.size);
-           // debug_info("Key val %s is %d\n", buf, (uint32_t ) val->via.u64);
-            
-            entry_time = val->via.u64;
-            
+          entry_time = val->via.u64;
         } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_NIL) {
             *t = create_schedule_event(0);
         } else if (key->type == MSGPACK_OBJECT_STR && val->type == MSGPACK_OBJECT_ARRAY
@@ -226,13 +220,18 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
                 uint32_t array_size = 0;
 
                 *t = create_schedule_event(val->via.array.size);
-                for (;array_size < (val->via.array.size); array_size++) {
-                        (*t)->block[array_size] = ptr->via.u64;
-                        debug_info("Array Element[%d] = %d block[] %d\n",
-                                array_size, (uint32_t) ptr->via.u64, 
-                                (*t)->block[array_size]);
-                        ptr++;
-                    }
+
+                if (NULL != (*t)) {
+                    for (; array_size < (val->via.array.size); array_size++) {
+                            (*t)->block[array_size] = ptr->via.u64;
+                            debug_info("Array Element[%d] = %d block[] %d\n",
+                                    array_size, (uint32_t) ptr->via.u64,
+                                    (*t)->block[array_size]);
+                            ptr++;
+                        }
+                }   else {
+                    ret_val = -2;
+                }
         } else {
             debug_error("Unexpected Item in msgpack_object_map\n");
             ret_val = -1;

@@ -72,8 +72,14 @@ schedule_t* create_schedule( void )
 /* See schedule.h for details. */
 schedule_event_t* create_schedule_event( size_t block_count )
 {
-    schedule_event_t *s;
+    schedule_event_t *s = NULL;
     size_t size;
+
+    if (block_count > MAXIMUM_BLOCKED_MAC_LIST) {
+        debug_error("create_schedule_event() Error Request %d exceeds maximum %d\n",
+                     block_count, MAXIMUM_BLOCKED_MAC_LIST);
+        return s;
+    }
 
     size = sizeof(schedule_event_t) + block_count * sizeof(int);
 
