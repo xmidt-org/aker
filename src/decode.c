@@ -91,8 +91,14 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
                 decode_schedule_table(key, val, &s->absolute);
                 }
             else  if (0 == strncmp(key->via.str.ptr, MACS, key->via.str.size)) {
-                debug_info("Found %s\n", MACS);
-                decode_macs_table(key, val, &s);
+                    debug_info("Found %s\n", MACS);
+                    if (0 != decode_macs_table(key, val, &s)) {
+                        debug_error("decode_schedule():decode_macs_table() failed\n");
+                        if (s->macs) {
+                            free(s->macs);
+                            s->macs = NULL;
+                        }
+                    }
                 } else {
                     debug_error("decode_schedule() can't handle object type\n");
                     // ret_val = -4;
@@ -164,20 +170,32 @@ int decode_macs_table (msgpack_object *key, msgpack_object *val, schedule_t **t)
     (void ) key;
     
     count = val->via.array.size;
-    create_mac_table( *t, count );
+
+    if (count > MAXIMUM_BLOCKED_MAC_LIST) {
+        debug_error("decode_macs_table(): MACs count %d exceeds max(%d)\n",
+                     count, MAXIMUM_BLOCKED_MAC_LIST);
+        return -1;
+    }
+
+    if (0 != create_mac_table( *t, count )) {
+        debug_error("decode_macs_table(): create_mac_table() failed\n");
+        return -2;
+    }
     
     for (i =0; i < count;i++) {
         if (ptr->via.str.size < MAC_ADDRESS_SIZE) {
             if (0 != set_mac_index( *t, ptr->via.str.ptr, ptr->via.str.size, i )) {
                 debug_error("decode_macs_table(): Invalid MAC address\n");
+                return -3;
             }
         } else {
             debug_error("decode_macs_table() Invalid MAC Address Length\n");
+            return -4;
         }
         ptr++;
     }
     
-    return -1;    
+    return 0;    
 }
 
 int process_map(msgpack_object_map *map, schedule_event_t **t)
