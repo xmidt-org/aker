@@ -84,6 +84,17 @@ add_executable(test_time test_time.c ../src/time.c)
 target_link_libraries (test_time ${AKER_COMMON_LIBS})
 
 
+#-------------------------------------------------------------------------------
+#   test_scheduleR
+#-------------------------------------------------------------------------------
+add_test(NAME test_scheduler COMMAND ${MEMORY_CHECK} ./test_scheduler)
+add_executable(test_scheduler test_scheduler.c ../src/schedule_print.c
+               ../src/schedule.c ../src/decode.c ../src/process_data.c
+               ../src/aker_md5.c ../src/md5.c
+               ../src/scheduler.c)
+target_link_libraries (test_scheduler ${AKER_COMMON_LIBS})
+
+
 add_custom_target(coverage
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_time.dir/__/src --output-file time.info
@@ -97,7 +108,12 @@ COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_process_data.dir/__/src --output-file process.info
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_wrp_interface.dir/__/src --output-file wrp.info
-COMMAND lcov -a md5.info -a decode.info -a schedule.info -a process.info -a time.info -a wrp.info --output-file coverage.info
+COMMAND lcov -q --capture --directory
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_scheduler.dir/__/src --output-file scheduler.info
+
+COMMAND lcov -a md5.info -a decode.info
+-a schedule.info -a process.info -a time.info -a scheduler.info
+-a wrp.info --output-file coverage.info
 COMMAND genhtml coverage.info
 WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
