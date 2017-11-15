@@ -26,6 +26,7 @@
 #include "scheduler.h"
 #include "aker_md5.h"
 #include "time.h"
+#include "aker_mem.h"
 
 
 /*----------------------------------------------------------------------------*/
@@ -80,7 +81,7 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
                 fclose(file_handle);
             }
         }
-        free(md5_string);
+        aker_free(md5_string);
         process_time = get_unix_time() - process_time;
         debug_info("Time to process schedule file of size %zu bytes is %ld seconds\n", write_size, process_time);
 
@@ -136,13 +137,13 @@ ssize_t process_message_ret_now( wrp_msg_t *ret )
 
     ret->u.crud.content_type = "application/msgpack";
     if( sbuf.data ) {
-        ret->u.crud.payload = malloc(sizeof(char) * sbuf.size);
+        ret->u.crud.payload = aker_malloc(sizeof(char) * sbuf.size);
         if( ret->u.crud.payload ) {
             memcpy(ret->u.crud.payload, sbuf.data, sbuf.size);
             ret->u.crud.payload_size = sbuf.size;
         }
     }
-    if( macs ) free(macs);
+    if( macs ) aker_free(macs);
     msgpack_sbuffer_destroy(&sbuf);
 
     return ret->u.crud.payload_size;
@@ -181,7 +182,7 @@ size_t read_file_from_disk( const char *filename, uint8_t **data )
     read_size = 0;
     *data = NULL;
     if( file_size > 0 ) {
-        *data = (uint8_t*) malloc(file_size);
+        *data = (uint8_t*) aker_malloc(file_size);
 
         if( NULL != *data ) {
             read_size = fread(*data, sizeof(uint8_t), file_size, file_handle);

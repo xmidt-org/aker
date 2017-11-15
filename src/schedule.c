@@ -27,6 +27,7 @@
 #include "time.h"
 #include "process_data.h"
 #include "aker_log.h"
+#include "aker_mem.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -60,7 +61,7 @@ schedule_t* create_schedule( void )
 {
     schedule_t *s;
 
-    s = (schedule_t*) malloc( sizeof(schedule_t) );
+    s = (schedule_t*) aker_malloc( sizeof(schedule_t) );
     if( NULL != s ) {
         memset( s, 0, sizeof(schedule_t) );
     }
@@ -83,7 +84,7 @@ schedule_event_t* create_schedule_event( size_t block_count )
 
     size = sizeof(schedule_event_t) + block_count * sizeof(int);
 
-    s = (schedule_event_t*) malloc( size );
+    s = (schedule_event_t*) aker_malloc( size );
     if( NULL != s ) {
         memset( s, 0, size );
         s->block_count = block_count;
@@ -176,21 +177,21 @@ void destroy_schedule( schedule_t *s )
 
         while( NULL != s->absolute ) {
             n = s->absolute->next;
-            free( s->absolute );
+            aker_free( s->absolute );
             s->absolute = n;
         }
 
         while( NULL != s->weekly ) {
             n = s->weekly->next;
-            free( s->weekly );
+            aker_free( s->weekly );
             s->weekly = n;
         }
 
         if( NULL != s->macs ) {
-            free( s->macs );
+            aker_free( s->macs );
         }
 
-        free( s );
+        aker_free( s );
     }
 }
 
@@ -271,7 +272,7 @@ done:
 /* See schedule.h for details. */
 int create_mac_table( schedule_t *s, size_t count )
 {
-    s->macs = (mac_address*) malloc( count * sizeof(mac_address) );
+    s->macs = (mac_address*) aker_malloc( count * sizeof(mac_address) );
     if( NULL == s->macs ) {
         return -1;
     }
@@ -374,7 +375,7 @@ char* __convert_event_to_string( schedule_t *s, schedule_event_t *e )
 
         count = e->block_count;
 
-        rv = (char*) malloc( sizeof(char) * (count * MAC_ADDRESS_SIZE + 1) );
+        rv = (char*) aker_malloc( sizeof(char) * (count * MAC_ADDRESS_SIZE + 1) );
         if( NULL != rv ) {
             char *p = rv;
             bool string_ok = false;
@@ -397,7 +398,7 @@ char* __convert_event_to_string( schedule_t *s, schedule_event_t *e )
             /* Don't send back an empty string, just put it out of it's
              * misery here. */
             if( false == string_ok ) {
-                free( rv );
+                aker_free( rv );
                 rv = NULL;
             } else {
                 /* Chomp the extra ' ' and make it a '\0'. */

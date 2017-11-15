@@ -19,6 +19,7 @@
 #include "aker_log.h"
 #include "wrp_interface.h"
 #include "process_data.h"
+#include "aker_mem.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -124,7 +125,7 @@ int wrp_cleanup(wrp_msg_t *message)
     if( WRP_MSG_TYPE__RETREIVE == message->msg_type ) {
         crud_msg_t *msg = &(message->u.crud);
         if( msg->payload )
-            free(msg->payload);
+            aker_free(msg->payload);
         rv = 0;
     }
 

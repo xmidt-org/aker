@@ -27,6 +27,7 @@
 #include "aker_md5.h"
 #include "aker_log.h"
 #include "process_data.h"
+#include "aker_mem.h"
 
 
 unsigned char *compute_file_md5(const char *filename, unsigned char *md5_sig)
@@ -41,7 +42,7 @@ unsigned char *compute_file_md5(const char *filename, unsigned char *md5_sig)
     }
     
     if (NULL != data) {
-        free(data);
+        aker_free(data);
     }
     
     return md5_string;
@@ -56,9 +57,9 @@ unsigned char * compute_byte_stream_md5(uint8_t *data, size_t size, unsigned cha
     MD5_Init(&ctx);
     MD5_Update(&ctx, (const void *) data, (unsigned long) size);
     MD5_Final(md5_sig, &ctx);
-    md5_string = (unsigned char *) malloc(sizeof(unsigned char) * (MD5_SIZE * 2) + 1);
+    md5_string = (unsigned char *) aker_malloc(sizeof(unsigned char) * (MD5_SIZE * 2) + 1);
     if (NULL == md5_string) {
-        debug_error("compute_byte_stream_md5()->malloc() failed\n");
+        debug_error("compute_byte_stream_md5()->aker_malloc() failed\n");
         return md5_string;
     }
     debug_info("MD5 sig: ");
@@ -102,11 +103,11 @@ int verify_md5_signatures(const char *data_file, const char *md5_file)
     }
 
     if (md5_sig) {
-        free(md5_sig);
+        aker_free(md5_sig);
     }
 
     if (data_md5) {
-        free(data_md5);
+        aker_free(data_md5);
     }
     
     return ret_val;
