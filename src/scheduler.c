@@ -41,6 +41,8 @@ static void call_firewall( const char* firewall_cmd, char *blocked );
 static schedule_t *current_schedule = NULL;
 static char *current_blocked_macs = NULL;
 static pthread_mutex_t schedule_lock;
+static pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
+
 
 
 /*----------------------------------------------------------------------------*/
@@ -90,6 +92,7 @@ int process_schedule_data( size_t len, uint8_t *data )
         destroy_schedule(current_schedule);
         current_schedule = s;
         pthread_mutex_unlock( &schedule_lock );
+        pthread_cond_signal(&cond_var);
         debug_info( "process_schedule_data() New schedule\n" );
     } else {
         destroy_schedule( s );
@@ -128,7 +131,6 @@ void *scheduler_thread(void *args)
     const char *firewall_cmd;
     struct timespec tm = { INT_MAX, 0 };
     time_t unix_time = 0, process_time = 0;
-    pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
     int rv = ETIMEDOUT;
     
     signal(SIGTERM, sig_handler);
