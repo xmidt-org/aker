@@ -34,12 +34,14 @@
 
 /* Local Functions and file-scoped variables */
 static void sig_handler(int sig);
+static void cleanup(void);
 static void *scheduler_thread(void *args);
 static void call_firewall( const char* firewall_cmd, char *blocked );
 
 static schedule_t *current_schedule = NULL;
 static char *current_blocked_macs = NULL;
 static pthread_mutex_t schedule_lock;
+
 
 /*----------------------------------------------------------------------------*/
 /*                             External functions                             */
@@ -135,17 +137,17 @@ void *scheduler_thread(void *args)
     signal(SIGQUIT, sig_handler);
     signal(SIGHUP, sig_handler);
     signal(SIGALRM, sig_handler);    
-
+    
     firewall_cmd = (const char*) args;
 
     call_firewall( firewall_cmd, NULL );
 
     unix_time = get_unix_time();
-
     while( true ) {
         int info_period = 3;
    
         pthread_mutex_lock( &schedule_lock );
+        
         if( current_schedule ) {
             char *blocked_macs;
 
@@ -231,6 +233,7 @@ static void sig_handler(int sig)
 {
     if( sig == SIGINT ) {
         signal(SIGINT, sig_handler); /* reset it to this function */
+        cleanup();
         debug_info("SIGINT received!\n");
         exit(0);
     } else if( sig == SIGUSR1 ) {
@@ -249,7 +252,15 @@ static void sig_handler(int sig)
         signal(SIGALRM, sig_handler); /* reset it to this function */
         debug_info("SIGALRM received!\n");
     } else {
+        cleanup();
         debug_info("Signal %d received!\n", sig);
         exit(0);
     }
+}
+
+void cleanup (void ) 
+{
+    pthread_mutex_unlock( &schedule_lock );
+    pthread_mutex_destroy(&schedule_lock);
+    destroy_schedule(current_schedule);
 }
