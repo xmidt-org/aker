@@ -354,7 +354,7 @@ void test_only_one_absolute( void )
 
 void test_only_one_weekly( void )
 {
-    #define WEEKLY_23_NEXT_WEEK 1234012 + (7 * 24 * 3600)
+    #define WEEKLY_23_NEXT_WEEK 1234012 + SECONDS_IN_A_WEEK
 
     char *mac_id[] = { "11:22:33:44:55:66", "22:33:44:55:66:aa", "33:44:55:66:aa:BB", "44:55:66:aa:BB:cc", "55:66:aa:BB:cc:DD", };
 

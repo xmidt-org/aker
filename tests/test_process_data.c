@@ -51,7 +51,7 @@ typedef struct {
 /*                                   Tests                                    */
 /*----------------------------------------------------------------------------*/
 void test_process_cu_and_ret()
-{   
+{
     test_t tests_cu[] =
     {
         {
@@ -65,8 +65,7 @@ void test_process_cu_and_ret()
             .m.u.crud.include_spans = false,
             .m.u.crud.spans.spans = NULL,
             .m.u.crud.spans.count = 0,
-            .m.u.crud.payload = "Some binary",
-            .m.u.crud.payload_size = 11,
+            .m.u.crud.path = "Some path",
         },
     };
 
@@ -84,23 +83,49 @@ void test_process_cu_and_ret()
             .m.u.crud.spans.spans = NULL,
             .m.u.crud.spans.count = 0,
             .m.u.crud.path = "Some path",
-            .m.u.crud.payload = "Some binary",
-            .m.u.crud.payload_size = 11,
         },
     };
 
     size_t t_size = sizeof(tests_cu)/sizeof(test_t);
-    ssize_t cu_size, ret_size;
+    ssize_t cu_size, ret_size, data_size;
     wrp_msg_t response;
-    uint8_t i;
+    uint8_t i, *data = NULL;
+
+    const char some_binary_file[] = "../../tests/some.bin";
+    FILE *file_handle = fopen(some_binary_file, "rb");
+    if( NULL != file_handle ) {
+        int32_t file_size;
+
+        fseek(file_handle, 0, SEEK_END);
+        file_size = ftell(file_handle);
+        if (file_size < 0) {
+            printf("read_file_from_disk() ftell() error on %s\n", some_binary_file);
+            fclose(file_handle);
+        } else {
+            fseek(file_handle, 0, SEEK_SET);
+
+            if( file_size > 0 ) {
+                data = (uint8_t*) malloc(file_size);
+
+                if( NULL != data ) {
+                    data_size = fread(data, sizeof(uint8_t), file_size, file_handle);
+                }
+            }
+            fclose(file_handle);
+        }
+    }
 
     for( i = 0; i < t_size; i++ ) {
+        tests_cu[i].m.u.crud.payload = data;
+        tests_cu[i].m.u.crud.payload_size = data_size;
         cu_size = process_message_cu("pcs.bin", "pcs_md5.bin", &tests_cu[i].m);
         CU_ASSERT((size_t)cu_size == tests_cu[i].m.u.crud.payload_size);
     }
 
     t_size = sizeof(tests_ret)/sizeof(test_t);
     for( i = 0; i < t_size; i++ ) {
+        tests_ret[i].m.u.crud.payload = data;
+        tests_ret[i].m.u.crud.payload_size = data_size;
         memset(&response, '\0', sizeof(wrp_msg_t));
         ret_size = process_message_ret_all("pcs.bin", &response);
         CU_ASSERT(0 == memcmp(tests_ret[i].m.u.crud.payload, response.u.crud.payload, response.u.crud.payload_size));
@@ -108,6 +133,15 @@ void test_process_cu_and_ret()
         free(response.u.crud.payload);
         CU_ASSERT((size_t)ret_size == tests_ret[i].m.u.crud.payload_size);
     }
+    if( NULL != data ) {
+        free(data);
+    }
+}
+
+void test_null_file()
+{
+    ssize_t cu_size = process_message_cu(NULL, NULL, NULL);
+    CU_ASSERT(-1 == cu_size);
 }
 
 void add_suites( CU_pSuite *suite )
@@ -115,6 +149,7 @@ void add_suites( CU_pSuite *suite )
     printf("--------Start of Test Cases Execution ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
     CU_add_test( *suite, "Test 1", test_process_cu_and_ret );
+    CU_add_test( *suite, "Test null file", test_null_file );
 }
 
 /*----------------------------------------------------------------------------*/
