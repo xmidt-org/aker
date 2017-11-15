@@ -46,5 +46,8 @@ int process_schedule_data( size_t len, uint8_t *data );
  */
 char *get_current_blocked_macs( void );
 
+/* For Unit Test Use, since SIGTERM kills the process and gcov info file is not
+ created */
+void terminate_scheduler_thread(void);
 
 #endif

@@ -47,6 +47,13 @@ static pthread_mutex_t schedule_lock;
 /*                             External functions                             */
 /*----------------------------------------------------------------------------*/
 
+static int __keep_going__ = 1;
+void terminate_scheduler_thread(void)
+{
+    __keep_going__ = 0;
+}
+
+
 /* See scheduler.h for details. */
 int scheduler_start( pthread_t *thread, const char *firewall_cmd )
 {
@@ -142,7 +149,7 @@ void *scheduler_thread(void *args)
     call_firewall( firewall_cmd, NULL );
 
     unix_time = get_unix_time();
-    while( true ) {
+    while( __keep_going__ ) {
         int info_period = 3;
    
         pthread_mutex_lock( &schedule_lock );
@@ -189,7 +196,7 @@ void *scheduler_thread(void *args)
         pthread_mutex_unlock( &schedule_lock );
     }
     
-    pthread_mutex_destroy(&schedule_lock);
+    cleanup();
     return NULL;    
 }
 
