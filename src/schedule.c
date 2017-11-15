@@ -340,7 +340,7 @@ time_t get_next_unixtime(schedule_t *s, time_t unixtime)
         if( 0 == num_events ) {
             next_unixtime = INT_MAX;
         } else if ( INT_MAX == next_unixtime ) {
-            next_unixtime = (unixtime - weekly) + first_weekly + (7 * 24 * 3600);
+            next_unixtime = (unixtime - weekly) + first_weekly + SECONDS_IN_A_WEEK;
         }
     }
 

@@ -86,6 +86,7 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
 
     } else {
         debug_error("process_message_cu()->compute_byte_stream_md5() Failed\n");
+        return -2;
     }
 
     return write_size;
@@ -127,10 +128,10 @@ ssize_t process_message_ret_now( wrp_msg_t *ret )
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
     msgpack_pack_map(&pk, 2);
 
-    __msgpack_pack_string(&pk, cstr_active, sizeof(cstr_active));
+    __msgpack_pack_string(&pk, cstr_active, strlen(cstr_active));
     __msgpack_pack_string(&pk, macs, macs_size);
 
-    __msgpack_pack_string(&pk, cstr_time, sizeof(cstr_time));
+    __msgpack_pack_string(&pk, cstr_time, strlen(cstr_time));
     msgpack_pack_int32(&pk, current);
 
     ret->u.crud.content_type = "application/msgpack";
@@ -191,6 +192,17 @@ size_t read_file_from_disk( const char *filename, uint8_t **data )
     return read_size;
 }
 
+/*----------------------------------------------------------------------------*/
+/*                             Internal functions                             */
+/*----------------------------------------------------------------------------*/
+
+/**
+ *  Helper to encode string.
+ *
+ *  @param pk     object
+ *  @param string to be encoded
+ *  @param n      size of string
+ */
 void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n )
 {
     msgpack_pack_str( pk, n );
