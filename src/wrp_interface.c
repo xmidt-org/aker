@@ -87,12 +87,15 @@ int wrp_process(const char *data_file, const char *md5_file,
             out_crud->source  = in_crud->dest;
             out_crud->dest    = in_crud->source;
             out_crud->path    = in_crud->path;
-            if( (0 == strcmp(SCHEDULE_ENDPOINT, in_crud->dest)) ||
-                (0 == strcmp(MD5_ENDPOINT,      in_crud->dest)) )
-            {
+            if( 0 == strcmp(PERSISTENT_SCHEDULE_ENDPOINT, in_crud->dest) ) {
                 rv = process_message_ret_all(data_file, response);
+            } else if( 0 == strcmp(PERSISTENT_MD5_ENDPOINT,      in_crud->dest) ) {
+                rv = process_message_ret_all(md5_file, response);
             } else if( 0 == strcmp(NOW_ENDPOINT, in_crud->dest) ) {
                 rv = process_message_ret_now(response);
+            } else if( 0 == strcmp(SCHEDULE_ENDPOINT, in_crud->dest) ) {
+                /* TODO */
+                debug_error("RETRIEVE /aker/schedule not supported yet.");
             } else {
                 debug_error("RETRIEVE message destination %s is invalid\n", in_crud->dest);
             }
