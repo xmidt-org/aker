@@ -87,7 +87,7 @@ void test_process_cu_and_ret()
     };
 
     size_t t_size = sizeof(tests_cu)/sizeof(test_t);
-    ssize_t cu_size, ret_size, data_size;
+    ssize_t cu_size = 0, ret_size = 0, data_size = 0;
     wrp_msg_t response;
     uint8_t i, *data = NULL;
 
