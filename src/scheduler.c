@@ -77,14 +77,13 @@ int process_schedule_data( size_t len, uint8_t *data )
     debug_info("process_schedule_data()\n");
     rv = decode_schedule( len, data, &s );
 
-    print_schedule( s );
-
     if (0 == rv ) {
+        print_schedule( s );
         pthread_mutex_lock( &schedule_lock );
         destroy_schedule(current_schedule);
         current_schedule = s;
         pthread_mutex_unlock( &schedule_lock );
-        debug_error( "process_schedule_data() New schedule\n" );
+        debug_info( "process_schedule_data() New schedule\n" );
     } else {
         destroy_schedule( s );
         debug_error( "process_schedule_data() Failed to decode\n" );
