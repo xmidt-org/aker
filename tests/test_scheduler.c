@@ -38,7 +38,8 @@
 #include "scheduler_data3.h"
 #define MAX_WRP_TEST_MSGS 4
 
-static wrp_msg_t wrp_test_msgs[MAX_WRP_TEST_MSGS];    
+static wrp_msg_t wrp_test_msgs[MAX_WRP_TEST_MSGS];
+// Tuesday, November 14, 2017 11:57:28 AM PST = 1510689448
 static time_t kUnixCurrentTime = 1510689448;
 static time_t add_time;
 
@@ -81,22 +82,29 @@ void test2()
         CU_ASSERT(0 < result);
     }
 
-    add_time = weekly_minute_offsets[0][0] * 60 * 5;
+    add_time = -214980;
     result = process_message_cu( file_name, md5_file, &wrp_test_msgs[0] );  
     CU_ASSERT(0 < result);
 
-    add_time = weekly_minute_offsets[1][2] * 60 * 2;
+    add_time = -214500;
     result = process_message_cu( file_name, md5_file, &wrp_test_msgs[1] );  
     CU_ASSERT(0 < result);    
 
-    add_time = weekly_minute_offsets[2][3] * 60;
+    add_time = -213000;
     result = process_message_cu( file_name, md5_file, &wrp_test_msgs[2] );  
     CU_ASSERT(0 < result);
 
-    add_time = weekly_minute_offsets[3][1] * 60 * 3;
+    add_time = -212900;
+    result = process_message_cu( file_name, md5_file, &wrp_test_msgs[3] );
+    CU_ASSERT(0 < result);
+
+    add_time = 0; // allow absolute to take effect ?
     result = process_message_cu( file_name, md5_file, &wrp_test_msgs[3] );  
     CU_ASSERT(0 < result);
     
+    add_time = -212790;
+    result = process_message_cu( file_name, md5_file, &wrp_test_msgs[0] );
+    CU_ASSERT(0 < result);
 }
 
 
