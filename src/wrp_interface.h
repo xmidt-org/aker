@@ -34,8 +34,9 @@ extern "C" {
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
 #define SCHEDULE_ENDPOINT "/aker/schedule"
-#define MD5_ENDPOINT      "/aker/md5"
 #define NOW_ENDPOINT      "/aker/now"
+#define PERSISTENT_MD5_ENDPOINT      "/aker/persistent/md5"
+#define PERSISTENT_SCHEDULE_ENDPOINT "/aker/persistent/schedule"
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
