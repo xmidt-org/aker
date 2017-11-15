@@ -22,10 +22,10 @@
 
 void *aker_malloc(size_t size)
 {
-    return aker_malloc(size);
+    return malloc(size);
 }
 
 void aker_free   (void *ptr)
 {
-    aker_free(ptr);
+    free(ptr);
 }
