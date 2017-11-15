@@ -30,6 +30,8 @@
 #include "scheduler.h"
 #include "process_data.h"
 #include "aker_md5.h"
+#include "aker_mem.h"
+
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -135,11 +137,11 @@ int main( int argc, char **argv)
         rv = 0;
     }
 
-    if( NULL != md5_file )          free( md5_file );
-    if( NULL != data_file )         free( data_file );
-    if( NULL != firewall_cmd )      free( firewall_cmd );
-    if( NULL != cfg.parodus_url )   free( (char*) cfg.parodus_url );
-    if( NULL != cfg.client_url )    free( (char*) cfg.client_url );
+    if( NULL != md5_file )          aker_free( md5_file );
+    if( NULL != data_file )         aker_free( data_file );
+    if( NULL != firewall_cmd )      aker_free( firewall_cmd );
+    if( NULL != cfg.parodus_url )   aker_free( (char*) cfg.parodus_url );
+    if( NULL != cfg.client_url )    aker_free( (char*) cfg.client_url );
 
     return rv;
 }
@@ -186,7 +188,7 @@ static void import_existing_schedule( const char *data_file, const char *md5_fil
     len = read_file_from_disk( data_file, &data );
     if( 0 < len ) {
         process_schedule_data( len, data );
-        free( data );
+        aker_free( data );
     }
 }
 

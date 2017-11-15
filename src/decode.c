@@ -20,7 +20,7 @@
 #include "schedule.h"
 #include "decode.h"
 #include "aker_log.h"
-
+#include "aker_mem.h"
 
 #define WEEKLY_SCHEDULE   "weekly"
 #define MACS              "macs"
@@ -95,7 +95,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
                     if (0 != decode_macs_table(key, val, &s)) {
                         debug_error("decode_schedule():decode_macs_table() failed\n");
                         if (s->macs) {
-                            free(s->macs);
+                            aker_free(s->macs);
                             s->macs = NULL;
                         }
                     }

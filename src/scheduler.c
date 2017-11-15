@@ -30,6 +30,7 @@
 #include "scheduler.h"
 #include "decode.h"
 #include "time.h"
+#include "aker_mem.h"
 
 
 /* Local Functions and file-scoped variables */
@@ -172,7 +173,7 @@ void *scheduler_thread(void *args)
             } else {
                 if (NULL != blocked_macs) {
                     if (0 != strcmp(current_blocked_macs, blocked_macs)) {
-                        free(current_blocked_macs);
+                        aker_free(current_blocked_macs);
                         current_blocked_macs = blocked_macs;
 
                         call_firewall( firewall_cmd, current_blocked_macs );
@@ -180,10 +181,10 @@ void *scheduler_thread(void *args)
                         if (0 == (info_period++ % 3)) {/* Reduce Clutter */
                             debug_print("scheduler_thread(): No Change\n");
                         }
-                        free(blocked_macs);
+                        aker_free(blocked_macs);
                     }
                 } else {
-                    free(current_blocked_macs);
+                    aker_free(current_blocked_macs);
                     current_blocked_macs = NULL;
                 }
             }
@@ -221,7 +222,7 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
         }
         len++; /* For trailing '\0' */
 
-        buf = (char*) malloc( len * sizeof(char) );
+        buf = (char*) aker_malloc( len * sizeof(char) );
         if( NULL != buf ) {
             if( NULL != blocked ) {
                 sprintf( buf, "%s %s", firewall_cmd, blocked );
@@ -230,7 +231,7 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
             }
             debug_info( "Firewall command: '%s'\n", buf );
             system( buf );
-            free( buf );
+            aker_free( buf );
         } else {
             debug_error( "Failed to allocate buffer needed to call firewall cmd.\n" );
         }
