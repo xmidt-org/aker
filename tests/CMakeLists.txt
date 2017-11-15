@@ -113,7 +113,7 @@ ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_wrp_interface.dir/__/src --output-fi
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_scheduler.dir/__/src --output-file scheduler.info
 
-COMMAND lcov -a md5.info -a decode.info
+COMMAND lcov -a md5.info -a decode.info -a process_now.info
 -a schedule.info -a process.info -a time.info -a scheduler.info
 -a wrp.info --output-file coverage.info
 
