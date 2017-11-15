@@ -146,7 +146,8 @@ int main( int argc, char *argv[] )
     }
 
    sleep(1);
-   pthread_kill(shceduler_thread_id, SIGTERM);
+   terminate_scheduler_thread();
+   //pthread_kill(shceduler_thread_id, SIGTERM);
    return rv;
 }
 
