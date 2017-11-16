@@ -28,6 +28,7 @@
 #include "../src/md5.h"
 #include "../src/aker_md5.h"
 #include "../src/process_data.h"
+#include "../src/aker_mem.h"
 
 #define MD5_SIG_FILE "md5_sig.out"
 
@@ -45,8 +46,12 @@ void md5_test1()
     CU_ASSERT(NULL != result);
     
     if (result) {
-        free(result);
+        aker_free(result);
     }
+
+    result = compute_file_md5("_no_exist_", &md5_sig_1[0]);
+    CU_ASSERT(NULL == result);
+
 }
 
 void md5_test2()
@@ -71,13 +76,33 @@ void md5_test2()
      
      CU_ASSERT(0 == strncmp(buffer, (char *) data, MD5_SIZE << 1));
       
-     free(data);
+     aker_free(data);
+
+     cnt = verify_md5_signatures("_no_exist_", MD5_SIG_FILE);
+     CU_ASSERT(0 != cnt);
+
+     cnt = verify_md5_signatures(test_file_name, "_no_exist_");
+     CU_ASSERT(0 != cnt);
+
     }
 }
 
 void md5_test3()
 {
+    size_t size;
+    uint8_t *data;
+
     CU_ASSERT(0 == verify_md5_signatures(test_file_name, MD5_SIG_FILE));
+
+    size = read_file_from_disk(MD5_SIG_FILE, &data);
+    data[0] = ~data[0];
+    FILE *bad_file = fopen(MD5_SIG_FILE, "w");
+    fwrite(data, sizeof(uint8_t), size, bad_file);
+    fclose(bad_file);
+    aker_free(data);
+
+    CU_ASSERT(0 != verify_md5_signatures(test_file_name, MD5_SIG_FILE));
+
 }
 
 void md5_test4()
@@ -91,7 +116,7 @@ void md5_test4()
         result = compute_byte_stream_md5(data, size, &md5_sig_2[0]);
         CU_ASSERT(NULL != result);
         if (result) {
-            free(result);
+            aker_free(result);
         }
         CU_ASSERT(0 == memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
         data[size >> 1] = ~data[size >> 1];
@@ -99,13 +124,13 @@ void md5_test4()
         result = compute_byte_stream_md5(data, size, &md5_sig_2[0]);
         CU_ASSERT(NULL != result);
         if (result) {
-            free(result);
+            aker_free(result);
         }
         CU_ASSERT(0 != memcmp(md5_sig_1, md5_sig_2, MD5_SIZE));
     }
 
     if (NULL != data) {
-        free(data);
+        aker_free(data);
     }
     
 }

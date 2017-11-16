@@ -26,7 +26,7 @@
 #include <CUnit/Basic.h>
 #include <wrp-c/wrp-c.h>
 
-
+#include "mem_wrapper.h"
 #include "../src/schedule.h"
 #include "../src/scheduler.h"
 #include "../src/process_data.h"
@@ -81,6 +81,14 @@ void test2()
         result = process_message_cu( file_name, md5_file, &wrp_test_msgs[cnt] );  
         CU_ASSERT(0 < result);
     }
+    malloc_fail = true;
+    malloc_failure_limit = 32;
+     for (cnt = 0; cnt < MAX_WRP_TEST_MSGS; cnt++) {
+        result = process_message_cu( file_name, md5_file, &wrp_test_msgs[cnt] );
+        CU_ASSERT(0 >= result);
+    }
+
+    malloc_fail = false;
 
     add_time = -214980;
     result = process_message_cu( file_name, md5_file, &wrp_test_msgs[0] );  
@@ -107,6 +115,16 @@ void test2()
     CU_ASSERT(0 < result);
 }
 
+void test3()
+{
+    // Just cover process_message_ret_now()->get_current_blocked_macs()
+    wrp_msg_t msg;
+    ssize_t cnt;
+
+    cnt = process_message_ret_now(&msg);
+
+    CU_ASSERT(cnt >= 0);
+}
 
 void add_suites( CU_pSuite *suite )
 {
@@ -114,6 +132,7 @@ void add_suites( CU_pSuite *suite )
     *suite = CU_add_suite( "tests", NULL, NULL );
     CU_add_test( *suite, "Scheduler Test 1", test1);
     CU_add_test( *suite, "Scheduler Test 2", test2);
+    CU_add_test( *suite, "Scheduler Test 3", test3);
 }
 
 /*----------------------------------------------------------------------------*/
