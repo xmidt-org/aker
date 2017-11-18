@@ -60,6 +60,7 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
     unsigned char result[MD5_SIZE];
     unsigned char *md5_string = NULL;
 
+    debug_print("process_message_cu\n");
     file_handle = fopen(filename, "wb");
     if( NULL == file_handle ) {
         debug_error("process_message_cu() Failed on fopen(%s, \"wb\"\n", filename);
@@ -162,7 +163,7 @@ size_t read_file_from_disk( const char *filename, uint8_t **data )
     file_handle = fopen(filename, "rb");
     local_errno = errno;
     if( NULL == file_handle ) {
-        debug_error("read_file_from_disk() can't read the file %s err %s\n",
+        debug_info("read_file_from_disk() can't read the file %s err %s\n",
                      filename, strerror(local_errno));
         return 0;
     }

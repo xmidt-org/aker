@@ -61,7 +61,8 @@ int wrp_process(const char *data_file, const char *md5_file,
             out_crud->source  = in_crud->dest;
             out_crud->dest    = in_crud->source;
             out_crud->path    = in_crud->path;
-            if( 0 == strcmp(SCHEDULE_ENDPOINT, in_crud->dest) ) {
+            debug_print("wrp_process - dest = %s\n", in_crud->dest);
+            if( 0 != strstr(in_crud->dest, SCHEDULE_ENDPOINT) ) {
                 rv = process_message_cu(data_file, md5_file, in_msg);
             } else {
                 debug_error("CREATE/UPDATE message destination %s is invalid\n", in_crud->dest);
@@ -88,13 +89,13 @@ int wrp_process(const char *data_file, const char *md5_file,
             out_crud->source  = in_crud->dest;
             out_crud->dest    = in_crud->source;
             out_crud->path    = in_crud->path;
-            if( 0 == strcmp(PERSISTENT_SCHEDULE_ENDPOINT, in_crud->dest) ) {
+            if( 0 != strstr(in_crud->dest, PERSISTENT_SCHEDULE_ENDPOINT) ) {
                 rv = process_message_ret_all(data_file, response);
-            } else if( 0 == strcmp(PERSISTENT_MD5_ENDPOINT,      in_crud->dest) ) {
+            } else if( 0 != strstr(in_crud->dest, PERSISTENT_MD5_ENDPOINT) ) {
                 rv = process_message_ret_all(md5_file, response);
-            } else if( 0 == strcmp(NOW_ENDPOINT, in_crud->dest) ) {
+            } else if( 0 != strstr(in_crud->dest, NOW_ENDPOINT) ) {
                 rv = process_message_ret_now(response);
-            } else if( 0 == strcmp(SCHEDULE_ENDPOINT, in_crud->dest) ) {
+            } else if( 0 != strstr(in_crud->dest, SCHEDULE_ENDPOINT) ) {
                 /* TODO */
                 debug_error("RETRIEVE /aker/schedule not supported yet.");
             } else {
