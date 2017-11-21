@@ -61,18 +61,29 @@ int wrp_process(const char *data_file, const char *md5_file,
             out_crud->source  = in_crud->dest;
             out_crud->dest    = in_crud->source;
             out_crud->path    = in_crud->path;
-            if( 0 == strcmp(SCHEDULE_ENDPOINT, in_crud->dest) ) {
-                rv = process_message_cu(data_file, md5_file, in_msg);
-            } else {
-                debug_error("CREATE/UPDATE message destination %s is invalid\n", in_crud->dest);
+            char *service = wrp_get_msg_dest_element(WRP_ID_ELEMENT__SERVICE, msg);
+            if (service && 0 == strcmp(SERVICE_AKER, service))
+            {
+                char *schedule = wrp_get_msg_dest_element(WRP_ID_ELEMENT__APPLICATION, msg);
+                if( schedule && 0 == strcmp(APP_SCHEDULE, schedule) ) {
+                    rv = process_message_cu(data_file, md5_file, in_msg);
+                } else {
+                    debug_error("CREATE/UPDATE message destination %s is invalid\n", in_crud->dest);
+                }
+                if( 0 <= rv ) {
+                    out_crud->status = 200;
+                }
+                in_crud->transaction_uuid = NULL;
+                in_crud->source = NULL;
+                in_crud->dest   = NULL;
+                in_crud->path   = NULL;
+                if (schedule) {
+                    free(schedule);
+                }
             }
-            if( 0 <= rv ) {
-                out_crud->status = 200;
+            if (service) {
+                free(service);
             }
-            in_crud->transaction_uuid = NULL;
-            in_crud->source = NULL;
-            in_crud->dest   = NULL;
-            in_crud->path   = NULL;
         }
         break;
 
@@ -88,25 +99,37 @@ int wrp_process(const char *data_file, const char *md5_file,
             out_crud->source  = in_crud->dest;
             out_crud->dest    = in_crud->source;
             out_crud->path    = in_crud->path;
-            if( 0 == strcmp(PERSISTENT_SCHEDULE_ENDPOINT, in_crud->dest) ) {
-                rv = process_message_ret_all(data_file, response);
-            } else if( 0 == strcmp(PERSISTENT_MD5_ENDPOINT,      in_crud->dest) ) {
-                rv = process_message_ret_all(md5_file, response);
-            } else if( 0 == strcmp(NOW_ENDPOINT, in_crud->dest) ) {
-                rv = process_message_ret_now(response);
-            } else if( 0 == strcmp(SCHEDULE_ENDPOINT, in_crud->dest) ) {
-                /* TODO */
-                debug_error("RETRIEVE /aker/schedule not supported yet.");
-            } else {
-                debug_error("RETRIEVE message destination %s is invalid\n", in_crud->dest);
+            char *service = wrp_get_msg_dest_element(WRP_ID_ELEMENT__SERVICE, msg);
+            if (service && 0 == strcmp(SERVICE_AKER, service))
+            {            
+                char *schedule = wrp_get_msg_dest_element(WRP_ID_ELEMENT__APPLICATION, msg);    
+                    
+                if( schedule && 0 == strcmp(APP_SCHEDULE_PERSIST, schedule) ) {
+                    rv = process_message_ret_all(data_file, response);
+                } else if(schedule && 0 == strcmp(APP_SCHEDULE_MD5, schedule) ) {
+                    rv = process_message_ret_all(md5_file, response);
+                } else if(schedule && 0 == strcmp(APP_SCHEDULE_END, schedule) ) {
+                    rv = process_message_ret_now(response);
+                } else if(schedule && 0 == strcmp(APP_SCHEDULE, schedule) ) {
+                    /* TODO */
+                    debug_error("RETRIEVE /aker/schedule not supported yet.");
+                } else {
+                    debug_error("RETRIEVE message destination %s is invalid\n", in_crud->dest);
+                }
+                if (schedule) {
+                    free(schedule);
+                }
+                if( 0 <= rv ) {
+                    out_crud->status = 200;
+                }
+                in_crud->transaction_uuid = NULL;
+                in_crud->source = NULL;
+                in_crud->dest   = NULL;
+                in_crud->path   = NULL;
             }
-            if( 0 <= rv ) {
-                out_crud->status = 200;
+            if (service) {
+                free(service);
             }
-            in_crud->transaction_uuid = NULL;
-            in_crud->source = NULL;
-            in_crud->dest   = NULL;
-            in_crud->path   = NULL;
         }
         break;
             
