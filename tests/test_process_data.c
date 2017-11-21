@@ -22,6 +22,7 @@
 
 #include <CUnit/Basic.h>
 
+#include "test_macros.h"
 #include "../src/wrp_interface.h"
 #include "../src/process_data.h"
 

@@ -33,10 +33,12 @@ extern "C" {
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-#define SCHEDULE_ENDPOINT "/aker/schedule"
-#define NOW_ENDPOINT      "/aker/now"
-#define PERSISTENT_MD5_ENDPOINT      "/aker/persistent/md5"
-#define PERSISTENT_SCHEDULE_ENDPOINT "/aker/persistent/schedule"
+#define SERVICE_AKER         "aker"
+#define APP_SCHEDULE         "schedule"
+#define APP_SCHEDULE_END     "now"
+#define APP_SCHEDULE_MD5     "persistent/md5"
+#define APP_SCHEDULE_PERSIST "persistent/schedule"    
+    
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
