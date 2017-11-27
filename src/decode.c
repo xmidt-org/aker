@@ -263,9 +263,8 @@ int decode_string_type (msgpack_object *key, msgpack_object *val, schedule_t **t
 {
     (void ) key;
 
-    memset((*t)->tz_struct.tz, 0, MAX_TIME_ZONE_SIZE);
-    strncpy((*t)->tz_struct.tz, val->via.str.ptr, val->via.str.size);
-    debug_info("time_zone:%s\n", (*t)->tz_struct.tz);
+    (*t)->time_zone = strdup(val->via.str.ptr);
+    debug_info("time_zone:%s\n", (*t)->time_zone);
 
     return 0;
 }
