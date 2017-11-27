@@ -24,8 +24,9 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-#define MAC_ADDRESS_SIZE 18
+#define MAC_ADDRESS_SIZE         18
 #define MAXIMUM_BLOCKED_MAC_LIST 128
+#define MAX_TIME_ZONE_SIZE       128
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -46,7 +47,12 @@ typedef struct mac_address_t {
                                    /* stored/used: "11:22:33:44:55:66" */
 } mac_address;
 
+typedef struct time_zone_t {
+    char tz[MAX_TIME_ZONE_SIZE];    /* time_zone string                   */
+} time_zone;
+
 typedef struct schedule {
+    time_zone               tz_struct;
     schedule_event_t *absolute;     /* The absolute schedule to apply if
                                      * a matching time window is found. */
 

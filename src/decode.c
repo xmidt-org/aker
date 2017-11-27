@@ -28,12 +28,17 @@
 #define RELATIVE_TIME_STR "time"
 #define UNIX_TIME_STR     "unix_time"
 #define INDEXES_STR       "indexes"
+/* Currently AKER will not do any validation on time_zone string */
+#define TIME_ZONE         "time_zone" /* REF: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones */
+
+
 
 #define UNPACKED_BUFFER_SIZE 2048
 char unpacked_buffer[UNPACKED_BUFFER_SIZE];
 
 static int decode_schedule_table   (msgpack_object *key, msgpack_object *val, schedule_event_t **t);
 static int decode_macs_table       (msgpack_object *key, msgpack_object *val, schedule_t **t);
+static int decode_string_type      (msgpack_object *key, msgpack_object *val, schedule_t **t);
 
 static int process_map(msgpack_object_map *, schedule_event_t **t);
 
@@ -99,10 +104,14 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
                             s->macs = NULL;
                         }
                     }
-                } else {
-                    debug_error("decode_schedule() can't handle object type\n");
-                    // ret_val = -4;
                 }
+            else if (0 == strncmp(key->via.str.ptr, TIME_ZONE, key->via.str.size)) {
+                    decode_string_type(key, val, &s);
+                 }
+            else {
+                     debug_error("decode_schedule() can't handle object %d\n", obj.type);
+                     // ret_val = -4;
+            }
             p++;
             key = &p->key;
             val = &p->val;
@@ -250,6 +259,16 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
     return ret_val;
 }
 
+int decode_string_type (msgpack_object *key, msgpack_object *val, schedule_t **t)
+{
+    (void ) key;
+
+    memset((*t)->tz_struct.tz, 0, MAX_TIME_ZONE_SIZE);
+    strncpy((*t)->tz_struct.tz, val->via.str.ptr, val->via.str.size);
+    debug_info("time_zone:%s\n", (*t)->tz_struct.tz);
+
+    return 0;
+}
 
 static bool name_match(msgpack_object *key, const char *name)
 {

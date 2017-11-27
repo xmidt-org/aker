@@ -24,6 +24,9 @@
 #include "../src/schedule.h"
 #include "../src/decode.h"
 
+#include "tz1.h"
+#include "tz2.h"
+
 uint8_t decode_buffer[] = {
 0x83, 0xA6, 0x77, 0x65, 0x65, 0x6B, 0x6C, 0x79, 0x93, 0x82, 0xA4, 0x74,
 0x69, 0x6D, 0x65, 0x0A, 0xA7, 0x69, 0x6E, 0x64, 0x65, 0x78, 0x65, 0x73,
@@ -199,6 +202,13 @@ void decode_test()
     ret = decode_schedule(0, decode_buffer, &t);
     CU_ASSERT(0 != ret);
     ret = decode_schedule(unknown_tag_size, unknown_tag_object, &t);
+    CU_ASSERT(0 == ret);
+    destroy_schedule(t);
+    t = NULL;
+    ret = decode_schedule(tz2_bin_len, tz2_bin, &t);
+    CU_ASSERT(0 == ret);
+    destroy_schedule(t);
+    ret = decode_schedule(tz1_bin_len, tz1_bin, &t);
     CU_ASSERT(0 == ret);
     destroy_schedule(t);
 }
