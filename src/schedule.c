@@ -190,6 +190,10 @@ void destroy_schedule( schedule_t *s )
         if( NULL != s->macs ) {
             aker_free( s->macs );
         }
+        
+        if (NULL != s->time_zone) {
+            aker_free( s->time_zone);
+        }
 
         aker_free( s );
     }
