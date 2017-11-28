@@ -69,7 +69,7 @@ uint8_t get_data(uint8_t **data)
             if( file_size > 0 ) { 
                 *data = (uint8_t*) malloc(file_size);
 
-                if( NULL != data ) {
+                if( NULL != *data ) {
                     data_size = fread(*data, sizeof(uint8_t), file_size, file_handle);
                 }
             }
@@ -167,6 +167,12 @@ void test_null_file()
     test_cu.u.crud.payload = data;
     ssize_t cu_size = process_message_cu(NULL, NULL, &test_cu);
     CU_ASSERT(0 <= cu_size);
+
+    test_cu.u.crud.payload_size = 0;
+    test_cu.u.crud.payload = NULL;
+    cu_size = process_message_cu("pcs.bin", "pcs.bin.md5", &test_cu);
+    CU_ASSERT(-1 == cu_size);
+
     if( NULL != data ) {
         free(data);
     }

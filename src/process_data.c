@@ -86,6 +86,10 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
                 }
                 fclose(file_handle);
             }
+        } else {
+            aker_free(md5_string);
+            debug_error("process_schedule_data() failed\n");
+            return -1;
         }
         aker_free(md5_string);
         process_time = get_unix_time() - process_time;
