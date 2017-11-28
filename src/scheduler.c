@@ -81,8 +81,8 @@ int scheduler_start( pthread_t *thread, const char *firewall_cmd )
 /* See scheduler.h for details. */
 int process_schedule_data( size_t len, uint8_t *data )
 {
-    schedule_t *s;
-    int rv;
+    schedule_t *s = NULL;
+    int rv = 0;
 
     debug_info("process_schedule_data()\n");
     rv = decode_schedule( len, data, &s );
