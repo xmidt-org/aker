@@ -261,9 +261,12 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
 
 int decode_string_type (msgpack_object *key, msgpack_object *val, schedule_t **t)
 {
+    char debug_buffer[128];
     (void ) key;
 
-    (*t)->time_zone = strdup(val->via.str.ptr);
+    memset(debug_buffer, 0, 128);
+    strncpy(debug_buffer, val->via.str.ptr, val->via.str.size);
+    (*t)->time_zone = strdup(debug_buffer);
     debug_info("time_zone:%s\n", (*t)->time_zone);
 
     return 0;
