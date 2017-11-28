@@ -53,7 +53,7 @@ extern "C" {
  *  @param msg       [in]  incoming WRP data.
  *  @param response  [in]  response WRP message.
  *
- *  @return 0 if success, < 0 otherwise.
+ *  @return 0 if the response message is to be sent, < 0 otherwise.
  */
 int wrp_process(const char *data_file, const char *md5_file,
                 wrp_msg_t *msg, wrp_msg_t *response);
