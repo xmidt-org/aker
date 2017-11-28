@@ -55,23 +55,29 @@ void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n );
 /* See process_data.h for details. */
 ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu )
 {
-    FILE *file_handle = NULL;
     size_t write_size = 0;
     unsigned char result[MD5_SIZE];
     unsigned char *md5_string = NULL;
 
-    file_handle = fopen(filename, "wb");
-    if( NULL == file_handle ) {
-        debug_error("process_message_cu() Failed on fopen(%s, \"wb\"\n", filename);
-        return -1;
-    }
-    debug_print("cu->u.crud.payload_size = %d\n", cu->u.crud.payload_size);
-    write_size = fwrite(cu->u.crud.payload, sizeof(uint8_t), cu->u.crud.payload_size, file_handle);
-    fclose(file_handle);
-    if (NULL != (md5_string = compute_byte_stream_md5(cu->u.crud.payload, cu->u.crud.payload_size, result)))
-    {
+    md5_string = compute_byte_stream_md5(cu->u.crud.payload, cu->u.crud.payload_size, result);
+    if( NULL != md5_string ) {
         time_t process_time = get_unix_time();
-        if (0 == process_schedule_data(cu->u.crud.payload_size, cu->u.crud.payload))  {
+        if( 0 == process_schedule_data(cu->u.crud.payload_size, cu->u.crud.payload) )
+        {
+            FILE *file_handle = NULL;
+
+            file_handle = fopen(filename, "wb");
+            if( file_handle ) {
+                debug_print("cu->u.crud.payload_size = %d\n", cu->u.crud.payload_size);
+                write_size = fwrite(cu->u.crud.payload, sizeof(uint8_t), cu->u.crud.payload_size, file_handle);
+                if( 0 >= write_size ) {
+                    debug_error("process_message_cu failed to write %s\n", md5);
+                }
+                fclose(file_handle);
+            } else {
+                debug_error("process_message_cu() Failed on fopen(%s, \"wb\"\n", filename);
+            }
+
             file_handle = fopen(md5, "wb");
             if (file_handle) {
                 size_t cnt = fwrite(md5_string, sizeof(uint8_t), MD5_SIZE * 2, file_handle);
