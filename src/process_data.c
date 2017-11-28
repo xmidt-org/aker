@@ -55,13 +55,13 @@ void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n );
 /* See process_data.h for details. */
 ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu )
 {
-    size_t write_size = 0;
+    ssize_t write_size = 0;
     unsigned char result[MD5_SIZE];
     unsigned char *md5_string = NULL;
+    time_t process_time = get_unix_time();
 
     md5_string = compute_byte_stream_md5(cu->u.crud.payload, cu->u.crud.payload_size, result);
     if( NULL != md5_string ) {
-        time_t process_time = get_unix_time();
         if( 0 == process_schedule_data(cu->u.crud.payload_size, cu->u.crud.payload) )
         {
             FILE *file_handle = NULL;
@@ -87,18 +87,16 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
                 fclose(file_handle);
             }
         } else {
-            aker_free(md5_string);
             debug_error("process_schedule_data() failed\n");
-            return -1;
+            write_size = -1;
         }
         aker_free(md5_string);
-        process_time = get_unix_time() - process_time;
-        debug_info("Time to process schedule file of size %zu bytes is %ld seconds\n", write_size, process_time);
-
     } else {
         debug_error("process_message_cu()->compute_byte_stream_md5() Failed\n");
-        return -2;
+        write_size = -2;
     }
+    process_time = get_unix_time() - process_time;
+    debug_info("Time to process schedule file of size %zu bytes is %ld seconds\n", write_size, process_time);
 
     return write_size;
 }
