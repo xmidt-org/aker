@@ -69,7 +69,7 @@ uint8_t get_data(uint8_t **data)
             if( file_size > 0 ) { 
                 *data = (uint8_t*) malloc(file_size);
 
-                if( NULL != data ) {
+                if( NULL != *data ) {
                     data_size = fread(*data, sizeof(uint8_t), file_size, file_handle);
                 }
             }
