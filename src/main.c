@@ -65,6 +65,7 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file );
 int main( int argc, char **argv)
 {
     static const struct option options[] = {
+        { "help",         optional_argument, 0, 'h' },
         { "parodus-url",  required_argument, 0, 'p' },
         { "client-url",   required_argument, 0, 'c' },
         { "firewall-cmd", required_argument, 0, 'w' },
@@ -101,7 +102,7 @@ int main( int argc, char **argv)
     signal(SIGHUP, sig_handler);
     signal(SIGALRM, sig_handler);
     
-    while( -1 != (item = getopt_long(argc, argv, "p:c:w:d:m:", options, &opt_index)) ) {
+    while( -1 != (item = getopt_long(argc, argv, "p:c:w:d:m:h", options, &opt_index)) ) {
         switch( item ) {
             case 'p':
                 cfg.parodus_url = strdup(optarg);
@@ -117,6 +118,11 @@ int main( int argc, char **argv)
                 break;
             case 'm':
                 md5_file = strdup(optarg);
+                break;
+            case 'h':
+      /* FixMe: See if there is an optional argument, like -h parodus, etc ...*/
+                debug_info("%s: Help will be available in the near future\n",
+                           argv[0]);
                 break;
             default:
                 break;
