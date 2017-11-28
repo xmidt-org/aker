@@ -94,7 +94,7 @@ int set_unix_time_zone (const char *time_zone)
    mt = localtime(&mtt);
    strftime(ftime,sizeof(ftime),"%Z %H%M",mt);
 
-   debug_info("%s\n", ftime);
+   debug_info("time_zone: %s is %s\n", time_zone, ftime);
    
    return rv;
 }
