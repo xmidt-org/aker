@@ -46,7 +46,6 @@ int wrp_process(const char *data_file, const char *md5_file,
     wrp_msg_t *in_msg = msg;
     int rv = -1;
 
-    memset(response, 0, sizeof(wrp_msg_t));
     switch (in_msg->msg_type) {
         case (WRP_MSG_TYPE__CREATE):
         case (WRP_MSG_TYPE__UPDATE):

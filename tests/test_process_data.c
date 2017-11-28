@@ -34,9 +34,7 @@
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
-typedef struct {
-    wrp_msg_t m;
-} test_t;
+/* None */
 
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
@@ -51,46 +49,9 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 /*                                   Tests                                    */
 /*----------------------------------------------------------------------------*/
-void test_process_cu_and_ret()
+uint8_t get_data(uint8_t **data)
 {
-    test_t tests_cu[] =
-    {
-        {
-            .m.msg_type = WRP_MSG_TYPE__CREATE,
-            .m.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .m.u.crud.source = "fake-server",
-            .m.u.crud.dest = SCHEDULE_ENDPOINT,
-            .m.u.crud.partner_ids = NULL,
-            .m.u.crud.headers = NULL,
-            .m.u.crud.metadata = NULL,
-            .m.u.crud.include_spans = false,
-            .m.u.crud.spans.spans = NULL,
-            .m.u.crud.spans.count = 0,
-            .m.u.crud.path = "Some path",
-        },
-    };
-
-    test_t tests_ret[] =
-    {
-        {
-            .m.msg_type = WRP_MSG_TYPE__RETREIVE,
-            .m.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .m.u.crud.source = SCHEDULE_ENDPOINT,
-            .m.u.crud.dest = "fake-server",
-            .m.u.crud.partner_ids = NULL,
-            .m.u.crud.headers = NULL,
-            .m.u.crud.metadata = NULL,
-            .m.u.crud.include_spans = false,
-            .m.u.crud.spans.spans = NULL,
-            .m.u.crud.spans.count = 0,
-            .m.u.crud.path = "Some path",
-        },
-    };
-
-    size_t t_size = sizeof(tests_cu)/sizeof(test_t);
-    ssize_t cu_size = 0, ret_size = 0, data_size = 0;
-    wrp_msg_t response;
-    uint8_t i, *data = NULL;
+    ssize_t data_size = 0;
 
     const char some_binary_file[] = "../../tests/some.bin";
     FILE *file_handle = fopen(some_binary_file, "rb");
@@ -105,34 +66,79 @@ void test_process_cu_and_ret()
         } else {
             fseek(file_handle, 0, SEEK_SET);
 
-            if( file_size > 0 ) {
-                data = (uint8_t*) malloc(file_size);
+            if( file_size > 0 ) { 
+                *data = (uint8_t*) malloc(file_size);
 
                 if( NULL != data ) {
-                    data_size = fread(data, sizeof(uint8_t), file_size, file_handle);
+                    data_size = fread(*data, sizeof(uint8_t), file_size, file_handle);
                 }
             }
             fclose(file_handle);
         }
     }
+    return data_size;
+}
 
+
+void test_process_cu_and_ret()
+{
+    wrp_msg_t tests_cu[] =
+    {
+        {
+            .msg_type = WRP_MSG_TYPE__CREATE,
+            .u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .u.crud.source = "fake-server",
+            .u.crud.dest = SCHEDULE_ENDPOINT,
+            .u.crud.partner_ids = NULL,
+            .u.crud.headers = NULL,
+            .u.crud.metadata = NULL,
+            .u.crud.include_spans = false,
+            .u.crud.spans.spans = NULL,
+            .u.crud.spans.count = 0,
+            .u.crud.path = "Some path",
+        },
+    };
+
+    wrp_msg_t tests_ret[] =
+    {
+        {
+            .msg_type = WRP_MSG_TYPE__RETREIVE,
+            .u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .u.crud.source = SCHEDULE_ENDPOINT,
+            .u.crud.dest = "fake-server",
+            .u.crud.partner_ids = NULL,
+            .u.crud.headers = NULL,
+            .u.crud.metadata = NULL,
+            .u.crud.include_spans = false,
+            .u.crud.spans.spans = NULL,
+            .u.crud.spans.count = 0,
+            .u.crud.path = "Some path",
+        },
+    };
+
+    size_t t_size = sizeof(tests_cu)/sizeof(wrp_msg_t);
+    ssize_t cu_size = 0, ret_size = 0, data_size = 0;
+    wrp_msg_t response;
+    uint8_t i, *data = NULL;
+
+    data_size = get_data(&data);
     for( i = 0; i < t_size; i++ ) {
-        tests_cu[i].m.u.crud.payload = data;
-        tests_cu[i].m.u.crud.payload_size = data_size;
-        cu_size = process_message_cu("pcs.bin", "pcs_md5.bin", &tests_cu[i].m);
-        CU_ASSERT((size_t)cu_size == tests_cu[i].m.u.crud.payload_size);
+        tests_cu[i].u.crud.payload = data;
+        tests_cu[i].u.crud.payload_size = data_size;
+        cu_size = process_message_cu("pcs.bin", "pcs_md5.bin", &tests_cu[i]);
+        CU_ASSERT((size_t)cu_size == tests_cu[i].u.crud.payload_size);
     }
 
-    t_size = sizeof(tests_ret)/sizeof(test_t);
+    t_size = sizeof(tests_ret)/sizeof(wrp_msg_t);
     for( i = 0; i < t_size; i++ ) {
-        tests_ret[i].m.u.crud.payload = data;
-        tests_ret[i].m.u.crud.payload_size = data_size;
+        tests_ret[i].u.crud.payload = data;
+        tests_ret[i].u.crud.payload_size = data_size;
         memset(&response, '\0', sizeof(wrp_msg_t));
         ret_size = process_message_ret_all("pcs.bin", &response);
-        CU_ASSERT(0 == memcmp(tests_ret[i].m.u.crud.payload, response.u.crud.payload, response.u.crud.payload_size));
-        CU_ASSERT(tests_ret[i].m.u.crud.payload_size == response.u.crud.payload_size);
+        CU_ASSERT(0 == memcmp(tests_ret[i].u.crud.payload, response.u.crud.payload, response.u.crud.payload_size));
+        CU_ASSERT(tests_ret[i].u.crud.payload_size == response.u.crud.payload_size);
         free(response.u.crud.payload);
-        CU_ASSERT((size_t)ret_size == tests_ret[i].m.u.crud.payload_size);
+        CU_ASSERT((size_t)ret_size == tests_ret[i].u.crud.payload_size);
     }
     if( NULL != data ) {
         free(data);
@@ -141,8 +147,29 @@ void test_process_cu_and_ret()
 
 void test_null_file()
 {
-    ssize_t cu_size = process_message_cu(NULL, NULL, NULL);
-    CU_ASSERT(-1 == cu_size);
+    wrp_msg_t test_cu =
+    {
+        .msg_type = WRP_MSG_TYPE__CREATE,
+        .u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+        .u.crud.source = "fake-server",
+        .u.crud.dest = SCHEDULE_ENDPOINT,
+        .u.crud.partner_ids = NULL,
+        .u.crud.headers = NULL,
+        .u.crud.metadata = NULL,
+        .u.crud.include_spans = false,
+        .u.crud.spans.spans = NULL,
+        .u.crud.spans.count = 0,
+        .u.crud.path = "Some path",
+    };
+    uint8_t *data = NULL;
+
+    test_cu.u.crud.payload_size = get_data(&data);
+    test_cu.u.crud.payload = data;
+    ssize_t cu_size = process_message_cu(NULL, NULL, &test_cu);
+    CU_ASSERT(0 <= cu_size);
+    if( NULL != data ) {
+        free(data);
+    }
 }
 
 void add_suites( CU_pSuite *suite )
