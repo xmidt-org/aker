@@ -21,6 +21,7 @@
 #include "decode.h"
 #include "aker_log.h"
 #include "aker_mem.h"
+#include "time.h"
 
 #define WEEKLY_SCHEDULE   "weekly"
 #define MACS              "macs"
@@ -261,14 +262,14 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
 
 int decode_string_type (msgpack_object *key, msgpack_object *val, schedule_t **t)
 {
-    char debug_buffer[128];
+    char temp[128];
     (void ) key;
 
-    memset(debug_buffer, 0, 128);
-    strncpy(debug_buffer, val->via.str.ptr, val->via.str.size);
-    (*t)->time_zone = strdup(debug_buffer);
+    memset(temp, 0, 128);
+    strncpy(temp, val->via.str.ptr, val->via.str.size);
+    (*t)->time_zone = strdup(temp);
     debug_info("time_zone:%s\n", (*t)->time_zone);
-
+    (void ) set_unix_time_zone((*t)->time_zone);
     return 0;
 }
 
