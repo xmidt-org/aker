@@ -40,7 +40,7 @@ typedef struct wrp_req_msg  req_msg_t;
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-int wrp_process(const char *data_file, const char *md5_file,
+int process_wrp(const char *data_file, const char *md5_file,
                 wrp_msg_t *msg, wrp_msg_t *response)
 {
     wrp_msg_t *in_msg = msg;
@@ -186,7 +186,7 @@ int wrp_process(const char *data_file, const char *md5_file,
     return rv;
 }
 
-int wrp_cleanup(wrp_msg_t *message)
+int cleanup_wrp(wrp_msg_t *message)
 {
     int rv = -1;
 

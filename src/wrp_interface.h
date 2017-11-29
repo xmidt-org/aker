@@ -55,17 +55,17 @@ extern "C" {
  *
  *  @return 0 if the response message is to be sent, < 0 otherwise.
  */
-int wrp_process(const char *data_file, const char *md5_file,
+int process_wrp(const char *data_file, const char *md5_file,
                 wrp_msg_t *msg, wrp_msg_t *response);
 
 /**
- *  Cleanup WRP response returned by wrp_processing.
+ *  Cleanup WRP response returned by processing wrp.
  *
  *  @param msg      [in]  WRP response structure 
  *
  *  @return 0 if success, < 0 otherwise.
  */
-int wrp_cleanup(wrp_msg_t *response);
+int cleanup_wrp(wrp_msg_t *response);
 
 #ifdef __cplusplus
 }
