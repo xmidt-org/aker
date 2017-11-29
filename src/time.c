@@ -92,7 +92,12 @@ int set_unix_time_zone (const char *time_zone)
    tzset();
    mtt = time(NULL);
    mt = localtime(&mtt);
-   strftime(ftime,sizeof(ftime),"%Z %H%M",mt);
+   if (0 != mt->tm_zone[0]) {
+       strftime(ftime,sizeof(ftime),"%Z %H%M",mt);
+   } else {
+       strftime(ftime,sizeof(ftime),"nil %H%M",mt);
+       debug_error("set_unix_time_zone(%s) is invalid\n", time_zone);
+   }
 
    debug_info("time_zone: %s is %s\n", time_zone, ftime);
    
