@@ -23,17 +23,25 @@ static void print_general_help(char *name);
 
 void aker_help(char *name, char *opt)
 {
-    if (NULL == opt) {
-        print_general_help(name);
+    /* it is your problem if you called with null for name ;-) */
+    char *command = strrchr(name, '/');
+    if (NULL == command) {
+        command = name;
     } else {
-        printf("%s %s has no help yet ;-)\n", name, opt);
+        command++; //  = &command[1]; skip '/'
+    }
+
+    if (NULL == opt) {
+        print_general_help(command);
+    } else {
+        printf("%s %s To get help on specific topic use --h=<topic> or --help=<topic>\n", command, opt);
     }
 }
                 
-void print_general_help(char *name)
+void print_general_help(char *command)
 {
-    debug_info("Usage:%s %s %s %s %s %s %s %s\n", name,
+    debug_info("Usage:%s %s %s %s %s %s %s %s\n", command,
             "-p <parodus_url>", "-c <client_url>", "-w <firewall_cmd>",
             "-d <data_file>", "-f <md5_sig_file>", "[-m <maximum_allowed_macs>]",
-            "[-h [<topic>]]");
+            "[-h }, [--h=[<topic>]]");
 }

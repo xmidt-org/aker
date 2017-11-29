@@ -17,6 +17,9 @@ set(SOURCES wrp_interface.c decode.c time.c schedule.c main.c
             process_data.c scheduler.c schedule_print.c
             aker_md5.c md5.c aker_mem.c aker_help.c)
 
+if (NOT BUILD_YOCTO)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W -g -fprofile-arcs -ftest-coverage -O0")
+endif ()
 
 add_executable(aker ${SOURCES})
 
