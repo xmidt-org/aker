@@ -23,7 +23,7 @@ static void print_general_help(char *name);
 
 void aker_help(char *name, char *opt)
 {
-    /* your problem if you called with null for name ;-) */
+    /* it is your problem if you called with null for name ;-) */
     char *command = strrchr(name, '/');
     if (NULL == command) {
         command = name;
