@@ -66,6 +66,7 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file );
 /*----------------------------------------------------------------------------*/
 int main( int argc, char **argv)
 {
+    const char *option_string = "p:c:w:d:f:m:h::";
     static const struct option options[] = {
         { "help",         optional_argument, 0, 'h' },
         { "parodus-url",  required_argument, 0, 'p' },
@@ -105,7 +106,7 @@ int main( int argc, char **argv)
     signal(SIGHUP, sig_handler);
     signal(SIGALRM, sig_handler);
     
-    while( -1 != (item = getopt_long(argc, argv, "p:c:w:d:f:m:h::", options, &opt_index)) ) {
+    while( -1 != (item = getopt_long(argc, argv, option_string, options, &opt_index)) ) {
         switch( item ) {
             case 'p':
                 cfg.parodus_url = strdup(optarg);
@@ -128,6 +129,18 @@ int main( int argc, char **argv)
             case 'h':
                 aker_help(argv[0], optarg);
                 break;
+            case '?':
+                if (strchr(option_string, optopt)) {
+                    debug_error("%s Option %c requires an argument!\n", argv[0], optopt);
+                    aker_help(argv[0], NULL);
+                    debug_error("%s program terminating!\n", argv[0]);
+                    return -1;
+                } else {
+                    debug_info("%s Unrecognized option %c\n", argv[0], optopt);
+                  }
+
+                break;
+
             default:
                 break;
         }
