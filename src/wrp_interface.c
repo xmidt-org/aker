@@ -86,6 +86,7 @@ int process_wrp(const char *data_file, const char *md5_file,
                 free(service);
             }
             rv = 0;
+            printf("process_wrp - out_crud->status = %d\n", out_crud->status);
         }
         break;
 
@@ -115,7 +116,7 @@ int process_wrp(const char *data_file, const char *md5_file,
                     ret_size = process_message_ret_now(response);
                 } else if(schedule && 0 == strcmp(APP_SCHEDULE, schedule) ) {
                     /* TODO */
-                    debug_error("RETRIEVE /aker/schedule not supported yet.");
+                    debug_error("RETRIEVE /aker/schedule not supported yet.\n");
                 } else {
                     debug_error("RETRIEVE message destination %s is invalid\n", in_crud->dest);
                 }
