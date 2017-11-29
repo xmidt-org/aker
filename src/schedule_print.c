@@ -53,6 +53,9 @@ void print_schedule( schedule_t *s )
     }
 
     printf( "schedule {\n" );
+
+    printf( "   s->time_zone: %s\n", s->time_zone );
+
     printf( "   s->mac_count: %zd\n", s->mac_count );
     for( i = 0; i < s->mac_count; i++ ) {
         printf( "       [%zd]: '%s'\n", i, (char*) &s->macs[i].mac[0] );
