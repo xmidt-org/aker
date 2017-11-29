@@ -31,6 +31,7 @@
 #include "process_data.h"
 #include "aker_md5.h"
 #include "aker_mem.h"
+#include "aker_help.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -45,7 +46,8 @@
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
-/* none */
+size_t max_macs = INT_MAX;
+
 
 /*----------------------------------------------------------------------------*/
 /*                            Global Variables                                */
@@ -65,11 +67,13 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file );
 int main( int argc, char **argv)
 {
     static const struct option options[] = {
+        { "help",         optional_argument, 0, 'h' },
         { "parodus-url",  required_argument, 0, 'p' },
         { "client-url",   required_argument, 0, 'c' },
         { "firewall-cmd", required_argument, 0, 'w' },
         { "data-file",    required_argument, 0, 'd' },
-        { "md5-file",     required_argument, 0, 'm' },
+        { "md5-file",     required_argument, 0, 'f' },
+        { "max-macs",     required_argument, 0, 'm' },
         { 0, 0, 0, 0 }
     };
 
@@ -101,7 +105,7 @@ int main( int argc, char **argv)
     signal(SIGHUP, sig_handler);
     signal(SIGALRM, sig_handler);
     
-    while( -1 != (item = getopt_long(argc, argv, "p:c:w:d:m:", options, &opt_index)) ) {
+    while( -1 != (item = getopt_long(argc, argv, "p:c:w:d:f:m:h::", options, &opt_index)) ) {
         switch( item ) {
             case 'p':
                 cfg.parodus_url = strdup(optarg);
@@ -115,14 +119,24 @@ int main( int argc, char **argv)
             case 'd':
                 data_file = strdup(optarg);
                 break;
-            case 'm':
+            case 'f':
                 md5_file = strdup(optarg);
+                break;
+            case 'm':
+                max_macs = atoi(optarg);
+                break;
+            case 'h':
+                aker_help(argv[0], optarg);
                 break;
             default:
                 break;
         }
     }
 
+    if (max_macs <= 0) {
+        max_macs = INT_MAX;
+    }
+    
     if( (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
         (NULL != firewall_cmd) &&
@@ -252,4 +266,10 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
     (void ) libparodus_shutdown(&hpd_instance);
     debug_print("End of parodus_upstream\n");
     return 0;
+}
+
+
+int32_t get_max_mac_limit(void)
+{
+    return max_macs;
 }

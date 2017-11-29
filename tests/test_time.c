@@ -30,11 +30,25 @@ void time_test1()
     CU_ASSERT(0 != t);
 }
 
+void test_time_zone()
+{
+    set_unix_time_zone("no_exist/no_where");
+
+    set_unix_time_zone("America/Boa_Vista");
+    set_unix_time_zone("America/Kentucky/Monticello");
+    set_unix_time_zone("America/North_Dakota/New_Salem");
+    set_unix_time_zone("America/Los_Angeles");
+    set_unix_time_zone("US/Arizona");
+    set_unix_time_zone("Etc/GMT+0");
+}
+
+
 void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution For test_time ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
     CU_add_test( *suite, "Time Test 1", time_test1);
+    CU_add_test( *suite, "test_time_zone", test_time_zone);
 }
 
 /*----------------------------------------------------------------------------*/

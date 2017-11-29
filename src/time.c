@@ -16,8 +16,10 @@
  */
 #include <stdint.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "time.h"
+#include "aker_log.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -79,6 +81,28 @@ time_t get_unix_time(void)
     return unix_time;
 }
 
+int set_unix_time_zone (const char *time_zone)
+{
+   struct tm *mt;
+   time_t mtt;
+   char ftime[10];
+   int rv = 0;
+
+   setenv("TZ", time_zone, 1);
+   tzset();
+   mtt = time(NULL);
+   mt = localtime(&mtt);
+   if (0 != mt->tm_zone[0]) {
+       strftime(ftime,sizeof(ftime),"%Z %H%M",mt);
+   } else {
+       strftime(ftime,sizeof(ftime),"nil %H%M",mt);
+       debug_error("set_unix_time_zone(%s) is invalid\n", time_zone);
+   }
+
+   debug_info("time_zone: %s is %s\n", time_zone, ftime);
+   
+   return rv;
+}
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/

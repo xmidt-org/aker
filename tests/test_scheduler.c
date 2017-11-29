@@ -210,3 +210,7 @@ time_t get_unix_time(void)
     return add_time + kUnixCurrentTime;
 }
 
+int32_t get_max_mac_limit(void)
+{
+    return 2048;
+}

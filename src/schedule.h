@@ -25,8 +25,6 @@
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
 #define MAC_ADDRESS_SIZE         18
-#define MAXIMUM_BLOCKED_MAC_LIST 128
-#define MAX_TIME_ZONE_SIZE       128
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */

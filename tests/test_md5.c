@@ -175,3 +175,7 @@ int main( int argc, char *argv[] )
     return rv;
 }
 
+int32_t get_max_mac_limit(void)
+{
+    return 2048;
+}

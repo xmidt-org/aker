@@ -42,4 +42,11 @@ time_t convert_unix_time_to_weekly( time_t unixtime );
  */
 time_t get_unix_time(void);
 
+/*
+ * Sets Unix TZ env variable to time_zone
+ */
+int set_unix_time_zone (const char *time_zone);
+
+
+
 #endif
