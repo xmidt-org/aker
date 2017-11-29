@@ -66,7 +66,7 @@ ssize_t process_message_ret_now( wrp_msg_t *ret )
 /*----------------------------------------------------------------------------*/
 /*                                   Tests                                    */
 /*----------------------------------------------------------------------------*/
-void test_wrp_processing()
+void test_process_wrp()
 {
     test_t tests[] = {
         {
@@ -252,7 +252,7 @@ void test_wrp_processing()
 
     for( i = 0; i < t_size; i++ ) {
         wrp_msg_t msg;
-        int rv = wrp_process("data", "md5", &(tests[i].s), &msg);
+        int rv = process_wrp("data", "md5", &(tests[i].s), &msg);
         CU_ASSERT(0 <= rv);
         CU_ASSERT(tests[i].r.msg_type == msg.msg_type);
         if( WRP_MSG_TYPE__REQ == msg.msg_type ) {
@@ -265,7 +265,7 @@ void test_wrp_processing()
             CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.dest, msg.u.crud.dest);
             CU_ASSERT(0 == strcmp(tests[i].r.u.crud.path, msg.u.crud.path));
         }
-        wrp_cleanup(&msg);
+        cleanup_wrp(&msg);
     }
 }
 
@@ -273,7 +273,7 @@ void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "Test 1", test_wrp_processing );
+    CU_add_test( *suite, "Test 1", test_process_wrp );
 }
 
 /*----------------------------------------------------------------------------*/

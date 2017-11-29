@@ -245,11 +245,11 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
 
             debug_info("Got something from parodus.\n");
             memset(&response, 0, sizeof(wrp_msg_t));
-            rv = wrp_process(data_file, md5_file, wrp_msg, &response);
+            rv = process_wrp(data_file, md5_file, wrp_msg, &response);
             if( 0 == rv ) {
                 libparodus_send(hpd_instance, &response);
             }
-            wrp_cleanup(&response);
+            cleanup_wrp(&response);
         } else if( 1 == rv || LIBPD_CLOSED_MSG_RECEIVED == rv ) {
             debug_print("Timed out or message closed.\n");
             continue;
