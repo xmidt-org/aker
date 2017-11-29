@@ -98,7 +98,7 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
     }
     process_time = get_unix_time() - process_time;
     debug_info("Time to process schedule file of size %zu bytes is %ld seconds\n", 
-                                    ( 0 < write_size ? write_size : 0 ), process_time);
+                                    ((0 < write_size) ? write_size : 0), process_time);
 
     return write_size;
 }
