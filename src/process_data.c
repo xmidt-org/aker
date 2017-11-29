@@ -69,7 +69,8 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
             file_handle = fopen(filename, "wb");
             if( file_handle ) {
                 debug_print("cu->u.crud.payload_size = %d\n", cu->u.crud.payload_size);
-                write_size = fwrite(cu->u.crud.payload, sizeof(uint8_t), cu->u.crud.payload_size, file_handle);
+                write_size = fwrite(cu->u.crud.payload, sizeof(uint8_t), cu->u.crud.payload_size, 
+                                 file_handle);
                 if( 0 >= write_size ) {
                     debug_error("process_message_cu failed to write %s\n", md5);
                 }
@@ -96,7 +97,8 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
         write_size = -2;
     }
     process_time = get_unix_time() - process_time;
-    debug_info("Time to process schedule file of size %zu bytes is %ld seconds\n", write_size, process_time);
+    debug_info("Time to process schedule file of size %zu bytes is %ld seconds\n", 
+                                    ((0 < write_size) ? write_size : 0), process_time);
 
     return write_size;
 }
