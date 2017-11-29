@@ -32,13 +32,14 @@ void time_test1()
 
 void test_time_zone()
 {
+    set_unix_time_zone("no_exist/no_where");
+
     set_unix_time_zone("America/Boa_Vista");
     set_unix_time_zone("America/Kentucky/Monticello");
     set_unix_time_zone("America/North_Dakota/New_Salem");
     set_unix_time_zone("America/Los_Angeles");
     set_unix_time_zone("US/Arizona");
     set_unix_time_zone("Etc/GMT+0");
-    set_unix_time_zone("no_exist/no_where");
 }
 
 

@@ -28,6 +28,7 @@
 #include "process_data.h"
 #include "aker_log.h"
 #include "aker_mem.h"
+#include "main.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -75,10 +76,11 @@ schedule_event_t* create_schedule_event( size_t block_count )
 {
     schedule_event_t *s = NULL;
     size_t size;
+    size_t max_macs = get_max_mac_limit();
 
-    if (block_count > MAXIMUM_BLOCKED_MAC_LIST) {
+    if (block_count > max_macs) {
         debug_error("create_schedule_event() Error Request %d exceeds maximum %d\n",
-                     block_count, MAXIMUM_BLOCKED_MAC_LIST);
+                     block_count, max_macs);
         return s;
     }
 
