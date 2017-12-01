@@ -90,7 +90,7 @@ int main( int argc, char **argv)
     char *md5_file = NULL;
     int item = 0;
     int opt_index = 0;
-    int rv = -1;
+    int rv = 0;
     pthread_t thread_id;
 
     signal(SIGTERM, sig_handler);
@@ -133,8 +133,8 @@ int main( int argc, char **argv)
                 if (strchr(option_string, optopt)) {
                     debug_error("%s Option %c requires an argument!\n", argv[0], optopt);
                     aker_help(argv[0], NULL);
-                    debug_error("%s program terminating!\n", argv[0]);
-                    return -1;
+                    rv = -7;
+                    break;
                 } else {
                     debug_info("%s Unrecognized option %c\n", argv[0], optopt);
                   }
@@ -150,7 +150,8 @@ int main( int argc, char **argv)
         max_macs = INT_MAX;
     }
     
-    if( (NULL != cfg.parodus_url) &&
+    if( (rv == 0) &&
+        (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
         (NULL != firewall_cmd) &&
         (NULL != data_file) &&
@@ -162,6 +163,31 @@ int main( int argc, char **argv)
         
         main_loop(&cfg, data_file, md5_file);
         rv = 0;
+    } else {
+        if ((NULL == cfg.parodus_url)) {
+            debug_error("%s parodus_url not specified!\n", argv[0]);
+            rv = -1;
+        }
+        if ((NULL == cfg.client_url)) {
+            debug_error("%s client_url not specified !\n", argv[0]);
+            rv = -2;
+        }
+        if ((NULL == firewall_cmd)) {
+            debug_error("%s firewall_cmd not specified!\n", argv[0]);
+            rv = -3;
+        }
+        if ((NULL == data_file)) {
+            debug_error("%s data_file not specified!\n", argv[0]);
+            rv = -4;
+        }
+        if ((NULL == md5_file)) {
+            debug_error("%s md5_file not specified!\n", argv[0]);
+            rv = -5;
+        }        
+     }
+    
+    if (rv != 0) {
+        debug_error("%s  program terminating\n", argv[0]);
     }
 
     if( NULL != md5_file )          aker_free( md5_file );
