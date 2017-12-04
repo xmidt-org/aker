@@ -45,28 +45,9 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 /*                                   Mocks                                    */
 /*----------------------------------------------------------------------------*/
-ssize_t process_create( const char *filename, const char *md5_file, wrp_msg_t *msg )
+int32_t get_max_mac_limit(void)
 {
-    (void) filename; (void) md5_file; (void) msg;
-    return 0;
-}
-
-ssize_t process_update( const char *filename, const char *md5_file, wrp_msg_t *msg )
-{
-    (void) filename; (void) md5_file; (void) msg;
-    return 0;
-}
-
-ssize_t process_retrieve_persistent( const char *filename, wrp_msg_t *msg )
-{
-    (void) filename; (void) msg;
-    return 0;
-}
-
-ssize_t process_retrieve_now( wrp_msg_t *msg )
-{
-    (void) msg;
-    return 0;
+    return 128;
 }
 
 /*----------------------------------------------------------------------------*/

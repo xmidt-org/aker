@@ -39,7 +39,10 @@ target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
 #-------------------------------------------------------------------------------
 add_test(NAME test_wrp_interface COMMAND ${MEMORY_CHECK} ./test_wrp_interface)
 add_executable(test_wrp_interface test_wrp_interface.c ../src/wrp_interface.c
-               ../src/aker_msgpack.c mem_wrapper.c )
+               ../src/process_data.c ../src/aker_md5.c ../src/md5.c
+               ../src/schedule_print.c ../src/schedule.c ../src/decode.c 
+               ../src/time.c ../src/scheduler.c ../src/aker_msgpack.c 
+               mem_wrapper.c )
 target_link_libraries (test_wrp_interface ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
