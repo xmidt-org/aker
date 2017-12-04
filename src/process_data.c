@@ -56,10 +56,8 @@
 ssize_t process_create( const char *filename, const char *md5, wrp_msg_t *cu )
 {
     ssize_t write_size = 0;
-    FILE *file_handle = NULL;
 
-    file_handle = fopen(filename, "r");
-    if( NULL != file_handle ) {
+    if( -1 != access(filename, F_OK) ) {
         write_size = -1;
     } else {
         write_size = process_update(filename, md5, cu);
