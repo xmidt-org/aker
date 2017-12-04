@@ -38,17 +38,6 @@ extern "C" {
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 /**
- * @brief Processes wrp CRUD message for Create.
- *
- * @param filename to write payload into
- * @param md5_file
- * @param msg      CRUD message
- *
- * @return size of payload, <0 otherwise.
- */
-ssize_t process_create( const char *filename, const char *md5_file, wrp_msg_t *msg );
-
-/**
  * @brief Processes wrp CRUD message for Update.
  *
  * @param filename to write payload into

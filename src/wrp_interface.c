@@ -70,13 +70,16 @@ int process_wrp(const char *data_file, const char *md5_file,
                 char *schedule = wrp_get_msg_dest_element(WRP_ID_ELEMENT__APPLICATION, msg);
                 if( (NULL != schedule) && (0 == strcmp(APP_SCHEDULE, schedule)) ) 
                 {
-                    ssize = process_create(data_file, md5_file, in_msg);
-                    if( -1 == ssize ) {
+                    if( -1 == access(data_file, F_OK) )
+                    {
                         snprintf(status_str, sizeof(status_str), "Conflict - schedule already CREATE-ed.\n");
                         out_crud->status = 422;
-                    } else if( -1 > ssize ) {
-                        snprintf(status_str, sizeof(status_str), "Error - schedule not CREATE-ed.\n");
-                        out_crud->status = 400;
+                    } else {
+                        ssize = process_update(data_file, md5_file, in_msg);
+                        if( 0 > ssize ) {
+                            snprintf(status_str, sizeof(status_str), "Error - schedule not CREATE-ed.\n");
+                            out_crud->status = 400;
+                        }
                     }
                 } else {
                     snprintf(status_str, sizeof(status_str), "Not allowed - endpoint(%s)\n", in_crud->dest);
