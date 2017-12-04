@@ -45,22 +45,28 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 /*                                   Mocks                                    */
 /*----------------------------------------------------------------------------*/
-ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu )
+ssize_t process_create( const char *filename, const char *md5_file, wrp_msg_t *msg )
 {
-    (void) filename; (void) md5; (void) cu;
-    return 1;
+    (void) filename; (void) md5_file; (void) msg;
+    return 0;
 }
 
-ssize_t process_message_ret_all( const char *filename, wrp_msg_t *ret )
+ssize_t process_update( const char *filename, const char *md5_file, wrp_msg_t *msg )
 {
-    (void) filename; (void) ret;
-    return 1;
+    (void) filename; (void) md5_file; (void) msg;
+    return 0;
 }
 
-ssize_t process_message_ret_now( wrp_msg_t *ret )
+ssize_t process_retrieve_persistent( const char *filename, wrp_msg_t *msg )
 {
-    (void) ret;
-    return 1;
+    (void) filename; (void) msg;
+    return 0;
+}
+
+ssize_t process_retrieve_now( wrp_msg_t *msg )
+{
+    (void) msg;
+    return 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -79,7 +85,6 @@ void test_process_wrp()
             .s.u.crud.metadata = NULL,
             .s.u.crud.include_spans = false,
             .s.u.crud.spans.spans = NULL,
-            .s.u.crud.spans.count = 0,
             .s.u.crud.path = "Some path",
             .s.u.crud.payload = "Some binary",
             .s.u.crud.payload_size = 11,
@@ -94,6 +99,98 @@ void test_process_wrp()
             .r.u.crud.include_spans = false,
             .r.u.crud.spans.spans = NULL,
             .r.u.crud.spans.count = 0,
+            .r.u.crud.status = 201,
+            .r.u.crud.path = "Some path",
+            .r.u.crud.payload = NULL,
+            .r.u.crud.payload_size = 0,
+        },
+
+        {
+            .s.msg_type = WRP_MSG_TYPE__CREATE,
+            .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .s.u.crud.source = "fake-server",
+            .s.u.crud.dest = SCHEDULE_ENDPOINT,
+            .s.u.crud.partner_ids = NULL,
+            .s.u.crud.headers = NULL,
+            .s.u.crud.metadata = NULL,
+            .s.u.crud.include_spans = false,
+            .s.u.crud.spans.spans = NULL,
+            .s.u.crud.path = "Some path",
+            .s.u.crud.payload = "Some binary",
+            .s.u.crud.payload_size = 11,
+
+            .r.msg_type = WRP_MSG_TYPE__CREATE,
+            .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .r.u.crud.source = SCHEDULE_ENDPOINT,
+            .r.u.crud.dest = "fake-server",
+            .r.u.crud.partner_ids = NULL,
+            .r.u.crud.headers = NULL,
+            .r.u.crud.metadata = NULL,
+            .r.u.crud.include_spans = false,
+            .r.u.crud.spans.spans = NULL,
+            .r.u.crud.spans.count = 0,
+            .r.u.crud.status = 422,
+            .r.u.crud.path = "Some path",
+            .r.u.crud.payload = NULL,
+            .r.u.crud.payload_size = 0,
+        },
+
+        {
+            .s.msg_type = WRP_MSG_TYPE__CREATE,
+            .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .s.u.crud.source = "fake-server",
+            .s.u.crud.dest = SCHEDULE_ENDPOINT,
+            .s.u.crud.partner_ids = NULL,
+            .s.u.crud.headers = NULL,
+            .s.u.crud.metadata = NULL,
+            .s.u.crud.include_spans = false,
+            .s.u.crud.spans.spans = NULL,
+            .s.u.crud.path = "Some path",
+            .s.u.crud.payload = "Some binary",
+            .s.u.crud.payload_size = 11,
+
+            .r.msg_type = WRP_MSG_TYPE__CREATE,
+            .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .r.u.crud.source = SCHEDULE_ENDPOINT,
+            .r.u.crud.dest = "fake-server",
+            .r.u.crud.partner_ids = NULL,
+            .r.u.crud.headers = NULL,
+            .r.u.crud.metadata = NULL,
+            .r.u.crud.include_spans = false,
+            .r.u.crud.spans.spans = NULL,
+            .r.u.crud.spans.count = 0,
+            .r.u.crud.status = 400,
+            .r.u.crud.path = "Some path",
+            .r.u.crud.payload = NULL,
+            .r.u.crud.payload_size = 0,
+        },
+
+        {
+            .s.msg_type = WRP_MSG_TYPE__UPDATE,
+            .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .s.u.crud.source = "fake-server",
+            .s.u.crud.dest = SCHEDULE_ENDPOINT,
+            .s.u.crud.partner_ids = NULL,
+            .s.u.crud.headers = NULL,
+            .s.u.crud.metadata = NULL,
+            .s.u.crud.include_spans = false,
+            .s.u.crud.spans.spans = NULL,
+            .s.u.crud.spans.count = 0,
+            .s.u.crud.path = "Some path",
+            .s.u.crud.payload = "Some binary",
+            .s.u.crud.payload_size = 11,
+
+            .r.msg_type = WRP_MSG_TYPE__UPDATE,
+            .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
+            .r.u.crud.source = SCHEDULE_ENDPOINT,
+            .r.u.crud.dest = "fake-server",
+            .r.u.crud.partner_ids = NULL,
+            .r.u.crud.headers = NULL,
+            .r.u.crud.metadata = NULL,
+            .r.u.crud.include_spans = false,
+            .r.u.crud.spans.spans = NULL,
+            .r.u.crud.spans.count = 0,
+            .r.u.crud.status = 200,
             .r.u.crud.path = "Some path",
             .r.u.crud.payload = NULL,
             .r.u.crud.payload_size = 0,
@@ -124,6 +221,7 @@ void test_process_wrp()
             .r.u.crud.include_spans = false,
             .r.u.crud.spans.spans = NULL,
             .r.u.crud.spans.count = 0,
+            .r.u.crud.status = 204,
             .r.u.crud.path = "Some path",
             .r.u.crud.payload = "Some other binary",
             .r.u.crud.payload_size = 16,
@@ -154,6 +252,7 @@ void test_process_wrp()
             .r.u.crud.include_spans = false,
             .r.u.crud.spans.spans = NULL,
             .r.u.crud.spans.count = 0,
+            .r.u.crud.status = 200,
             .r.u.crud.path = "Some path",
             .r.u.crud.payload = "Some other binary",
             .r.u.crud.payload_size = 16,
@@ -184,6 +283,7 @@ void test_process_wrp()
             .r.u.crud.include_spans = false,
             .r.u.crud.spans.spans = NULL,
             .r.u.crud.spans.count = 0,
+            .r.u.crud.status = 200,
             .r.u.crud.path = "Some path",
             .r.u.crud.payload = "Some other binary",
             .r.u.crud.payload_size = 16,
@@ -214,6 +314,7 @@ void test_process_wrp()
             .r.u.crud.include_spans = false,
             .r.u.crud.spans.spans = NULL,
             .r.u.crud.spans.count = 0,
+            .r.u.crud.status = 405,
             .r.u.crud.path = "Some path",
             .r.u.crud.payload = NULL,
             .r.u.crud.payload_size = 0,

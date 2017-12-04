@@ -167,7 +167,7 @@ void test_process_ret_now()
 
     for( i = 0; i < t_size; i++ ) {
         memset(&response, '\0', sizeof(wrp_msg_t));
-        ret_size = process_message_ret_now(&response);
+        ret_size = process_retrieve_now(&response);
         CU_ASSERT(0 == memcmp(response.u.crud.payload, tests_now[i].msgpack, tests_now[i].msgpack_size));
         free(response.u.crud.payload);
         CU_ASSERT(ret_size == tests_now[i].msgpack_size);

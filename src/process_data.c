@@ -27,7 +27,7 @@
 #include "aker_md5.h"
 #include "time.h"
 #include "aker_mem.h"
-
+#include "aker_msgpack.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -47,13 +47,30 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n );
+/* None */
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
 /* See process_data.h for details. */
-ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu )
+ssize_t process_create( const char *filename, const char *md5, wrp_msg_t *cu )
+{
+    ssize_t write_size = 0;
+    FILE *file_handle = NULL;
+
+    file_handle = fopen(filename, "r");
+    if( NULL != file_handle ) {
+        write_size = -1;
+    } else {
+        write_size = process_update(filename, md5, cu);
+        if( 0 > write_size ) write_size--;
+    }
+
+    return write_size;
+}
+
+/* See process_data.h for details. */
+ssize_t process_update( const char *filename, const char *md5, wrp_msg_t *cu )
 {
     ssize_t write_size = 0;
     unsigned char result[MD5_SIZE];
@@ -72,28 +89,28 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
                 write_size = fwrite(cu->u.crud.payload, sizeof(uint8_t), cu->u.crud.payload_size, 
                                  file_handle);
                 if( 0 >= write_size ) {
-                    debug_error("process_message_cu failed to write %s\n", md5);
+                    debug_error("Create/Update - failed to write %s\n", md5);
                 }
                 fclose(file_handle);
             } else {
-                debug_error("process_message_cu() Failed on fopen(%s, \"wb\"\n", filename);
+                debug_error("Create/Update - failed on fopen(%s, \"wb\"\n", filename);
             }
 
             file_handle = fopen(md5, "wb");
             if (file_handle) {
                 size_t cnt = fwrite(md5_string, sizeof(uint8_t), MD5_SIZE * 2, file_handle);
                 if (cnt <= 0) {
-                    debug_error("process_message_cu failed to write %s\n", md5);
+                    debug_error("Create/Update - failed to write %s\n", md5);
                 }
                 fclose(file_handle);
             }
         } else {
-            debug_error("process_schedule_data() failed\n");
+            debug_error("Create/Update - process data failed\n");
             write_size = -1;
         }
         aker_free(md5_string);
     } else {
-        debug_error("process_message_cu()->compute_byte_stream_md5() Failed\n");
+        debug_error("Create/Update - compute_byte_stream_md5() failed\n");
         write_size = -2;
     }
     process_time = get_unix_time() - process_time;
@@ -105,7 +122,7 @@ ssize_t process_message_cu( const char *filename, const char *md5, wrp_msg_t *cu
 
 
 /* See process_data.h for details. */
-ssize_t process_message_ret_all( const char *filename, wrp_msg_t *ret )
+ssize_t process_retrieve_persistent( const char *filename, wrp_msg_t *ret )
 {
     uint8_t *data = NULL;
     size_t read_size = 0;
@@ -121,7 +138,7 @@ ssize_t process_message_ret_all( const char *filename, wrp_msg_t *ret )
 
 
 /* See process_data.h for details. */
-ssize_t process_message_ret_now( wrp_msg_t *ret )
+ssize_t process_retrieve_now( wrp_msg_t *ret )
 {
     const char cstr_active[] = "active";
     const char cstr_time[] = "time";
@@ -139,10 +156,10 @@ ssize_t process_message_ret_now( wrp_msg_t *ret )
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
     msgpack_pack_map(&pk, 2);
 
-    __msgpack_pack_string(&pk, cstr_active, strlen(cstr_active));
-    __msgpack_pack_string(&pk, macs, macs_size);
+    pack_msgpack_string(&pk, cstr_active, strlen(cstr_active));
+    pack_msgpack_string(&pk, macs, macs_size);
 
-    __msgpack_pack_string(&pk, cstr_time, strlen(cstr_time));
+    pack_msgpack_string(&pk, cstr_time, strlen(cstr_time));
     msgpack_pack_int32(&pk, current);
 
     ret->u.crud.content_type = "application/msgpack";
@@ -206,17 +223,4 @@ size_t read_file_from_disk( const char *filename, uint8_t **data )
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-
-/**
- *  Helper to encode string.
- *
- *  @param pk     object
- *  @param string to be encoded
- *  @param n      size of string
- */
-void __msgpack_pack_string( msgpack_packer *pk, const void *string, size_t n )
-{
-    msgpack_pack_str( pk, n );
-    msgpack_pack_str_body( pk, string, n );
-}
-
+/* None */

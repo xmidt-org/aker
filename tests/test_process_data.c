@@ -80,7 +80,7 @@ uint8_t get_data(uint8_t **data)
 }
 
 
-void test_process_cu_and_ret()
+void test_process_data()
 {
     wrp_msg_t tests_cu[] =
     {
@@ -125,7 +125,7 @@ void test_process_cu_and_ret()
     for( i = 0; i < t_size; i++ ) {
         tests_cu[i].u.crud.payload = data;
         tests_cu[i].u.crud.payload_size = data_size;
-        cu_size = process_message_cu("pcs.bin", "pcs_md5.bin", &tests_cu[i]);
+        cu_size = process_update("pcs.bin", "pcs_md5.bin", &tests_cu[i]);
         CU_ASSERT((size_t)cu_size == tests_cu[i].u.crud.payload_size);
     }
 
@@ -134,7 +134,7 @@ void test_process_cu_and_ret()
         tests_ret[i].u.crud.payload = data;
         tests_ret[i].u.crud.payload_size = data_size;
         memset(&response, '\0', sizeof(wrp_msg_t));
-        ret_size = process_message_ret_all("pcs.bin", &response);
+        ret_size = process_retrieve_persistent("pcs.bin", &response);
         CU_ASSERT(0 == memcmp(tests_ret[i].u.crud.payload, response.u.crud.payload, response.u.crud.payload_size));
         CU_ASSERT(tests_ret[i].u.crud.payload_size == response.u.crud.payload_size);
         free(response.u.crud.payload);
@@ -165,12 +165,12 @@ void test_null_file()
 
     test_cu.u.crud.payload_size = get_data(&data);
     test_cu.u.crud.payload = data;
-    ssize_t cu_size = process_message_cu(NULL, NULL, &test_cu);
+    ssize_t cu_size = process_update(NULL, NULL, &test_cu);
     CU_ASSERT(0 <= cu_size);
 
     test_cu.u.crud.payload_size = 0;
     test_cu.u.crud.payload = NULL;
-    cu_size = process_message_cu("pcs.bin", "pcs.bin.md5", &test_cu);
+    cu_size = process_update("pcs.bin", "pcs.bin.md5", &test_cu);
     CU_ASSERT(-1 == cu_size);
 
     if( NULL != data ) {
@@ -182,7 +182,7 @@ void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "Test 1", test_process_cu_and_ret );
+    CU_add_test( *suite, "Test 1", test_process_data );
     CU_add_test( *suite, "Test null file", test_null_file );
 }
 

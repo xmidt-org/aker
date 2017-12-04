@@ -38,15 +38,26 @@ extern "C" {
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
 /**
- * @brief Processes wrp CRUD message for Create and Update.
+ * @brief Processes wrp CRUD message for Create.
  *
  * @param filename to write payload into
  * @param md5_file
- * @param cu       CRUD message
+ * @param msg      CRUD message
  *
  * @return size of payload, <0 otherwise.
  */
-ssize_t process_message_cu( const char *filename, const char *md5_file, wrp_msg_t *cu );
+ssize_t process_create( const char *filename, const char *md5_file, wrp_msg_t *msg );
+
+/**
+ * @brief Processes wrp CRUD message for Update.
+ *
+ * @param filename to write payload into
+ * @param md5_file
+ * @param msg      CRUD message
+ *
+ * @return size of payload, <0 otherwise.
+ */
+ssize_t process_update( const char *filename, const char *md5_file, wrp_msg_t *msg );
 
 /**
  * @brief Returns current schedule through the wrp CRUD message.
@@ -54,22 +65,22 @@ ssize_t process_message_cu( const char *filename, const char *md5_file, wrp_msg_
  * @note return data buffer needs to be free()-ed by caller.
  *
  * @param filename to read payload from
- * @param ret CRUD message
+ * @param msg CRUD message
  *
  * @return size of data retrieved, <0 otherwise.
  */
-ssize_t process_message_ret_all( const char *filename, wrp_msg_t *ret );
+ssize_t process_retrieve_persistent( const char *filename, wrp_msg_t *msg );
 
 /**
  * @brief Returns list of the currently blocked MAC IDs through the wrp CRUD message.
  * 
  * @note return data buffer needs to be free()-ed by caller.
  *
- * @param ret CRUD message
+ * @param msg CRUD message
  *
  * @return size of data retrieved, <0 otherwise.
  */
-ssize_t process_message_ret_now( wrp_msg_t *ret );
+ssize_t process_retrieve_now( wrp_msg_t *msg );
 
 /**
  * @brief reads the file.
