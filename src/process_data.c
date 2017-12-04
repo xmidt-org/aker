@@ -55,13 +55,17 @@
 /* See process_data.h for details. */
 ssize_t process_create( const char *filename, const char *md5, wrp_msg_t *cu )
 {
-    ssize_t write_size = 0;
+    ssize_t write_size = -1;
 
-    if( -1 != access(filename, F_OK) ) {
-        write_size = -1;
-    } else {
+    if( -1 == access(filename, F_OK) )
+    {
         write_size = process_update(filename, md5, cu);
-        if( 0 > write_size ) write_size--;
+        if( 0 > write_size ) {
+            /* -- <0 return code to differentiate between -1 return code when
+             * @filename file is already present.
+             */
+            write_size--;
+        }
     }
 
     return write_size;
