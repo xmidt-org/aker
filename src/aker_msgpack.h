@@ -27,5 +27,12 @@
  */
 void pack_msgpack_string( msgpack_packer *pk, const void *string, size_t size );
 
+/**
+ *  Packs string into msgpack 
+ *
+ *  @param string [in]  string to be packed
+ *  @param binary [out] string size
+ */
+size_t pack_status_msgpack_map(const char *string, void **binary);
 
 #endif

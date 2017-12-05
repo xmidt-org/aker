@@ -37,7 +37,7 @@ typedef struct wrp_req_msg  req_msg_t;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-static size_t __pack_msgpack_map(const char *string, void **binary);
+/* None */
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -92,7 +92,7 @@ int process_wrp(const char *data_file, const char *md5_file,
                 snprintf(status_str, sizeof(status_str), "Not found - destination(%s)\n", in_crud->dest);
                 out_crud->status = 404;
             }
-            out_crud->payload_size = __pack_msgpack_map(status_str, &out_crud->payload);
+            out_crud->payload_size = pack_status_msgpack_map(status_str, &out_crud->payload);
 
             in_crud->transaction_uuid = NULL;
             in_crud->source = NULL;
@@ -140,7 +140,7 @@ int process_wrp(const char *data_file, const char *md5_file,
                 snprintf(status_str, sizeof(status_str), "Not found - destination(%s)\n", in_crud->dest);
                 out_crud->status = 404;
             }
-            out_crud->payload_size = __pack_msgpack_map(status_str, &out_crud->payload);
+            out_crud->payload_size = pack_status_msgpack_map(status_str, &out_crud->payload);
 
             in_crud->transaction_uuid = NULL;
             in_crud->source = NULL;
@@ -193,7 +193,7 @@ int process_wrp(const char *data_file, const char *md5_file,
                 snprintf(status_str, sizeof(status_str), "Not found - destination(%s)\n", in_crud->dest);
                 out_crud->status = 404;
             }
-            out_crud->payload_size = __pack_msgpack_map(status_str, &out_crud->payload);
+            out_crud->payload_size = pack_status_msgpack_map(status_str, &out_crud->payload);
 
             in_crud->transaction_uuid = NULL;
             in_crud->source = NULL;
@@ -218,7 +218,7 @@ int process_wrp(const char *data_file, const char *md5_file,
             out_crud->source  = in_crud->dest;
             out_crud->dest    = in_crud->source;
             out_crud->path    = in_crud->path;
-            out_crud->payload_size = __pack_msgpack_map(status_str, &out_crud->payload);
+            out_crud->payload_size = pack_status_msgpack_map(status_str, &out_crud->payload);
   
             in_crud->transaction_uuid = NULL;
             in_crud->source = NULL;
@@ -238,7 +238,7 @@ int process_wrp(const char *data_file, const char *md5_file,
             out_req->transaction_uuid = in_req->transaction_uuid;
             out_req->source  = in_req->dest;
             out_req->dest    = in_req->source;
-            out_req->payload_size = __pack_msgpack_map(status_str, &out_req->payload);
+            out_req->payload_size = pack_status_msgpack_map(status_str, &out_req->payload);
 
             in_req->transaction_uuid = NULL;
             in_req->source = NULL;
@@ -272,28 +272,4 @@ int cleanup_wrp(wrp_msg_t *message)
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-static size_t __pack_msgpack_map(const char *string, void **binary)
-{
-    const char cstr_message[] = "message";
-    size_t binary_size = 0;
-    msgpack_sbuffer sbuf;
-    msgpack_packer pk;
-
-    msgpack_sbuffer_init(&sbuf);
-    msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
-    msgpack_pack_map(&pk, 2);
-
-    pack_msgpack_string(&pk, cstr_message, strlen(cstr_message));
-    pack_msgpack_string(&pk, string, strlen(string));
-
-    if( NULL != sbuf.data ) {
-        *binary = aker_malloc(sizeof(char) * sbuf.size);
-        if( NULL != *binary ) {
-            memcpy(*binary, sbuf.data, sbuf.size);
-            binary_size = sbuf.size;
-        }
-    }
-    msgpack_sbuffer_destroy(&sbuf);
-
-    return binary_size;
-}
+/* None */

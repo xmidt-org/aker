@@ -14,6 +14,9 @@
  * limitations under the License.
  *
  */
+#include <stddef.h>
+
+#include "aker_mem.h"
 #include "aker_msgpack.h"
 
 /*----------------------------------------------------------------------------*/
@@ -45,6 +48,33 @@ void pack_msgpack_string( msgpack_packer *pk, const void *string, size_t size )
 {
     msgpack_pack_str( pk, size );
     msgpack_pack_str_body( pk, string, size );
+}
+
+/* See aker_msgpack.h for details. */
+size_t pack_status_msgpack_map(const char *string, void **binary)
+{
+    const char cstr_message[] = "message";
+    size_t binary_size = 0;
+    msgpack_sbuffer sbuf;
+    msgpack_packer pk;
+
+    msgpack_sbuffer_init(&sbuf);
+    msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
+    msgpack_pack_map(&pk, 2);
+
+    pack_msgpack_string(&pk, cstr_message, strlen(cstr_message));
+    pack_msgpack_string(&pk, string, strlen(string));
+
+    if( NULL != sbuf.data ) {
+        *binary = aker_malloc(sizeof(char) * sbuf.size);
+        if( NULL != *binary ) {
+            memcpy(*binary, sbuf.data, sbuf.size);
+            binary_size = sbuf.size;
+        }
+    }
+    msgpack_sbuffer_destroy(&sbuf);
+
+    return binary_size;
 }
 
 /*----------------------------------------------------------------------------*/
