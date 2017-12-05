@@ -78,40 +78,40 @@ void test2()
     int cnt;
     
     for (cnt = 0; cnt < MAX_WRP_TEST_MSGS; cnt++) {
-        result = process_message_cu( file_name, md5_file, &wrp_test_msgs[cnt] );  
+        result = process_update( file_name, md5_file, &wrp_test_msgs[cnt] );  
         CU_ASSERT(0 < result);
     }
     malloc_fail = true;
     malloc_failure_limit = 32;
      for (cnt = 0; cnt < MAX_WRP_TEST_MSGS; cnt++) {
-        result = process_message_cu( file_name, md5_file, &wrp_test_msgs[cnt] );
+        result = process_update( file_name, md5_file, &wrp_test_msgs[cnt] );
         CU_ASSERT(0 >= result);
     }
 
     malloc_fail = false;
 
     add_time = -214980;
-    result = process_message_cu( file_name, md5_file, &wrp_test_msgs[0] );  
+    result = process_update( file_name, md5_file, &wrp_test_msgs[0] );  
     CU_ASSERT(0 < result);
 
     add_time = -214500;
-    result = process_message_cu( file_name, md5_file, &wrp_test_msgs[1] );  
+    result = process_update( file_name, md5_file, &wrp_test_msgs[1] );  
     CU_ASSERT(0 < result);    
 
     add_time = -213000;
-    result = process_message_cu( file_name, md5_file, &wrp_test_msgs[2] );  
+    result = process_update( file_name, md5_file, &wrp_test_msgs[2] );  
     CU_ASSERT(0 < result);
 
     add_time = -212900;
-    result = process_message_cu( file_name, md5_file, &wrp_test_msgs[3] );
+    result = process_update( file_name, md5_file, &wrp_test_msgs[3] );
     CU_ASSERT(0 < result);
 
     add_time = 0; // allow absolute to take effect ?
-    result = process_message_cu( file_name, md5_file, &wrp_test_msgs[3] );  
+    result = process_update( file_name, md5_file, &wrp_test_msgs[3] );  
     CU_ASSERT(0 < result);
     
     add_time = -212790;
-    result = process_message_cu( file_name, md5_file, &wrp_test_msgs[0] );
+    result = process_update( file_name, md5_file, &wrp_test_msgs[0] );
     CU_ASSERT(0 < result);
 }
 
@@ -121,7 +121,7 @@ void test3()
     wrp_msg_t msg;
     ssize_t cnt;
 
-    cnt = process_message_ret_now(&msg);
+    cnt = process_retrieve_now(&msg);
 
     CU_ASSERT(cnt >= 0);
 }
