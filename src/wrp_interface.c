@@ -15,7 +15,6 @@
  *
  */
 #include <stdio.h>
-#include <msgpack.h>
 
 #include "aker_log.h"
 #include "wrp_interface.h"
