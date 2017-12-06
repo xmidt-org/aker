@@ -90,7 +90,6 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
             if (0 == strncmp(key->via.str.ptr, WEEKLY_SCHEDULE, key->via.str.size)) {
                 debug_info("Found %s\n", WEEKLY_SCHEDULE);
                 decode_schedule_table(key, val, &s->weekly);
-                
                 }
             else if (0 == strncmp(key->via.str.ptr, ABSOLUTE_SCHEDULE, key->via.str.size)) {
                 debug_info("Found %s\n", ABSOLUTE_SCHEDULE);
@@ -104,6 +103,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
                             aker_free(s->macs);
                             s->macs = NULL;
                         }
+                        ret_val = -7;
                     }
                 }
             else if (0 == strncmp(key->via.str.ptr, TIME_ZONE, key->via.str.size)) {
@@ -137,9 +137,14 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
         msgpack_unpacked_destroy(&result);
     }
 
-    if (0 != ret_val) {
+    if (0 != ret_val || (NULL == s->macs) || (NULL == s->weekly && NULL == s->absolute))
+    {
+        debug_error("Invalid format for schedule\n");
         msgpack_unpacked_destroy(&result);
         destroy_schedule(s);
+        if (0 == ret_val) {
+            ret_val = -9;
+        }
        *t = NULL;
     }
 
@@ -180,6 +185,12 @@ int decode_macs_table (msgpack_object *key, msgpack_object *val, schedule_t **t)
     (void ) key;
     
     count = val->via.array.size;
+    
+    if (0 == count) {
+        debug_error("decode_macs_table(): empty MAC array\n");        
+        return -1;
+    }
+    
 
     if (0 != create_mac_table( *t, count )) {
         debug_error("decode_macs_table(): create_mac_table() failed\n");
