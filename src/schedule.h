@@ -31,7 +31,7 @@
 /*----------------------------------------------------------------------------*/
 
 typedef struct schedule_event {
-    time_t time;                    /* Time is either minutes since last sunday
+    time_t time;                    /* Time is either seconds since last sunday
                                      * or UTC Unix time. */
     struct schedule_event *next ;   /* The next node in the SLL or NULL. */
     
