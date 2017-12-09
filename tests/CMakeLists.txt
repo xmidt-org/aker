@@ -35,6 +35,14 @@ add_executable(test_schedule test_schedule.c ../src/schedule_print.c
 target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
+#   test_time_changes
+#-------------------------------------------------------------------------------
+add_test(NAME test_time_changes COMMAND ${MEMORY_CHECK} ./test_time_changes)
+add_executable(test_time_changes test_time_changes.c ../src/schedule_print.c 
+               ../src/schedule.c ../src/time.c mem_wrapper.c)
+target_link_libraries (test_time_changes ${AKER_COMMON_LIBS})
+
+#-------------------------------------------------------------------------------
 #   test_wrp_interface
 #-------------------------------------------------------------------------------
 add_test(NAME test_wrp_interface COMMAND ${MEMORY_CHECK} ./test_wrp_interface)
