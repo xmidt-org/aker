@@ -203,8 +203,7 @@ void test_spring()
 
         next = get_blocked_at_time( s, t );
         if( t < 1520747100 ) {
-            // TODO - code is broken!
-            // CU_ASSERT( NULL == next );
+            CU_ASSERT( NULL == next );
         }
         if( (1520747100 <= t) && (t < 1520749800) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 11:11:11:11:11:11");
