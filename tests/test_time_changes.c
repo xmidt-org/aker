@@ -245,8 +245,7 @@ void test_fall()
 
         next = get_blocked_at_time( s, t );
         if( t < 1541306700 ) {
-            // TODO - code is broken!
-            // CU_ASSERT( NULL == next );
+            CU_ASSERT( NULL == next );
         }
         if( (1541306700 <= t) && (t < 1541309400) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 11:11:11:11:11:11");
