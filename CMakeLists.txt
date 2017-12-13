@@ -40,13 +40,24 @@ include_directories(${INCLUDE_DIR}
 # Compile options/flags
 #-------------------------------------------------------------------------------
 add_definitions(-std=c99)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE -DNOPOLL_LOGGER ")
+# Get git commit hash 
+#-------------------------------------------------------------------------------
+execute_process(
+  COMMAND git describe --abbrev=40 --tags --always
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE AKER_GIT_COMMIT_TAG
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+add_definitions("-DAKER_GIT_COMMIT_TAG=\"${AKER_GIT_COMMIT_TAG}\"")
+message(${AKER_GIT_COMMIT_TAG})
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE -DNOPOLL_LOGGER")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wno-missing-field-initializers")
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall")
-
 
 # pthread external dependency
 #-------------------------------------------------------------------------------
@@ -161,6 +172,7 @@ endif()
 link_directories ( ${LIBRARY_DIR} ${LIBRARY_DIR64} ${COMMON_LIBRARY_DIR} ${MAIN_PROJ_COMMON_PATH} ${MAIN_PROJ_LIB_PATH} ${MAIN_PROJ_LIB64_PATH} )
 
 add_subdirectory(src)
+add_subdirectory(service/version/upstream)
 
 if (BUILD_TESTING)
     add_subdirectory(tests)
