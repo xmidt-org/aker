@@ -29,6 +29,7 @@
 #include "../src/aker_mem.h"
 #include "../src/schedule.h"
 #include "../src/time.h"
+#include "../service/version/upstream/aker_version.h"
 #include "mem_wrapper.h"
 
 /* The test schedule:
@@ -116,7 +117,7 @@ schedule_t* build_schedule()
 {
     schedule_t *s;
     schedule_event_t *e;
-
+        
     s = create_schedule();
 
     e = create_schedule_event( 2 );
@@ -341,5 +342,6 @@ int main( int argc, char *argv[] )
 
     }
 
+   printf("\naker_version_string %s\n", aker_version_string());
    return rv;
 }
