@@ -194,7 +194,7 @@ void test_spring()
     time_t t;
     schedule_t *s;
 
-    set_unix_time_zone( "America/New_York" );
+    set_unix_time_zone( "EST5EDT" );
     s = build_schedule();
     print_schedule( s );
 
@@ -236,7 +236,7 @@ void test_fall()
     time_t t;
     schedule_t *s;
 
-    set_unix_time_zone( "America/New_York" );
+    set_unix_time_zone( "EST5EDT" );
     s = build_schedule();
     print_schedule( s );
 
