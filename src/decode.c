@@ -118,6 +118,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t) {
             val = &p->val;
             }
 
+        finalize_schedule(s);
         ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
     } else {
             debug_error("Unexpected result in decode_schedule()\n");
