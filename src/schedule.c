@@ -259,9 +259,9 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
         if( NULL != w_prev) {
             if( (w_prev->time < last_abs) && (last_abs <= weekly) ) {
                 rv = __convert_event_to_string( s, abs_prev );
-            } else if (w_prev->time <= weekly) {
-                      rv = __convert_event_to_string( s, w_prev );
-                   }
+            } else {
+                rv = __convert_event_to_string( s, w_prev );
+            }
         } else {
             if( last_abs <= weekly ) {
                 rv = __convert_event_to_string( s, abs_prev );

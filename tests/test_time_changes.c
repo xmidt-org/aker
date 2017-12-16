@@ -178,6 +178,7 @@ schedule_t* build_schedule()
     set_mac_index( s, "44:44:44:44:44:44", 17, 4 );
     set_mac_index( s, "55:55:55:55:55:55", 17, 5 );
 
+    finalize_schedule( s );
     return s;
 }
 
