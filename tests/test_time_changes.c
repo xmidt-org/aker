@@ -201,22 +201,30 @@ void test_spring()
 
     for( t = start_unix; t < end_unix; t++ ) {
         char *next;
+        time_t until;
 
         next = get_blocked_at_time( s, t );
+        until = get_next_unixtime( s, t );
         if( t < 1520747100 ) {
             CU_ASSERT( NULL == next );
+            CU_ASSERT( 1520747100 == until );
         }
         if( (1520747100 <= t) && (t < 1520749800) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 11:11:11:11:11:11");
+            CU_ASSERT( 1520749800 == until );
         }
         if( (1520749800 <= t) && (t < 1520751600) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 22:22:22:22:22:22");
+            CU_ASSERT( 1520751600 == until );
         }
         if( (1520751600 <= t) && (t < 1520752500) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 55:55:55:55:55:55");
+            CU_ASSERT( 1520752500 == until );
         }
         if( 1520752500 <= t ) {
             CU_ASSERT( NULL == next );
+            // Next Sunday at 00:45 AM.
+            CU_ASSERT( 1521348300 == until );
         }
 
         if( NULL != next ) {
@@ -243,40 +251,54 @@ void test_fall()
 
     for( t = start_unix; t < end_unix; t++ ) {
         char *next;
+        time_t until;
 
         next = get_blocked_at_time( s, t );
+        until = get_next_unixtime( s, t );
         if( t < 1541306700 ) {
             CU_ASSERT( NULL == next );
+            CU_ASSERT( 1541306700 == until );
         }
         if( (1541306700 <= t) && (t < 1541309400) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 11:11:11:11:11:11");
+            CU_ASSERT( 1541309400 == until );
         }
         if( (1541309400 <= t) && (t < 1541311200) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 22:22:22:22:22:22");
+            CU_ASSERT( 1541311200 == until );
         }
         if( (1541311200 <= t) && (t < 1541313000) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 11:11:11:11:11:11");
+            CU_ASSERT( 1541313000 == until );
         }
         if( (1541313000 <= t) && (t < 1541314800) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 22:22:22:22:22:22");
+            CU_ASSERT( 1541314800 == until );
         }
         if( (1541314800 <= t) && (t < 1541315700) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 22:22:22:22:22:22 44:44:44:44:44:44");
+            CU_ASSERT( 1541315700 == until );
         }
         if( (1541315700 <= t) && (t < 1541316600) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 33:33:33:33:33:33 44:44:44:44:44:44");
+            CU_ASSERT( 1541316600 == until );
         }
         if( (1541316600 <= t) && (t < 1541317500) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 33:33:33:33:33:33 44:44:44:44:44:44 55:55:55:55:55:55");
+            CU_ASSERT( 1541317500 == until );
         }
         if( (1541317500 <= t) && (t < 1541318400) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 44:44:44:44:44:44 55:55:55:55:55:55");
+            CU_ASSERT( 1541318400 == until );
         }
         if( (1541318400 <= t) && (t < 1541319300) ) {
             CU_ASSERT_STRING_EQUAL(next, "00:00:00:00:00:00 55:55:55:55:55:55");
+            CU_ASSERT( 1541319300 == until );
         }
         if( 1541319300 <= t ) {
             CU_ASSERT( NULL == next );
+            // Next Sunday at 00:45 AM.
+            CU_ASSERT( 1541915100 == until );
         }
 
         if( NULL != next ) {
