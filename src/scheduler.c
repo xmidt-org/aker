@@ -85,19 +85,32 @@ int process_schedule_data( size_t len, uint8_t *data )
     int rv = 0;
 
     debug_info("process_schedule_data()\n");
-    rv = decode_schedule( len, data, &s );
 
-    if (0 == rv ) {
-        print_schedule( s );
+    if (0 == len) {
         pthread_mutex_lock( &schedule_lock );
-        destroy_schedule(current_schedule);
-        current_schedule = s;
+        s = current_schedule;
+        current_schedule = NULL;
         pthread_mutex_unlock( &schedule_lock );
         pthread_cond_signal(&cond_var);
-        debug_info( "process_schedule_data() New schedule\n" );
-    } else {
         destroy_schedule( s );
-        debug_error( "process_schedule_data() Failed to decode\n" );
+        debug_info( "process_schedule_data() empty schedule\n" );
+    } else {
+        rv = decode_schedule( len, data, &s );
+
+        if (0 == rv ) {
+            schedule_t *tmp;
+            print_schedule( s );
+            pthread_mutex_lock( &schedule_lock );
+            tmp = current_schedule;
+            current_schedule = s;
+            pthread_mutex_unlock( &schedule_lock );
+            pthread_cond_signal(&cond_var);
+            destroy_schedule(tmp);
+            debug_info( "process_schedule_data() New schedule\n" );
+        } else {
+            destroy_schedule( s );
+            debug_error( "process_schedule_data() Failed to decode\n" );
+        }
     }
 
     return rv;

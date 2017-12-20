@@ -61,7 +61,7 @@ ssize_t process_update( const char *filename, const char *md5, wrp_msg_t *cu )
     time_t process_time = get_unix_time();
 
     md5_string = compute_byte_stream_md5(cu->u.crud.payload, cu->u.crud.payload_size, result);
-    if( NULL != md5_string ) {
+    if( (NULL != md5_string) && (0 < cu->u.crud.payload_size) ) {
         if( 0 == process_schedule_data(cu->u.crud.payload_size, cu->u.crud.payload) )
         {
             FILE *file_handle = NULL;
