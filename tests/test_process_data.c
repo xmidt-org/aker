@@ -171,7 +171,7 @@ void test_null_file()
     test_cu.u.crud.payload_size = 0;
     test_cu.u.crud.payload = NULL;
     cu_size = process_update("pcs.bin", "pcs.bin.md5", &test_cu);
-    CU_ASSERT(-1 == cu_size);
+    CU_ASSERT(-2 == cu_size);
 
     if( NULL != data ) {
         free(data);
