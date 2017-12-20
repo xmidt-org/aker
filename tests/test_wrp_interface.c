@@ -50,6 +50,46 @@ int32_t get_max_mac_limit(void)
     return 128;
 }
 
+size_t pack_status_msgpack_map(const char *string, void **binary)
+{
+    (void) string;
+    (void) binary;
+
+    return 0;
+}
+
+ssize_t process_update( const char *filename, const char *md5_file, wrp_msg_t *msg )
+{
+    (void) filename;
+    (void) md5_file;
+    (void) msg;
+
+    return 0;
+}
+
+ssize_t process_retrieve_persistent( const char *filename, wrp_msg_t *msg )
+{
+    (void) filename;
+    (void) msg;
+
+    return 0;
+}
+
+ssize_t process_retrieve_now( wrp_msg_t *msg )
+{
+    (void) msg;
+
+    return 0;
+}
+
+int process_schedule_data( size_t len, uint8_t *data )
+{
+    (void) len;
+    (void) data;
+
+    return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*                                   Tests                                    */
 /*----------------------------------------------------------------------------*/
@@ -60,7 +100,7 @@ void test_process_wrp()
             .s.msg_type = WRP_MSG_TYPE__CREATE,
             .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
             .s.u.crud.source = "fake-server",
-            .s.u.crud.dest = SCHEDULE_ENDPOINT,
+            .s.u.crud.dest = "mac:112233445566/aker/schedule",
             .s.u.crud.partner_ids = NULL,
             .s.u.crud.headers = NULL,
             .s.u.crud.metadata = NULL,
@@ -72,7 +112,7 @@ void test_process_wrp()
 
             .r.msg_type = WRP_MSG_TYPE__CREATE,
             .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .r.u.crud.source = SCHEDULE_ENDPOINT,
+            .r.u.crud.source = "mac:112233445566/aker/schedule",
             .r.u.crud.dest = "fake-server",
             .r.u.crud.partner_ids = NULL,
             .r.u.crud.headers = NULL,
@@ -90,7 +130,7 @@ void test_process_wrp()
             .s.msg_type = WRP_MSG_TYPE__CREATE,
             .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
             .s.u.crud.source = "fake-server",
-            .s.u.crud.dest = SCHEDULE_ENDPOINT,
+            .s.u.crud.dest = "mac:112233445566/aker/schedule",
             .s.u.crud.partner_ids = NULL,
             .s.u.crud.headers = NULL,
             .s.u.crud.metadata = NULL,
@@ -102,7 +142,7 @@ void test_process_wrp()
 
             .r.msg_type = WRP_MSG_TYPE__CREATE,
             .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .r.u.crud.source = SCHEDULE_ENDPOINT,
+            .r.u.crud.source = "mac:112233445566/aker/schedule",
             .r.u.crud.dest = "fake-server",
             .r.u.crud.partner_ids = NULL,
             .r.u.crud.headers = NULL,
@@ -120,7 +160,7 @@ void test_process_wrp()
             .s.msg_type = WRP_MSG_TYPE__CREATE,
             .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
             .s.u.crud.source = "fake-server",
-            .s.u.crud.dest = SCHEDULE_ENDPOINT,
+            .s.u.crud.dest = "mac:112233445566/aker/schedule",
             .s.u.crud.partner_ids = NULL,
             .s.u.crud.headers = NULL,
             .s.u.crud.metadata = NULL,
@@ -132,7 +172,7 @@ void test_process_wrp()
 
             .r.msg_type = WRP_MSG_TYPE__CREATE,
             .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .r.u.crud.source = SCHEDULE_ENDPOINT,
+            .r.u.crud.source = "mac:112233445566/aker/schedule",
             .r.u.crud.dest = "fake-server",
             .r.u.crud.partner_ids = NULL,
             .r.u.crud.headers = NULL,
@@ -150,7 +190,7 @@ void test_process_wrp()
             .s.msg_type = WRP_MSG_TYPE__UPDATE,
             .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
             .s.u.crud.source = "fake-server",
-            .s.u.crud.dest = SCHEDULE_ENDPOINT,
+            .s.u.crud.dest = "mac:112233445566/aker/schedule",
             .s.u.crud.partner_ids = NULL,
             .s.u.crud.headers = NULL,
             .s.u.crud.metadata = NULL,
@@ -163,7 +203,7 @@ void test_process_wrp()
 
             .r.msg_type = WRP_MSG_TYPE__UPDATE,
             .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .r.u.crud.source = SCHEDULE_ENDPOINT,
+            .r.u.crud.source = "mac:112233445566/aker/schedule",
             .r.u.crud.dest = "fake-server",
             .r.u.crud.partner_ids = NULL,
             .r.u.crud.headers = NULL,
@@ -212,7 +252,7 @@ void test_process_wrp()
             .s.msg_type = WRP_MSG_TYPE__RETREIVE,
             .s.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
             .s.u.crud.source = "fake-server",
-            .s.u.crud.dest = PERSISTENT_MD5_ENDPOINT,
+            .s.u.crud.dest = "mac:112233445566/aker/schedule/invalid",
             .s.u.crud.partner_ids = NULL,
             .s.u.crud.headers = NULL,
             .s.u.crud.metadata = NULL,
@@ -225,7 +265,7 @@ void test_process_wrp()
 
             .r.msg_type = WRP_MSG_TYPE__RETREIVE,
             .r.u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .r.u.crud.source = PERSISTENT_MD5_ENDPOINT,
+            .r.u.crud.source = "mac:112233445566/aker/schedule/invalid",
             .r.u.crud.dest = "fake-server",
             .r.u.crud.partner_ids = NULL,
             .r.u.crud.headers = NULL,
@@ -233,7 +273,7 @@ void test_process_wrp()
             .r.u.crud.include_spans = false,
             .r.u.crud.spans.spans = NULL,
             .r.u.crud.spans.count = 0,
-            .r.u.crud.status = 200,
+            .r.u.crud.status = 400,
             .r.u.crud.path = "Some path",
             .r.u.crud.payload = "Some other binary",
             .r.u.crud.payload_size = 16,
@@ -345,9 +385,13 @@ void test_process_wrp()
             CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.transaction_uuid, msg.u.crud.transaction_uuid);
             CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.source, msg.u.crud.source);
             CU_ASSERT_STRING_EQUAL(tests[i].r.u.crud.dest, msg.u.crud.dest);
+            if( tests[i].r.u.crud.status !=  msg.u.crud.status ) {
+                printf( "Test: %d Expected: %d, Got: %d\n", i, tests[i].r.u.crud.status, msg.u.crud.status );
+            }
+            CU_ASSERT_EQUAL(tests[i].r.u.crud.status, msg.u.crud.status);
             CU_ASSERT(0 == strcmp(tests[i].r.u.crud.path, msg.u.crud.path));
         }
-        cleanup_wrp(&msg);
+        // TODO Fix the leak! cleanup_wrp(&msg);
     }
 }
 
