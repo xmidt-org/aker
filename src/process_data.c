@@ -226,11 +226,16 @@ int process_delete( const char *filename, const char *md5_file )
 
     rv = process_schedule_data(0, NULL);
 
+    /* Only try to delete the files if they exist. */
     if( NULL != filename ) {
-        rv |= remove(filename);
+        if( 0 == access(filename, F_OK) ) {
+            rv |= remove(filename);
+        }
     }
     if( NULL != md5_file ) {
-        rv |= remove(md5_file);
+        if( 0 == access(md5_file, F_OK) ) {
+            rv |= remove(md5_file);
+        }
     }
 
     return rv;
