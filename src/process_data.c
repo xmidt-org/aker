@@ -226,16 +226,12 @@ int process_delete( const char *filename, const char *md5_file )
 
     rv = process_schedule_data(0, NULL);
 
-    /* Only try to delete the files if they exist. */
+    /* We don't care if these have errors, just try to delete the files. */
     if( NULL != filename ) {
-        if( 0 == access(filename, F_OK) ) {
-            rv |= remove(filename);
-        }
+        remove(filename);
     }
     if( NULL != md5_file ) {
-        if( 0 == access(md5_file, F_OK) ) {
-            rv |= remove(md5_file);
-        }
+        remove(md5_file);
     }
 
     return rv;
