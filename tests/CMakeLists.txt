@@ -51,6 +51,15 @@ add_executable(test_wrp_interface test_wrp_interface.c ../src/wrp_interface.c
 target_link_libraries (test_wrp_interface ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
+#   test_aker_msgpack
+#-------------------------------------------------------------------------------
+add_test(NAME test_aker_msgpack COMMAND ${MEMORY_CHECK} ./test_aker_msgpack)
+add_executable(test_aker_msgpack test_aker_msgpack.c ../src/aker_msgpack.c
+               mem_wrapper.c )
+target_link_libraries (test_aker_msgpack ${AKER_COMMON_LIBS})
+
+
+#-------------------------------------------------------------------------------
 #   test_process_data
 #-------------------------------------------------------------------------------
 add_test(NAME test_process_data COMMAND ${MEMORY_CHECK} ./test_process_data)
@@ -124,10 +133,12 @@ COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_wrp_interface.dir/__/src --output-file wrp.info
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_scheduler.dir/__/src --output-file scheduler.info
+COMMAND lcov -q --capture --directory
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_msgpack.dir/__/src --output-file aker_msgpack.info
 
 COMMAND lcov -a md5.info -a decode.info -a process_now.info
 -a schedule.info -a process.info -a time.info -a scheduler.info
--a wrp.info --output-file coverage.info
+-a wrp.info -a aker_msgpack.info --output-file coverage.info
 
 COMMAND genhtml coverage.info
 WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

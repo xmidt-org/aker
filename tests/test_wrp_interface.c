@@ -33,7 +33,7 @@
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 typedef struct {
-    size_t pack_status_msgpack_map_rv;
+    size_t pack_status_msg_rv;
     int process_update_rv;
     size_t process_retrieve_now_rv;
     int process_schedule_data_rv;
@@ -57,13 +57,23 @@ int32_t get_max_mac_limit(void)
     return 128;
 }
 
-static size_t pack_status_msgpack_map_rv = 0;
-size_t pack_status_msgpack_map(const char *string, void **binary)
+static size_t pack_status_msg_rv = 0;
+size_t pack_status_msg(const char *string, void **binary)
 {
     (void) string;
     (void) binary;
 
-    return pack_status_msgpack_map_rv;
+    return pack_status_msg_rv;
+}
+
+static size_t pack_now_msg_rv = 0;
+size_t pack_now_msg( const char *active, time_t time, void **binary )
+{
+    (void) active;
+    (void) time;
+    (void) binary;
+
+    return pack_now_msg_rv = 0;
 }
 
 static int process_update_rv = 0;
@@ -128,7 +138,7 @@ void test_process_wrp()
 {
     test_t tests[] = {
         {   // 0
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -166,7 +176,7 @@ void test_process_wrp()
         },
 
         {   // 1
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -204,7 +214,7 @@ void test_process_wrp()
         },
 
         {   // 2
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = -1,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -242,7 +252,7 @@ void test_process_wrp()
         },
 
         {   // 3
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = -1,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -280,7 +290,7 @@ void test_process_wrp()
         },
 
         {   // 4
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -318,7 +328,7 @@ void test_process_wrp()
         },
 
         {   // 5
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -357,7 +367,7 @@ void test_process_wrp()
         },
 
         {   // 6
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = -1,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -396,7 +406,7 @@ void test_process_wrp()
         },
 
         {   // 7
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -435,7 +445,7 @@ void test_process_wrp()
         },
 
         {   // 8
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -474,7 +484,7 @@ void test_process_wrp()
         },
 
         {   // 9
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -513,7 +523,7 @@ void test_process_wrp()
         },
 
         {   // 10
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -553,7 +563,7 @@ void test_process_wrp()
 
 
         {   // 11
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -592,7 +602,7 @@ void test_process_wrp()
         },
 
         {   // 12
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 16,
             .process_schedule_data_rv = 0,
@@ -631,7 +641,7 @@ void test_process_wrp()
         },
 
         {   // 13
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -670,7 +680,7 @@ void test_process_wrp()
         },
 
         {   // 14
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = 0,
@@ -709,7 +719,7 @@ void test_process_wrp()
         },
 
         {   // 15
-            .pack_status_msgpack_map_rv = 0,
+            .pack_status_msg_rv = 0,
             .process_update_rv = 0,
             .process_retrieve_now_rv = 0,
             .process_schedule_data_rv = -1,
@@ -753,7 +763,7 @@ void test_process_wrp()
     for( i = 0; i < t_size; i++ ) {
         wrp_msg_t msg;
 
-        pack_status_msgpack_map_rv = tests[i].pack_status_msgpack_map_rv;
+        pack_status_msg_rv = tests[i].pack_status_msg_rv;
         process_update_rv = tests[i].process_update_rv;
         process_retrieve_now_rv = tests[i].process_retrieve_now_rv;
         process_schedule_data_rv = tests[i].process_schedule_data_rv;

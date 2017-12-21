@@ -19,16 +19,15 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <errno.h>
-#include <msgpack.h>
 #include <unistd.h>
 
 #include "aker_log.h"
 #include "process_data.h"
 #include "scheduler.h"
 #include "aker_md5.h"
+#include "aker_msgpack.h"
 #include "time.h"
 #include "aker_mem.h"
-#include "aker_msgpack.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -134,45 +133,20 @@ int process_update( const char *filename, const char *md5,
 /* See process_data.h for details. */
 size_t process_retrieve_now( uint8_t **data )
 {
-    const char cstr_active[] = "active";
-    const char cstr_time[] = "time";
-    time_t current = 0;
-    char *macs = NULL;
-    size_t macs_size = 0;
-    size_t len;
-    msgpack_sbuffer sbuf;
-    msgpack_packer pk;
+    time_t current;
+    char *macs;
+    size_t rv;
 
     current = get_unix_time();
     macs = get_current_blocked_macs();
-    if( macs ) {
-        macs_size = strlen(macs);
-    }
 
-    msgpack_sbuffer_init(&sbuf);
-    msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
-    msgpack_pack_map(&pk, 2);
+    rv = pack_now_msg (macs, current, (void**) data);
 
-    pack_msgpack_string(&pk, cstr_active, strlen(cstr_active));
-    pack_msgpack_string(&pk, macs, macs_size);
-
-    pack_msgpack_string(&pk, cstr_time, strlen(cstr_time));
-    msgpack_pack_int32(&pk, current);
-
-    len = 0;
-    if( sbuf.data ) {
-        len = sbuf.size;
-        *data = aker_malloc(sizeof(char) * len);
-        if( *data ) {
-            memcpy(*data, sbuf.data, len);
-        }
-    }
-    if( macs ) {
+    if (macs) {
         aker_free(macs);
     }
-    msgpack_sbuffer_destroy(&sbuf);
 
-    return len;
+    return rv;
 }
 
 
