@@ -199,6 +199,6 @@ void process_crud(const char *data_file, const char *md5_file,
             case 534: text = "Unable to update schedule";   break;
             case 535: text = "Unable to delete schedule";   break;
         }
-        crud_out->payload_size = pack_status_msgpack_map(text, &crud_out->payload);
+        crud_out->payload_size = pack_status_msg(text, &crud_out->payload);
     }
 }

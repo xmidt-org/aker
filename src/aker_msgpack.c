@@ -15,6 +15,8 @@
  *
  */
 #include <stddef.h>
+#include <time.h>
+#include <msgpack.h>
 
 #include "aker_mem.h"
 #include "aker_msgpack.h"
@@ -37,21 +39,14 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-/* none */
+void pack_msgpack_string( msgpack_packer *pk, const void *string, size_t size );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
 
 /* See aker_msgpack.h for details. */
-void pack_msgpack_string( msgpack_packer *pk, const void *string, size_t size )
-{
-    msgpack_pack_str( pk, size );
-    msgpack_pack_str_body( pk, string, size );
-}
-
-/* See aker_msgpack.h for details. */
-size_t pack_status_msgpack_map(const char *string, void **binary)
+size_t pack_status_msg(const char *string, void **binary)
 {
     const char cstr_message[] = "message";
     size_t binary_size = 0;
@@ -60,7 +55,7 @@ size_t pack_status_msgpack_map(const char *string, void **binary)
 
     msgpack_sbuffer_init(&sbuf);
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
-    msgpack_pack_map(&pk, 2);
+    msgpack_pack_map(&pk, 1);
 
     pack_msgpack_string(&pk, cstr_message, strlen(cstr_message));
     pack_msgpack_string(&pk, string, strlen(string));
@@ -77,7 +72,56 @@ size_t pack_status_msgpack_map(const char *string, void **binary)
     return binary_size;
 }
 
+/* See aker_msgpack.h for details. */
+size_t pack_now_msg( const char *active, time_t time, void **binary )
+{
+    const char cstr_active[] = "active";
+    const char cstr_time[] = "time";
+    size_t len;
+    size_t active_len = 0;
+    msgpack_sbuffer sbuf;
+    msgpack_packer pk;
+
+    if( active ) {
+        active_len = strlen(active);
+    }
+
+    msgpack_sbuffer_init(&sbuf);
+    msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
+    msgpack_pack_map(&pk, 2);
+
+    pack_msgpack_string(&pk, cstr_active, strlen(cstr_active));
+    pack_msgpack_string(&pk, active, active_len);
+
+    pack_msgpack_string(&pk, cstr_time, strlen(cstr_time));
+    msgpack_pack_int32(&pk, time);
+
+    len = 0;
+    if( sbuf.data ) {
+        *binary = aker_malloc(sizeof(char) * sbuf.size);
+        if( NULL != *binary ) {
+            memcpy(*binary, sbuf.data, sbuf.size);
+            len = sbuf.size;
+        }
+    }
+    msgpack_sbuffer_destroy(&sbuf);
+
+    return len;
+}
+
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-/* none */
+
+/**
+ *  Packs string into msgpack object
+ *
+ *  @param pk     msgpack object
+ *  @param string string to be packed
+ *  @param size   string size
+ */
+void pack_msgpack_string( msgpack_packer *pk, const void *string, size_t size )
+{
+    msgpack_pack_str( pk, size );
+    msgpack_pack_str_body( pk, string, size );
+}
