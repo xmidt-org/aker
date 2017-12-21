@@ -18,11 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <wrp-c.h>
 
 #include <CUnit/Basic.h>
 
-#include "../src/wrp_interface.h"
 #include "../src/process_data.h"
 
 /*----------------------------------------------------------------------------*/
@@ -163,14 +161,14 @@ void test_process_ret_now()
 {   
     size_t t_size = sizeof(tests_now)/sizeof(test_t);
     size_t ret_size = 0;
-    wrp_msg_t response;
+    uint8_t *data = NULL;
 
     for( i = 0; i < t_size; i++ ) {
-        memset(&response, '\0', sizeof(wrp_msg_t));
-        ret_size = process_retrieve_now(&response);
-        CU_ASSERT(0 == memcmp(response.u.crud.payload, tests_now[i].msgpack, tests_now[i].msgpack_size));
-        free(response.u.crud.payload);
+        ret_size = process_retrieve_now(&data);
         CU_ASSERT(ret_size == tests_now[i].msgpack_size);
+        CU_ASSERT(0 == memcmp(data, tests_now[i].msgpack, tests_now[i].msgpack_size));
+        free(data);
+        data = NULL;
     }
 }
 

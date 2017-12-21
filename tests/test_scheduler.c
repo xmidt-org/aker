@@ -24,10 +24,10 @@
 #include <signal.h>
 
 #include <CUnit/Basic.h>
-#include <wrp-c/wrp-c.h>
 
 #include "mem_wrapper.h"
 #include "../src/schedule.h"
+#include "../src/aker_mem.h"
 #include "../src/scheduler.h"
 #include "../src/process_data.h"
 #include "test_scheduler.h"
@@ -38,7 +38,6 @@
 #include "scheduler_data3.h"
 #define MAX_WRP_TEST_MSGS 4
 
-static wrp_msg_t wrp_test_msgs[MAX_WRP_TEST_MSGS];
 // Tuesday, November 14, 2017 11:57:28 AM PST = 1510689448
 static time_t kUnixCurrentTime = 1510689448;
 static time_t add_time;
@@ -50,80 +49,90 @@ unsigned char *data_payloads[] = {
     scheduler_data3_bin
 };
 
+uint32_t data_sizes[] = {
+    scheduler_data0_bin_len,
+    scheduler_data1_bin_len,
+    scheduler_data2_bin_len,
+    scheduler_data3_bin_len
+};
+
 #define TIME_SLOTS 5
 uint32_t weekly_minute_offsets[MAX_WRP_TEST_MSGS][TIME_SLOTS] = {
     {10, 20, 30, 40, 35}, {10, 20, 30, 40, 50},
     {11, 23, 25, 43, 19}, {5, 11, 23, 37, 40}
 };
 
-pthread_t shceduler_thread_id;
+pthread_t scheduler_thread_id;
 const char *firewall_cmd = " ";
 const char *file_name = "scheduler_data.bin";
 const char *md5_file  = "md5.md5";
-
-void initialize_wrp_messages(void);
 
 /* Start the scheduler thread without any schedule data */
 void test1()
 {
     int result;
-    result = scheduler_start( &shceduler_thread_id, firewall_cmd );
+    result = scheduler_start( &scheduler_thread_id, firewall_cmd );
     CU_ASSERT(0 == result);
 }
 
 
 void test2()
 {
-    ssize_t result;
+    int result;
     int cnt;
     
     for (cnt = 0; cnt < MAX_WRP_TEST_MSGS; cnt++) {
-        result = process_update( file_name, md5_file, &wrp_test_msgs[cnt] );  
-        CU_ASSERT(0 < result);
+        result = process_update( file_name, md5_file, data_payloads[cnt], data_sizes[cnt] );
+        printf( "got: %d\n", result );
+        CU_ASSERT(0 == result);
     }
     malloc_fail = true;
     malloc_failure_limit = 32;
      for (cnt = 0; cnt < MAX_WRP_TEST_MSGS; cnt++) {
-        result = process_update( file_name, md5_file, &wrp_test_msgs[cnt] );
+        result = process_update( file_name, md5_file, data_payloads[cnt], data_sizes[cnt] );
         CU_ASSERT(0 >= result);
     }
 
     malloc_fail = false;
 
     add_time = -214980;
-    result = process_update( file_name, md5_file, &wrp_test_msgs[0] );  
-    CU_ASSERT(0 < result);
+    result = process_update( file_name, md5_file, data_payloads[0], data_sizes[0] );
+    CU_ASSERT(0 == result);
 
     add_time = -214500;
-    result = process_update( file_name, md5_file, &wrp_test_msgs[1] );  
-    CU_ASSERT(0 < result);    
+    result = process_update( file_name, md5_file, data_payloads[1], data_sizes[1] );
+    CU_ASSERT(0 == result);    
 
     add_time = -213000;
-    result = process_update( file_name, md5_file, &wrp_test_msgs[2] );  
-    CU_ASSERT(0 < result);
+    result = process_update( file_name, md5_file, data_payloads[2], data_sizes[2] );
+    CU_ASSERT(0 == result);
 
     add_time = -212900;
-    result = process_update( file_name, md5_file, &wrp_test_msgs[3] );
-    CU_ASSERT(0 < result);
+    result = process_update( file_name, md5_file, data_payloads[3], data_sizes[3] );
+    CU_ASSERT(0 == result);
 
     add_time = 0; // allow absolute to take effect ?
-    result = process_update( file_name, md5_file, &wrp_test_msgs[3] );  
-    CU_ASSERT(0 < result);
+    result = process_update( file_name, md5_file, data_payloads[3], data_sizes[3] );
+    CU_ASSERT(0 == result);
     
     add_time = -212790;
-    result = process_update( file_name, md5_file, &wrp_test_msgs[0] );
-    CU_ASSERT(0 < result);
+    result = process_update( file_name, md5_file, data_payloads[0], data_sizes[0] );
+    CU_ASSERT(0 == result);
 }
 
 void test3()
 {
     // Just cover process_message_ret_now()->get_current_blocked_macs()
-    wrp_msg_t msg;
+    uint8_t *data;
     ssize_t cnt;
 
-    cnt = process_retrieve_now(&msg);
+    cnt = process_retrieve_now(&data);
 
     CU_ASSERT(cnt >= 0);
+    CU_ASSERT(data != NULL);
+    if( NULL != data ) {
+        aker_free( data );
+    }
 }
 
 void add_suites( CU_pSuite *suite )
@@ -146,8 +155,6 @@ int main( int argc, char *argv[] )
     (void ) argc;
     (void ) argv;
     
-    initialize_wrp_messages();
-    
     if( CUE_SUCCESS == CU_initialize_registry() ) {
         add_suites( &suite );
 
@@ -166,26 +173,8 @@ int main( int argc, char *argv[] )
 
    sleep(1);
    terminate_scheduler_thread();
-   //pthread_kill(shceduler_thread_id, SIGTERM);
+   //pthread_kill(scheduler_thread_id, SIGTERM);
    return rv;
-}
-
-void initialize_wrp_messages(void)
-{
-    uint32_t data_sizes[] = {
-    scheduler_data0_bin_len,
-    scheduler_data1_bin_len,
-    scheduler_data2_bin_len,
-    scheduler_data3_bin_len
-    };
-    int cnt = 0;
-
-    for (; cnt < MAX_WRP_TEST_MSGS; cnt++) {
-        memset(&wrp_test_msgs[cnt], 0, sizeof(wrp_msg_t));
-        wrp_test_msgs[cnt].u.crud.payload_size = data_sizes[cnt];
-        wrp_test_msgs[cnt].u.crud.payload      = data_payloads[cnt];
-    }
-    
 }
 
 time_t convert_unix_time_to_weekly(time_t unixtime)

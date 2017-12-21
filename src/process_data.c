@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <msgpack.h>
+#include <unistd.h>
 
 #include "aker_log.h"
 #include "process_data.h"
@@ -52,88 +53,101 @@
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
+
 /* See process_data.h for details. */
-ssize_t process_update( const char *filename, const char *md5, wrp_msg_t *cu )
+int process_is_create_ok( const char *filename )
 {
-    ssize_t write_size = 0;
+    if( (NULL != filename) && (0 == access(filename, F_OK)) ) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/* See process_data.h for details. */
+int process_update( const char *filename, const char *md5, 
+                        void *payload, size_t payload_size )
+{
+    int rv;
     unsigned char result[MD5_SIZE];
     unsigned char *md5_string = NULL;
-    time_t process_time = get_unix_time();
+    time_t process_time;
 
-    md5_string = compute_byte_stream_md5(cu->u.crud.payload, cu->u.crud.payload_size, result);
-    if( (NULL != md5_string) && (0 < cu->u.crud.payload_size) ) {
-        if( 0 == process_schedule_data(cu->u.crud.payload_size, cu->u.crud.payload) )
-        {
-            FILE *file_handle = NULL;
+    process_time = get_unix_time();
+    rv = 0;
 
-            file_handle = fopen(filename, "wb");
-            if( file_handle ) {
-                debug_print("cu->u.crud.payload_size = %d\n", cu->u.crud.payload_size);
-                write_size = fwrite(cu->u.crud.payload, sizeof(uint8_t), cu->u.crud.payload_size, 
-                                 file_handle);
-                if( 0 >= write_size ) {
+    md5_string = compute_byte_stream_md5(payload, payload_size, result);
+    if( (NULL != md5_string) && (0 < payload_size) ) {
+        if( 0 == process_schedule_data(payload_size, payload) ) {
+            FILE *fh = NULL;
+
+            fh = fopen(filename, "wb");
+            if( fh ) {
+                debug_print("payload_size = %d\n", payload_size);
+                if( payload_size == fwrite(payload, sizeof(uint8_t), payload_size, fh) ) {
+                    rv += 1;
+                } else {
                     debug_error("Create/Update - failed to write %s\n", md5);
                 }
-                fclose(file_handle);
+                fclose(fh);
             } else {
                 debug_error("Create/Update - failed on fopen(%s, \"wb\"\n", filename);
             }
 
-            file_handle = fopen(md5, "wb");
-            if (file_handle) {
-                size_t cnt = fwrite(md5_string, sizeof(uint8_t), MD5_SIZE * 2, file_handle);
-                if (cnt <= 0) {
+            fh = fopen(md5, "wb");
+            if (fh) {
+                if( 0 < fwrite(md5_string, sizeof(uint8_t), MD5_SIZE * 2, fh) ) {
+                    rv += 2;
+                } else {
                     debug_error("Create/Update - failed to write %s\n", md5);
                 }
-                fclose(file_handle);
+                fclose(fh);
+            }
+
+            /* If we wrote both files successfully, rv is 3 - then it's a success. */
+            if( 3 == rv ) {
+                rv = 0;
+            } else {
+                rv = -1;
             }
         } else {
             debug_error("Create/Update - process data failed\n");
-            write_size = -1;
+            rv = -2;
         }
-        aker_free(md5_string);
     } else {
         debug_error("Create/Update - compute_byte_stream_md5() failed\n");
-        write_size = -2;
+        rv = -3;
     }
+
+    if( NULL != md5_string ) {
+        aker_free(md5_string);
+    }
+
     process_time = get_unix_time() - process_time;
     debug_info("Time to process schedule file of size %zu bytes is %ld seconds\n", 
-                                    ((0 < write_size) ? write_size : 0), process_time);
+                                    ((0 < rv) ? rv : 0), process_time);
 
-    return write_size;
+    return rv;
 }
 
 
 /* See process_data.h for details. */
-ssize_t process_retrieve_persistent( const char *filename, wrp_msg_t *ret )
-{
-    uint8_t *data = NULL;
-    size_t read_size = 0;
-
-    read_size = read_file_from_disk( filename, &data );
-    ret->u.crud.content_type = "application/msgpack";
-
-    ret->u.crud.payload = data;
-    ret->u.crud.payload_size = read_size;
-
-    return read_size;
-}
-
-
-/* See process_data.h for details. */
-ssize_t process_retrieve_now( wrp_msg_t *ret )
+size_t process_retrieve_now( uint8_t **data )
 {
     const char cstr_active[] = "active";
     const char cstr_time[] = "time";
     time_t current = 0;
     char *macs = NULL;
     size_t macs_size = 0;
+    size_t len;
     msgpack_sbuffer sbuf;
     msgpack_packer pk;
 
     current = get_unix_time();
     macs = get_current_blocked_macs();
-    if( macs ) macs_size = strlen(macs);
+    if( macs ) {
+        macs_size = strlen(macs);
+    }
 
     msgpack_sbuffer_init(&sbuf);
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
@@ -145,18 +159,20 @@ ssize_t process_retrieve_now( wrp_msg_t *ret )
     pack_msgpack_string(&pk, cstr_time, strlen(cstr_time));
     msgpack_pack_int32(&pk, current);
 
-    ret->u.crud.content_type = "application/msgpack";
+    len = 0;
     if( sbuf.data ) {
-        ret->u.crud.payload = aker_malloc(sizeof(char) * sbuf.size);
-        if( ret->u.crud.payload ) {
-            memcpy(ret->u.crud.payload, sbuf.data, sbuf.size);
-            ret->u.crud.payload_size = sbuf.size;
+        len = sbuf.size;
+        *data = aker_malloc(sizeof(char) * len);
+        if( *data ) {
+            memcpy(*data, sbuf.data, len);
         }
     }
-    if( macs ) aker_free(macs);
+    if( macs ) {
+        aker_free(macs);
+    }
     msgpack_sbuffer_destroy(&sbuf);
 
-    return ret->u.crud.payload_size;
+    return len;
 }
 
 
@@ -201,6 +217,28 @@ size_t read_file_from_disk( const char *filename, uint8_t **data )
     fclose(file_handle);
 
     return read_size;
+}
+
+/* See process_data.h for details. */
+int process_delete( const char *filename, const char *md5_file )
+{
+    int rv;
+
+    rv = process_schedule_data(0, NULL);
+
+    /* Only try to delete the files if they exist. */
+    if( NULL != filename ) {
+        if( 0 == access(filename, F_OK) ) {
+            rv |= remove(filename);
+        }
+    }
+    if( NULL != md5_file ) {
+        if( 0 == access(md5_file, F_OK) ) {
+            rv |= remove(md5_file);
+        }
+    }
+
+    return rv;
 }
 
 /*----------------------------------------------------------------------------*/

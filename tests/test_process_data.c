@@ -82,96 +82,28 @@ uint8_t get_data(uint8_t **data)
 
 void test_process_data()
 {
-    wrp_msg_t tests_cu[] =
-    {
-        {
-            .msg_type = WRP_MSG_TYPE__CREATE,
-            .u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .u.crud.source = "fake-server",
-            .u.crud.dest = SCHEDULE_ENDPOINT,
-            .u.crud.partner_ids = NULL,
-            .u.crud.headers = NULL,
-            .u.crud.metadata = NULL,
-            .u.crud.include_spans = false,
-            .u.crud.spans.spans = NULL,
-            .u.crud.spans.count = 0,
-            .u.crud.path = "Some path",
-        },
-    };
-
-    wrp_msg_t tests_ret[] =
-    {
-        {
-            .msg_type = WRP_MSG_TYPE__RETREIVE,
-            .u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-            .u.crud.source = SCHEDULE_ENDPOINT,
-            .u.crud.dest = "fake-server",
-            .u.crud.partner_ids = NULL,
-            .u.crud.headers = NULL,
-            .u.crud.metadata = NULL,
-            .u.crud.include_spans = false,
-            .u.crud.spans.spans = NULL,
-            .u.crud.spans.count = 0,
-            .u.crud.path = "Some path",
-        },
-    };
-
-    size_t t_size = sizeof(tests_cu)/sizeof(wrp_msg_t);
-    ssize_t cu_size = 0, ret_size = 0, data_size = 0;
-    wrp_msg_t response;
-    uint8_t i, *data = NULL;
-
-    data_size = get_data(&data);
-    for( i = 0; i < t_size; i++ ) {
-        tests_cu[i].u.crud.payload = data;
-        tests_cu[i].u.crud.payload_size = data_size;
-        cu_size = process_update("pcs.bin", "pcs_md5.bin", &tests_cu[i]);
-        CU_ASSERT((size_t)cu_size == tests_cu[i].u.crud.payload_size);
-    }
-
-    t_size = sizeof(tests_ret)/sizeof(wrp_msg_t);
-    for( i = 0; i < t_size; i++ ) {
-        tests_ret[i].u.crud.payload = data;
-        tests_ret[i].u.crud.payload_size = data_size;
-        memset(&response, '\0', sizeof(wrp_msg_t));
-        ret_size = process_retrieve_persistent("pcs.bin", &response);
-        CU_ASSERT(0 == memcmp(tests_ret[i].u.crud.payload, response.u.crud.payload, response.u.crud.payload_size));
-        CU_ASSERT(tests_ret[i].u.crud.payload_size == response.u.crud.payload_size);
-        free(response.u.crud.payload);
-        CU_ASSERT((size_t)ret_size == tests_ret[i].u.crud.payload_size);
-    }
-    if( NULL != data ) {
-        free(data);
-    }
-}
-
-void test_null_file()
-{
-    wrp_msg_t test_cu =
-    {
-        .msg_type = WRP_MSG_TYPE__CREATE,
-        .u.crud.transaction_uuid = "c2bb1f16-09c8-11e7-93ae-92361f002671",
-        .u.crud.source = "fake-server",
-        .u.crud.dest = SCHEDULE_ENDPOINT,
-        .u.crud.partner_ids = NULL,
-        .u.crud.headers = NULL,
-        .u.crud.metadata = NULL,
-        .u.crud.include_spans = false,
-        .u.crud.spans.spans = NULL,
-        .u.crud.spans.count = 0,
-        .u.crud.path = "Some path",
-    };
     uint8_t *data = NULL;
+    uint8_t *test_vector = NULL;
+    size_t len, data_size = 0;
+    int rv;
 
-    test_cu.u.crud.payload_size = get_data(&data);
-    test_cu.u.crud.payload = data;
-    ssize_t cu_size = process_update(NULL, NULL, &test_cu);
-    CU_ASSERT(0 <= cu_size);
+    data_size = get_data(&test_vector);
 
-    test_cu.u.crud.payload_size = 0;
-    test_cu.u.crud.payload = NULL;
-    cu_size = process_update("pcs.bin", "pcs.bin.md5", &test_cu);
-    CU_ASSERT(-2 == cu_size);
+    /* No file names */
+    rv = process_update(NULL, NULL, test_vector, data_size);
+    CU_ASSERT( 0 != rv );
+
+    /* Empty payload */
+    rv = process_update("pcs.bin", "pcs_md5.bin", NULL, 0);
+    CU_ASSERT( rv != 0 );
+
+    /* Normal payload */
+    rv = process_update("pcs.bin", "pcs_md5.bin", test_vector, data_size);
+    CU_ASSERT( rv == 0 );
+
+    len = read_file_from_disk("pcs.bin", &data);
+    CU_ASSERT(data_size == len);
+    CU_ASSERT(0 == memcmp(test_vector, data, len));
 
     if( NULL != data ) {
         free(data);
@@ -183,7 +115,6 @@ void add_suites( CU_pSuite *suite )
     printf("--------Start of Test Cases Execution ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
     CU_add_test( *suite, "Test 1", test_process_data );
-    CU_add_test( *suite, "Test null file", test_null_file );
 }
 
 /*----------------------------------------------------------------------------*/
