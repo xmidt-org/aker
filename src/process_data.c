@@ -202,10 +202,10 @@ int process_delete( const char *filename, const char *md5_file )
 
     /* We don't care if these have errors, just try to delete the files. */
     if( NULL != filename ) {
-        remove(filename);
+        (void) remove(filename);
     }
     if( NULL != md5_file ) {
-        remove(md5_file);
+        (void) remove(md5_file);
     }
 
     return rv;
