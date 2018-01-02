@@ -61,7 +61,7 @@ void test_pack_status_msg()
 
     buf = NULL;
     len = pack_status_msg( "I am a message.", (void**) &buf );
-    CU_ASSERT( len = sizeof(expected)/sizeof(uint8_t) );
+    CU_ASSERT( len == sizeof(expected)/sizeof(uint8_t) );
     CU_ASSERT( NULL != buf );
     CU_ASSERT( 0 == memcmp(expected, buf, len) );
     aker_free(buf);
