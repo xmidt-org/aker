@@ -39,7 +39,8 @@ target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
 #-------------------------------------------------------------------------------
 add_test(NAME test_time_changes COMMAND ${MEMORY_CHECK} ./test_time_changes)
 add_executable(test_time_changes test_time_changes.c ../src/schedule_print.c 
-               ../src/schedule.c ../src/time.c mem_wrapper.c)
+               ../src/schedule.c ../src/time.c mem_wrapper.c
+              ../service/version/upstream/aker_version.c)
 target_link_libraries (test_time_changes ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------

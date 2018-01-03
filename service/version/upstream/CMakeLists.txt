@@ -13,29 +13,5 @@
 #   limitations under the License.
 
 set(PROJ_AKER aker)
+set(SOURCES aker_version.c)
 
-set(SOURCES wrp_interface.c decode.c time.c schedule.c main.c
-            process_data.c scheduler.c schedule_print.c
-            aker_md5.c md5.c aker_mem.c aker_help.c aker_msgpack.c
-            ../service/version/upstream/aker_version.c)
-
-if (NOT BUILD_YOCTO)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W -g -fprofile-arcs -ftest-coverage -O0")
-endif ()
-
-add_executable(aker ${SOURCES})
-
-target_link_libraries (aker
-    ${CMAKE_THREAD_LIBS_INIT}
-    -llibparodus
-    -lnanomsg
-    -lwrp-c
-    -lmsgpackc
-    -ltrower-base64
-    -lm
-    -lcimplog
-    -lpthread
-    -lrt
-    -lcrypt
-    )
-install (TARGETS aker DESTINATION bin)

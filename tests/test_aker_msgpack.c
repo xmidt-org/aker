@@ -61,7 +61,7 @@ void test_pack_status_msg()
 
     buf = NULL;
     len = pack_status_msg( "I am a message.", (void**) &buf );
-    CU_ASSERT( len == sizeof(expected)/sizeof(uint8_t) );
+    CU_ASSERT( sizeof(expected)/sizeof(uint8_t) == len );
     CU_ASSERT( NULL != buf );
     CU_ASSERT( 0 == memcmp(expected, buf, len) );
     aker_free(buf);
@@ -89,14 +89,14 @@ void test_pack_now_msg()
     buf = NULL;
 
     len = pack_now_msg( NULL, 1513822552, (void**) &buf );
-    CU_ASSERT( len = sizeof(expected0)/sizeof(uint8_t) );
+    CU_ASSERT( sizeof(expected0)/sizeof(uint8_t) == len );
     CU_ASSERT( NULL != buf );
     CU_ASSERT( 0 == memcmp(expected0, buf, len) );
     aker_free(buf);
     buf = NULL;
 
     len = pack_now_msg( "11:22:33:44:55:66", 1513822553, (void**) &buf );
-    CU_ASSERT( len = sizeof(expected1)/sizeof(uint8_t) );
+    CU_ASSERT( sizeof(expected1)/sizeof(uint8_t) == len );
     CU_ASSERT( NULL != buf );
     CU_ASSERT( 0 == memcmp(expected1, buf, len) );
     aker_free(buf);
