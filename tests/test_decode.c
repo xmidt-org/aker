@@ -142,17 +142,22 @@ void decode_test()
     CU_ASSERT(0 == ret);
     destroy_schedule(t);
 
+    t = NULL;
     ret = decode_schedule(test1_bin_len, test1_bin, &t);
     CU_ASSERT(0 != ret);
+    CU_ASSERT(NULL == t);
 
     ret = decode_schedule(test2_bin_len, test2_bin, &t);
     CU_ASSERT(0 != ret);
+    CU_ASSERT(NULL == t);
 
     ret = decode_schedule(test3_bin_len, test3_bin, &t);
     CU_ASSERT(0 != ret);
+    CU_ASSERT(NULL == t);
 
     ret = decode_schedule(test4_bin_len, test4_bin, &t);
     CU_ASSERT(0 != ret);
+    CU_ASSERT(NULL == t);
 }
 
 void add_suites( CU_pSuite *suite )

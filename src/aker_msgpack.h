@@ -16,16 +16,8 @@
  */
 #ifndef __AKER_MSGPACK_H__
 #define __AKER_MSGPACK_H__
-#include <msgpack.h>
 
-/**
- *  Packs string into msgpack object
- *
- *  @param pk     msgpack object
- *  @param string string to be packed
- *  @param size   string size
- */
-void pack_msgpack_string( msgpack_packer *pk, const void *string, size_t size );
+#include <stddef.h>
 
 /**
  *  Packs string into msgpack 
@@ -33,6 +25,16 @@ void pack_msgpack_string( msgpack_packer *pk, const void *string, size_t size );
  *  @param string [in]  string to be packed
  *  @param binary [out] string size
  */
-size_t pack_status_msgpack_map(const char *string, void **binary);
+size_t pack_status_msg(const char *string, void **binary);
 
+/**
+ *  Packs the actively blocked devices and the time into msgpack payload.
+ *
+ *  @param active [in]  the list of blocked devices
+ *  @param time   [in]  the time value
+ *  @param binary [out] the pointer to assign the allocated byte array
+ *
+ *  @returns the length of the allocated byte array
+ */
+size_t pack_now_msg( const char *active, time_t time, void **binary );
 #endif

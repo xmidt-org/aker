@@ -36,8 +36,6 @@ extern "C" {
 #define SERVICE_AKER         "aker"
 #define APP_SCHEDULE         "schedule"
 #define APP_SCHEDULE_END     "now"
-#define APP_SCHEDULE_MD5     "persistent/md5"
-#define APP_SCHEDULE_PERSIST "persistent/schedule"    
     
 
 /*----------------------------------------------------------------------------*/

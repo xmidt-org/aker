@@ -21,8 +21,8 @@
 extern "C" {
 #endif
 
-#include <unistd.h>
-#include <wrp-c/wrp-c.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -37,28 +37,28 @@ extern "C" {
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
+
+/**
+ * @brief Returns if it is ok to create the file or not.
+ *
+ * @param filename the name of the data file to check for
+ *
+ * @return 0 if ok, otherwise it is not ok
+ */
+int process_is_create_ok( const char *filename );
+
 /**
  * @brief Processes wrp CRUD message for Update.
  *
- * @param filename to write payload into
- * @param md5_file
- * @param msg      CRUD message
+ * @param filename     to write data payload into
+ * @param md5_file     to write the MD5 checksum into
+ * @param payload      the data to consume
+ * @param payload_size the length of the data in bytes
  *
- * @return size of payload, <0 otherwise.
+ * @return 0 if successful, error otherwise
  */
-ssize_t process_update( const char *filename, const char *md5_file, wrp_msg_t *msg );
-
-/**
- * @brief Returns current schedule through the wrp CRUD message.
- * 
- * @note return data buffer needs to be free()-ed by caller.
- *
- * @param filename to read payload from
- * @param msg CRUD message
- *
- * @return size of data retrieved, <0 otherwise.
- */
-ssize_t process_retrieve_persistent( const char *filename, wrp_msg_t *msg );
+int process_update( const char *filename, const char *md5_file,
+                    void *payload, size_t payload_size );
 
 /**
  * @brief Returns list of the currently blocked MAC IDs through the wrp CRUD message.
@@ -69,7 +69,7 @@ ssize_t process_retrieve_persistent( const char *filename, wrp_msg_t *msg );
  *
  * @return size of data retrieved, <0 otherwise.
  */
-ssize_t process_retrieve_now( wrp_msg_t *msg );
+size_t process_retrieve_now( uint8_t **data );
 
 /**
  * @brief reads the file.
@@ -82,6 +82,16 @@ ssize_t process_retrieve_now( wrp_msg_t *msg );
  * 
  */
 size_t read_file_from_disk( const char *filename, uint8_t **data );
+
+/**
+ * @brief Deletes the files during the delete operation.
+ *
+ * @param filename the data file to delete
+ * @param md5_file the md5 file to delete
+ *
+ * @return 0 if successful, error otherwise
+ */
+int process_delete( const char *filename, const char *md5_file );
 
 #ifdef __cplusplus
 }

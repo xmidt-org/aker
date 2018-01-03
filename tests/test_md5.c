@@ -52,6 +52,9 @@ void md5_test1()
     result = compute_file_md5("_no_exist_", &md5_sig_1[0]);
     CU_ASSERT(NULL == result);
 
+    if (result) {
+        aker_free(result);
+    }
 }
 
 void md5_test2()

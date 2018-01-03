@@ -19,6 +19,7 @@
 #include "aker_log.h"
 #include "wrp_interface.h"
 #include "process_data.h"
+#include "scheduler.h"
 #include "aker_mem.h"
 #include "aker_msgpack.h"
 
@@ -36,7 +37,9 @@ typedef struct wrp_req_msg  req_msg_t;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-/* None */
+void process_crud(const char *data_file, const char *md5_file,
+                  const char *service, const char *endpoint,
+                  wrp_msg_t *in, wrp_msg_t *response);
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -44,211 +47,31 @@ typedef struct wrp_req_msg  req_msg_t;
 int process_wrp(const char *data_file, const char *md5_file,
                 wrp_msg_t *msg, wrp_msg_t *response)
 {
-    wrp_msg_t *in_msg = msg;
-    char status_str[100] = {0};
     int rv = 0;
+    char *service, *endpoint;
 
-    switch (in_msg->msg_type) {
-        case (WRP_MSG_TYPE__CREATE):
-        {
-            crud_msg_t *in_crud  = &(in_msg->u.crud);
-            crud_msg_t *out_crud = &(response->u.crud);
-            ssize_t ssize = 0;
+    service = wrp_get_msg_dest_element(WRP_ID_ELEMENT__SERVICE, msg);
+    endpoint = wrp_get_msg_dest_element(WRP_ID_ELEMENT__APPLICATION, msg);
 
-            out_crud->status = 201; // default to success
-            snprintf(status_str, sizeof(status_str), "Success - schedule CREATE-ed.\n");
-            response->msg_type = in_msg->msg_type;
-
-            out_crud->transaction_uuid = in_crud->transaction_uuid;
-            out_crud->source  = in_crud->dest;
-            out_crud->dest    = in_crud->source;
-            out_crud->path    = in_crud->path;
-            char *service = wrp_get_msg_dest_element(WRP_ID_ELEMENT__SERVICE, msg);
-            if( (NULL != service) && (0 == strcmp(SERVICE_AKER, service)) )
-            {
-                char *schedule = wrp_get_msg_dest_element(WRP_ID_ELEMENT__APPLICATION, msg);
-                if( (NULL != schedule) && (0 == strcmp(APP_SCHEDULE, schedule)) ) 
-                {
-                    if( -1 == access(data_file, F_OK) )
-                    {
-                        snprintf(status_str, sizeof(status_str), "Conflict - schedule already CREATE-ed.\n");
-                        out_crud->status = 422;
-                    } else {
-                        ssize = process_update(data_file, md5_file, in_msg);
-                        if( 0 > ssize ) {
-                            snprintf(status_str, sizeof(status_str), "Error - schedule not CREATE-ed.\n");
-                            out_crud->status = 400;
-                        }
-                    }
-                } else {
-                    snprintf(status_str, sizeof(status_str), "Not allowed - endpoint(%s)\n", in_crud->dest);
-                    out_crud->status = 405;
-                }
-                if (schedule) {
-                    free(schedule);
-                }
-            } else {
-                snprintf(status_str, sizeof(status_str), "Not found - destination(%s)\n", in_crud->dest);
-                out_crud->status = 404;
-            }
-            out_crud->payload_size = pack_status_msgpack_map(status_str, &out_crud->payload);
-
-            in_crud->transaction_uuid = NULL;
-            in_crud->source = NULL;
-            in_crud->dest   = NULL;
-            in_crud->path   = NULL;
-            if (service) {
-                free(service);
-            }
-        }
-        break;
-
-        case (WRP_MSG_TYPE__UPDATE):
-        {
-            crud_msg_t *in_crud  = &(in_msg->u.crud);
-            crud_msg_t *out_crud = &(response->u.crud);
-            ssize_t ssize = 0;
-
-            out_crud->status = 200; // default to success
-            snprintf(status_str, sizeof(status_str), "Success - schedule UPDATE-ed.\n");
-            response->msg_type = in_msg->msg_type;
-
-            out_crud->transaction_uuid = in_crud->transaction_uuid;
-            out_crud->source  = in_crud->dest;
-            out_crud->dest    = in_crud->source;
-            out_crud->path    = in_crud->path;
-            char *service = wrp_get_msg_dest_element(WRP_ID_ELEMENT__SERVICE, msg);
-            if( (NULL != service) && (0 == strcmp(SERVICE_AKER, service)) )
-            {
-                char *schedule = wrp_get_msg_dest_element(WRP_ID_ELEMENT__APPLICATION, msg);
-                if( (NULL != schedule) && (0 == strcmp(APP_SCHEDULE, schedule)) ) 
-                {
-                    ssize = process_update(data_file, md5_file, in_msg);
-                    if( 0 > ssize ) {
-                        snprintf(status_str, sizeof(status_str), "Error - schedule not CREATE-ed/UPDATE-ed.\n");
-                        out_crud->status = 400;
-                    }
-                } else {
-                    snprintf(status_str, sizeof(status_str), "Not allowed - endpoint(%s)\n", in_crud->dest);
-                    out_crud->status = 405;
-                }
-                if (schedule) {
-                    free(schedule);
-                }
-            } else {
-                snprintf(status_str, sizeof(status_str), "Not found - destination(%s)\n", in_crud->dest);
-                out_crud->status = 404;
-            }
-            out_crud->payload_size = pack_status_msgpack_map(status_str, &out_crud->payload);
-
-            in_crud->transaction_uuid = NULL;
-            in_crud->source = NULL;
-            in_crud->dest   = NULL;
-            in_crud->path   = NULL;
-            if (service) {
-                free(service);
-            }
-        }
-        break;
-
-        case (WRP_MSG_TYPE__RETREIVE):
-        {
-            crud_msg_t *in_crud  = &(in_msg->u.crud);
-            crud_msg_t *out_crud = &(response->u.crud);
-            ssize_t ret_size = 0;
-
-            response->msg_type = WRP_MSG_TYPE__RETREIVE;
-
-            out_crud->transaction_uuid = in_crud->transaction_uuid;
-            out_crud->source  = in_crud->dest;
-            out_crud->dest    = in_crud->source;
-            out_crud->path    = in_crud->path;
-            char *service = wrp_get_msg_dest_element(WRP_ID_ELEMENT__SERVICE, msg);
-            if (service && 0 == strcmp(SERVICE_AKER, service))
-            {            
-                char *schedule = wrp_get_msg_dest_element(WRP_ID_ELEMENT__APPLICATION, msg);    
-                    
-                if( schedule && 0 == strcmp(APP_SCHEDULE_PERSIST, schedule) ) {
-                    ret_size = process_retrieve_persistent(data_file, response);
-                    out_crud->status = ((0 == ret_size) ? 204 : 200);
-                } else if(schedule && 0 == strcmp(APP_SCHEDULE_MD5, schedule) ) {
-                    ret_size = process_retrieve_persistent(md5_file, response);
-                    out_crud->status = ((0 == ret_size) ? 204 : 200);
-                } else if(schedule && 0 == strcmp(APP_SCHEDULE_END, schedule) ) {
-                    ret_size = process_retrieve_now(response);
-                    out_crud->status = ((0 == ret_size) ? 204 : 200);
-                } else if(schedule && 0 == strcmp(APP_SCHEDULE, schedule) ) {
-                    /* TODO */
-                    snprintf(status_str, sizeof(status_str), "Not allowed - /aker/schedule not supported yet.\n");
-                    out_crud->status = 405;
-                } else {
-                    snprintf(status_str, sizeof(status_str), "Not allowed - endpoint(%s)\n", in_crud->dest);
-                    out_crud->status = 405;
-                }
-                if (schedule) {
-                    free(schedule);
-                }
-            } else {
-                snprintf(status_str, sizeof(status_str), "Not found - destination(%s)\n", in_crud->dest);
-                out_crud->status = 404;
-            }
-            out_crud->payload_size = pack_status_msgpack_map(status_str, &out_crud->payload);
-
-            in_crud->transaction_uuid = NULL;
-            in_crud->source = NULL;
-            in_crud->dest   = NULL;
-            in_crud->path   = NULL;
-            if (service) {
-                free(service);
-            }
-        }
-        break;
-
-        case (WRP_MSG_TYPE__DELETE):
-        {
-            crud_msg_t *in_crud  = &(in_msg->u.crud);
-            crud_msg_t *out_crud = &(response->u.crud);
-
-            out_crud->status = 405; // default to not allowed
-            snprintf(status_str, sizeof(status_str), "Not allowed - endpoint(%s)\n", in_crud->dest);
-            response->msg_type = WRP_MSG_TYPE__DELETE;
-
-            out_crud->transaction_uuid = in_crud->transaction_uuid;
-            out_crud->source  = in_crud->dest;
-            out_crud->dest    = in_crud->source;
-            out_crud->path    = in_crud->path;
-            out_crud->payload_size = pack_status_msgpack_map(status_str, &out_crud->payload);
-  
-            in_crud->transaction_uuid = NULL;
-            in_crud->source = NULL;
-            in_crud->dest   = NULL;
-            in_crud->path   = NULL;
-        }
-        break;
-            
-        case (WRP_MSG_TYPE__REQ):
-        {
-            req_msg_t *in_req  = &(in_msg->u.req);
-            req_msg_t *out_req = &(response->u.req);
-
-            snprintf(status_str, sizeof(status_str), "Not allowed - endpoint(%s)\n", in_req->dest);
-            response->msg_type = WRP_MSG_TYPE__REQ;
-
-            out_req->transaction_uuid = in_req->transaction_uuid;
-            out_req->source  = in_req->dest;
-            out_req->dest    = in_req->source;
-            out_req->payload_size = pack_status_msgpack_map(status_str, &out_req->payload);
-
-            in_req->transaction_uuid = NULL;
-            in_req->source = NULL;
-            in_req->dest   = NULL;
-        }
-        break;
+    switch (msg->msg_type) {
+        case WRP_MSG_TYPE__CREATE:
+        case WRP_MSG_TYPE__RETREIVE:
+        case WRP_MSG_TYPE__UPDATE:
+        case WRP_MSG_TYPE__DELETE:
+            process_crud(data_file, md5_file, service, endpoint, msg, response);
+            break;
 
         default:
-            debug_info("Message of type %d not handled\n", in_msg->msg_type);
+            debug_info("Message of type %d not handled\n", msg->msg_type);
             rv = -1;
-        break;
+            break;
+    }
+
+    if (endpoint) {
+        free(endpoint);
+    }
+    if (service) {
+        free(service);
     }
 
     return rv;
@@ -271,4 +94,111 @@ int cleanup_wrp(wrp_msg_t *message)
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-/* None */
+void process_crud(const char *data_file, const char *md5_file,
+                  const char *service, const char *endpoint,
+                  wrp_msg_t *in, wrp_msg_t *response)
+{
+    int tmp;
+    int payload_valid;
+    crud_msg_t *crud_in = &(in->u.crud);
+    crud_msg_t *crud_out = &(response->u.crud);
+
+    /* Response struct has been initialized to 0. */
+
+    payload_valid = 0;
+    crud_out->status = 400;
+    response->msg_type = in->msg_type;
+
+    crud_out->content_type     = "application/msgpack";
+    crud_out->transaction_uuid = crud_in->transaction_uuid;
+    crud_out->source           = crud_in->dest;
+    crud_out->dest             = crud_in->source;
+    crud_out->path             = crud_in->path;
+
+    if( (NULL != service) &&
+        (NULL != endpoint) &&
+        (0 == strcmp(SERVICE_AKER, service)) )
+    {
+        switch (in->msg_type) {
+            case WRP_MSG_TYPE__CREATE:
+                if( 0 == strcmp(APP_SCHEDULE, endpoint) ) {
+                    if( 0 == process_is_create_ok(data_file) ) {
+                        tmp = process_update(data_file, md5_file,
+                                                crud_in->payload, crud_in->payload_size );
+                        crud_out->status = ((0 == tmp) ? 201 : 533);
+                    } else {
+                        crud_out->status = 409;
+                    }
+                } else if( 0 == strcmp(APP_SCHEDULE_END, endpoint) ) {
+                    crud_out->status = 405;
+                }
+                break;
+                
+            case WRP_MSG_TYPE__RETREIVE:
+                if( 0 == strcmp(APP_SCHEDULE, endpoint) ) {
+                    crud_out->status = 200;
+                    crud_out->payload_size = read_file_from_disk(data_file,
+                                                (uint8_t**) &(crud_out->payload));
+                } else if( 0 == strcmp(APP_SCHEDULE_END, endpoint) ) {
+                    crud_out->status = 200;
+                    crud_out->payload_size = process_retrieve_now((uint8_t**) &(crud_out->payload));
+                }
+
+                if( 200 == crud_out->status ) {
+                    if( 0 == crud_out->payload_size ) {
+                        crud_out->payload = NULL;
+                        crud_out->status = 404;
+                    }
+                    payload_valid = 1;
+                }
+                break;
+
+            case WRP_MSG_TYPE__UPDATE:
+                if( 0 == strcmp(APP_SCHEDULE, endpoint) ) {
+                    tmp = process_update(data_file, md5_file, crud_in->payload,
+                                            crud_in->payload_size );
+                    crud_out->status = ((0 == tmp) ? 201 : 534);
+                } else if( 0 == strcmp(APP_SCHEDULE_END, endpoint) ) {
+                    crud_out->status = 405;
+                }
+                break;
+
+            case WRP_MSG_TYPE__DELETE:
+                if( 0 == strcmp(APP_SCHEDULE, endpoint) ) {
+                    crud_out->status = 200;
+                    if( 0 != process_delete(data_file, md5_file) ) {
+                        crud_out->status = 535;
+                    }
+                } else if( 0 == strcmp(APP_SCHEDULE_END, endpoint) ) {
+                    crud_out->status = 405;
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    crud_in->transaction_uuid = NULL;
+    crud_in->source = NULL;
+    crud_in->dest   = NULL;
+    crud_in->path   = NULL;
+
+    if( 0 == payload_valid ) {
+        char *text;
+        text = "Unknown Error";
+
+        switch( crud_out->status ) {
+            case 200: text = "Success";                     break;
+            case 201: text = "Created";                     break;
+            case 400: text = "Bad Request";                 break;
+            case 404: text = "Not Found";                   break;
+            case 405: text = "Method Not allowed";          break;
+            case 409: text = "Schedule already present";    break;
+            case 533: text = "Unable to create schedule";   break;
+            case 534: text = "Unable to update schedule";   break;
+            case 535: text = "Unable to delete schedule";   break;
+        }
+        crud_out->payload_size = pack_status_msg(text, &crud_out->payload);
+    }
+}

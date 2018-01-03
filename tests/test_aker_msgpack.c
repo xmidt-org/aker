@@ -23,8 +23,8 @@
 #include <CUnit/Basic.h>
 
 #include "test_macros.h"
-#include "../src/wrp_interface.h"
-#include "../src/process_data.h"
+#include "../src/aker_msgpack.h"
+#include "../src/aker_mem.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -49,72 +49,67 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Tests                                    */
 /*----------------------------------------------------------------------------*/
-uint8_t get_data(uint8_t **data)
+void test_pack_status_msg()
 {
-    ssize_t data_size = 0;
+    uint8_t expected[] = { 0x81,
+                                 0xa7, 'm', 'e', 's', 's', 'a', 'g', 'e',
+                                 0xaf, 'I', ' ', 'a', 'm', ' ', 'a', ' ',
+                                 'm', 'e', 's', 's', 'a', 'g', 'e', '.' };
 
-    const char some_binary_file[] = "../../tests/some.bin";
-    FILE *file_handle = fopen(some_binary_file, "rb");
-    if( NULL != file_handle ) {
-        int32_t file_size;
+    size_t len;
+    uint8_t *buf;
 
-        fseek(file_handle, 0, SEEK_END);
-        file_size = ftell(file_handle);
-        if (file_size < 0) {
-            printf("read_file_from_disk() ftell() error on %s\n", some_binary_file);
-            fclose(file_handle);
-        } else {
-            fseek(file_handle, 0, SEEK_SET);
-
-            if( file_size > 0 ) { 
-                *data = (uint8_t*) malloc(file_size);
-
-                if( NULL != *data ) {
-                    data_size = fread(*data, sizeof(uint8_t), file_size, file_handle);
-                }
-            }
-            fclose(file_handle);
-        }
-    }
-    return data_size;
+    buf = NULL;
+    len = pack_status_msg( "I am a message.", (void**) &buf );
+    CU_ASSERT( len == sizeof(expected)/sizeof(uint8_t) );
+    CU_ASSERT( NULL != buf );
+    CU_ASSERT( 0 == memcmp(expected, buf, len) );
+    aker_free(buf);
 }
 
-
-void test_process_data()
+void test_pack_now_msg()
 {
-    uint8_t *data = NULL;
-    uint8_t *test_vector = NULL;
-    size_t len, data_size = 0;
-    int rv;
+    // time: 1513822552
+    uint8_t expected0[] = { 0x82,
+                                 0xa6, 'a', 'c', 't', 'i', 'v', 'e',
+                                 0xa0,
+                                 0xa4, 't', 'i', 'm', 'e',
+                                 0xce, 0x5a, 0x3b, 0x19, 0x58 };
 
-    data_size = get_data(&test_vector);
+    // time: 1513822553
+    uint8_t expected1[] = { 0x82,
+                                 0xa6, 'a', 'c', 't', 'i', 'v', 'e',
+                                 0xb1, '1', '1', ':', '2', '2', ':', '3', '3', ':', '4', '4', ':', '5', '5', ':', '6', '6',
+                                 0xa4, 't', 'i', 'm', 'e',
+                                 0xce, 0x5a, 0x3b, 0x19, 0x59 };
 
-    /* No file names */
-    rv = process_update(NULL, NULL, test_vector, data_size);
-    CU_ASSERT( 0 != rv );
+    size_t len;
+    uint8_t *buf;
 
-    /* Empty payload */
-    rv = process_update("pcs.bin", "pcs_md5.bin", NULL, 0);
-    CU_ASSERT( rv != 0 );
+    buf = NULL;
 
-    /* Normal payload */
-    rv = process_update("pcs.bin", "pcs_md5.bin", test_vector, data_size);
-    CU_ASSERT( rv == 0 );
+    len = pack_now_msg( NULL, 1513822552, (void**) &buf );
+    CU_ASSERT( len = sizeof(expected0)/sizeof(uint8_t) );
+    CU_ASSERT( NULL != buf );
+    CU_ASSERT( 0 == memcmp(expected0, buf, len) );
+    aker_free(buf);
+    buf = NULL;
 
-    len = read_file_from_disk("pcs.bin", &data);
-    CU_ASSERT(data_size == len);
-    CU_ASSERT(0 == memcmp(test_vector, data, len));
-
-    if( NULL != data ) {
-        free(data);
-    }
+    len = pack_now_msg( "11:22:33:44:55:66", 1513822553, (void**) &buf );
+    CU_ASSERT( len = sizeof(expected1)/sizeof(uint8_t) );
+    CU_ASSERT( NULL != buf );
+    CU_ASSERT( 0 == memcmp(expected1, buf, len) );
+    aker_free(buf);
+    buf = NULL;
 }
+
 
 void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "Test 1", test_process_data );
+    CU_add_test( *suite, "Test pack_status_msg", test_pack_status_msg );
+    CU_add_test( *suite, "Test pack_now_msg", test_pack_now_msg );
 }
 
 /*----------------------------------------------------------------------------*/
