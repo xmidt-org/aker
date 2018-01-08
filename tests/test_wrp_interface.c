@@ -763,6 +763,7 @@ void test_process_wrp()
     for( i = 0; i < t_size; i++ ) {
         wrp_msg_t msg;
 
+        memset(&msg, 0, sizeof(wrp_msg_t));
         pack_status_msg_rv = tests[i].pack_status_msg_rv;
         process_update_rv = tests[i].process_update_rv;
         process_retrieve_now_rv = tests[i].process_retrieve_now_rv;
@@ -788,7 +789,7 @@ void test_process_wrp()
             CU_ASSERT_EQUAL(tests[i].r.u.crud.status, msg.u.crud.status);
             CU_ASSERT(0 == strcmp(tests[i].r.u.crud.path, msg.u.crud.path));
         }
-        // TODO Fix the leak! cleanup_wrp(&msg);
+        cleanup_wrp(&msg);
     }
 }
 
