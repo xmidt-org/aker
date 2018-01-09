@@ -205,8 +205,10 @@ int main( int argc, char **argv)
 static void sig_handler(int sig)
 {
     if( sig == SIGINT ) {
-        signal(SIGINT, sig_handler); /* reset it to this function */
-        debug_info("SIGINT received!\n");
+        debug_info("SIGINT received! Program Terminating!\n");
+        exit(0);
+    } else if ( sig == SIGTERM ) {
+        debug_info("SIGTERM received! Program Terminating!\n");
         exit(0);
     } else if( sig == SIGUSR1 ) {
         signal(SIGUSR1, sig_handler); /* reset it to this function */
