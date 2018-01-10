@@ -263,7 +263,7 @@ char* get_blocked_at_time( schedule_t *s, time_t unixtime )
                 rv = __convert_event_to_string( s, w_prev );
             }
         } else {
-            if( last_abs <= weekly ) {
+            if( (NULL != abs_prev) && (abs_prev->time <= unixtime) ) {
                 rv = __convert_event_to_string( s, abs_prev );
             }
         }
