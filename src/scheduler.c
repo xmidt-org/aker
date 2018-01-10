@@ -144,7 +144,7 @@ void *scheduler_thread(void *args)
 {
     const char *firewall_cmd;
     struct timespec tm = { INT_MAX, 0 };
-    time_t unix_time = 0, process_time = 0;
+    time_t current_unix_time = 0;
     int rv = ETIMEDOUT;
     
     signal(SIGTERM, sig_handler);
@@ -164,7 +164,6 @@ void *scheduler_thread(void *args)
 
     call_firewall( firewall_cmd, NULL );
 
-    unix_time = get_unix_time();
     while( __keep_going__ ) {
         int info_period = 3;
    
@@ -173,10 +172,9 @@ void *scheduler_thread(void *args)
         if( current_schedule ) {
             char *blocked_macs;
 
-            process_time = get_unix_time();
-            blocked_macs = get_blocked_at_time(current_schedule, unix_time);
-            process_time = get_unix_time() - process_time;
-            debug_info("Time to process current schedule event is %ld seconds\n", process_time);
+            current_unix_time = get_unix_time();
+            blocked_macs = get_blocked_at_time(current_schedule, current_unix_time);
+            debug_info("Time to process current schedule event is %ld seconds\n", (get_unix_time() - current_unix_time));
 
             if (NULL == current_blocked_macs) {
                 if (NULL != blocked_macs) {
@@ -203,7 +201,7 @@ void *scheduler_thread(void *args)
             }
         }
 
-        tm.tv_sec = get_next_unixtime(current_schedule, unix_time);
+        tm.tv_sec = get_next_unixtime(current_schedule, current_unix_time);
         rv = pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
         if( ETIMEDOUT != rv) {
             debug_error("pthread_cond_timedwait: %d(%s)\n", rv, strerror(rv));
