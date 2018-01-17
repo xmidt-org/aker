@@ -23,6 +23,7 @@
 
 #include "../src/schedule.h"
 #include "../src/decode.h"
+#include "../src/time.h"
 
 #include "tz1.h"
 #include "tz2.h"
@@ -122,6 +123,8 @@ void test_schedule(schedule_t *s)
     time_t end_unix   = 1514707500;  /* 12:05:00 AM - 5 minutes later */
     time_t t;
 
+    set_unix_time_zone( "PST8PDT" );
+
     for( t = start_unix; t < end_unix; t++ ) {
         char *macs;
         time_t next;
@@ -154,6 +157,8 @@ void test_schedule_2(schedule_t *s)
     time_t start_unix = 1514707200;  /* 12:00:01 AM */
     time_t end_unix   = 1514707500;  /* 12:05:00 AM - 5 minutes later */
     time_t t;
+
+    set_unix_time_zone( "PST8PDT" );
 
     for( t = start_unix; t < end_unix; t++ ) {
         char *macs;
