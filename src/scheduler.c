@@ -266,26 +266,26 @@ static void sig_handler(int sig)
     if( sig == SIGINT ) {
         signal(SIGINT, sig_handler); /* reset it to this function */
         cleanup();
-        debug_info("SIGINT received!\n");
+        debug_info("Scheduler - SIGINT received!\n");
         exit(0);
     } else if( sig == SIGUSR1 ) {
         signal(SIGUSR1, sig_handler); /* reset it to this function */
-        debug_info("SIGUSR1 received!\n");
+        debug_info("Scheduler - SIGUSR1 received!\n");
     } else if( sig == SIGUSR2 ) {
         signal(SIGUSR2, sig_handler);
-        debug_info("SIGUSR2 received!\n");
+        debug_info("Scheduler - SIGUSR2 received!\n");
     } else if( sig == SIGCHLD ) {
         signal(SIGCHLD, sig_handler); /* reset it to this function */
-        debug_info("SIGHLD received!\n");
+        debug_info("Scheduler - SIGHLD received!\n");
     } else if( sig == SIGPIPE ) {
         signal(SIGPIPE, sig_handler); /* reset it to this function */
-        debug_info("SIGPIPE received!\n");
+        debug_info("Scheduler - SIGPIPE received!\n");
     } else if( sig == SIGALRM ) {
         signal(SIGALRM, sig_handler); /* reset it to this function */
-        debug_info("SIGALRM received!\n");
+        debug_info("Scheduler - SIGALRM received!\n");
     } else {
         cleanup();
-        debug_info("Signal %d received!\n", sig);
+        debug_info("Scheduler - Signal %d received!\n", sig);
         exit(0);
     }
 }

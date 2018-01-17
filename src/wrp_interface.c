@@ -62,7 +62,7 @@ int process_wrp(const char *data_file, const char *md5_file,
             break;
 
         default:
-            debug_info("Message of type %d not handled\n", msg->msg_type);
+            debug_info("Message not handled, type = %d\n", msg->msg_type);
             rv = -1;
             break;
     }
