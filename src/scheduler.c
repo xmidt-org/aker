@@ -166,6 +166,7 @@ void *scheduler_thread(void *args)
 
     while( __keep_going__ ) {
         int info_period = 3;
+        int schedule_changed = 0;
    
         pthread_mutex_lock( &schedule_lock );
         
@@ -179,7 +180,7 @@ void *scheduler_thread(void *args)
             if (NULL == current_blocked_macs) {
                 if (NULL != blocked_macs) {
                     current_blocked_macs = blocked_macs;
-                    call_firewall( firewall_cmd, current_blocked_macs );
+                    schedule_changed = 1;
                 }
             } else {
                 if (NULL != blocked_macs) {
@@ -187,7 +188,7 @@ void *scheduler_thread(void *args)
                         aker_free(current_blocked_macs);
                         current_blocked_macs = blocked_macs;
 
-                        call_firewall( firewall_cmd, current_blocked_macs );
+                        schedule_changed = 1;
                     } else {/* No Change In Schedule */
                         if (0 == (info_period++ % 3)) {/* Reduce Clutter */
                             debug_print("scheduler_thread(): No Change\n");
@@ -197,8 +198,19 @@ void *scheduler_thread(void *args)
                 } else {
                     aker_free(current_blocked_macs);
                     current_blocked_macs = NULL;
+                    schedule_changed = 1;
                 }
             }
+        } else {
+            if( current_blocked_macs ) {
+                aker_free(current_blocked_macs);
+                current_blocked_macs = NULL;
+                schedule_changed = 1;
+            }
+        }
+
+        if( 0 != schedule_changed ) {
+            call_firewall( firewall_cmd, current_blocked_macs );
         }
 
         tm.tv_sec = get_next_unixtime(current_schedule, current_unix_time);
