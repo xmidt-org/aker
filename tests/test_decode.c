@@ -129,26 +129,18 @@ void test_schedule(schedule_t *s)
         macs = get_blocked_at_time( s, t );
         next = get_next_unixtime( s, t );
         if( t < 1514707210 ) {
-            printf("#1 - macs = %s\n", macs);
-            printf("#1 - next = %ld\n", next);
             CU_ASSERT( NULL == macs );
             CU_ASSERT( 1514707210 == next );
         }
         if( (1514707210 <= t) && (t < 1514707220) ) {
-            printf("#1 - macs = %s\n", macs);
-            printf("#1 - next = %ld\n", next);
             CU_ASSERT_STRING_EQUAL(macs, "11:22:33:44:55:aa 22:33:44:55:66:bb 44:55:66:77:88:dd");
             CU_ASSERT( 1514707220 == next );
         }
         if( (1514707220 <= t) && (t < 1514707230) ) {
-            printf("#1 - macs = %s\n", macs);
-            printf("#1 - next = %ld\n", next);
             CU_ASSERT_STRING_EQUAL(macs, "11:22:33:44:55:aa");
             CU_ASSERT( 1514707230 == next );
         }
         if( 1514707230 <= t ) {
-            printf("#1 - macs = %s\n", macs);
-            printf("#1 - next = %ld\n", next);
             CU_ASSERT( NULL == macs );
             // Next Sunday at 12:00:10 AM.
             CU_ASSERT( 1515312010 == next );
