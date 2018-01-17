@@ -21,9 +21,11 @@
 
 #include <CUnit/Basic.h>
 
+#include "../src/aker_mem.h"
 #include "../src/schedule.h"
 #include "../src/decode.h"
 #include "../src/time.h"
+#include "mem_wrapper.h"
 
 #include "tz1.h"
 #include "tz2.h"
@@ -126,7 +128,7 @@ void test_schedule(schedule_t *s)
     set_unix_time_zone( "PST8PDT" );
 
     for( t = start_unix; t < end_unix; t++ ) {
-        char *macs;
+        char *macs = NULL;
         time_t next;
 
         macs = get_blocked_at_time( s, t );
@@ -148,6 +150,12 @@ void test_schedule(schedule_t *s)
             // Next Sunday at 12:00:10 AM.
             CU_ASSERT( 1515312010 == next );
         }
+
+        if( NULL != macs ) {
+            aker_free( macs );
+            macs = NULL;
+        }
+
     }
 }
 
@@ -161,7 +169,7 @@ void test_schedule_2(schedule_t *s)
     set_unix_time_zone( "PST8PDT" );
 
     for( t = start_unix; t < end_unix; t++ ) {
-        char *macs;
+        char *macs = NULL;
         time_t next;
 
         macs = get_blocked_at_time( s, t );
@@ -187,6 +195,12 @@ void test_schedule_2(schedule_t *s)
             // Next Sunday at 12:00:10 AM.
             CU_ASSERT( 1515312010 == next );
         }
+
+        if( NULL != macs ) {
+            aker_free( macs );
+            macs = NULL;
+        }
+
     }
 }
 
