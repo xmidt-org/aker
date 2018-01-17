@@ -112,14 +112,17 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t)
                 }
                 else {
                      debug_error("decode_schedule() can't handle object %d\n", obj.type);
-                     // ret_val = -4;
                 }
                 p++;
                 key = &p->key;
                 val = &p->val;
             }
 
-            finalize_schedule(s);
+            if (0 < finalize_schedule(s)) {
+                debug_error("Unexpected result in finalize_schedule()\n");
+                ret_val = -8;
+                break;
+            }
             ret = msgpack_unpack_next(&result, (char *) buf, len, &off);
         } else {
             debug_error("Unexpected result in decode_schedule()\n");
