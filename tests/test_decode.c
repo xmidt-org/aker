@@ -119,7 +119,7 @@ void test_schedule(schedule_t *s)
 {
     /* December 31, 2017 from 12:00:01 AM to 12:05 AM*/
     time_t start_unix = 1514707200;  /* 12:00:00 AM */
-    time_t end_unix   = 1514707500;  /* 12:05:00 AM - 1h later */
+    time_t end_unix   = 1514707500;  /* 12:05:00 AM - 5 minutes later */
     time_t t;
 
     for( t = start_unix; t < end_unix; t++ ) {
@@ -152,7 +152,7 @@ void test_schedule_2(schedule_t *s)
 {
     /* December 31, 2017 from 12:00:01 AM to 12:05 AM*/
     time_t start_unix = 1514707200;  /* 12:00:01 AM */
-    time_t end_unix   = 1514707500;  /* 12:05:00 AM - 1h later */
+    time_t end_unix   = 1514707500;  /* 12:05:00 AM - 5 minutes later */
     time_t t;
 
     for( t = start_unix; t < end_unix; t++ ) {
