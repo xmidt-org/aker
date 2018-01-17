@@ -37,13 +37,13 @@
 static void sig_handler(int sig);
 static void cleanup(void);
 static void *scheduler_thread(void *args);
-static void call_firewall( const char* firewall_cmd, char *blocked );
+static void call_firewall( char *blocked );
 
 static schedule_t *current_schedule = NULL;
 static char *current_blocked_macs = NULL;
 static pthread_mutex_t schedule_lock;
 static pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
-
+static const char *firewall_cmd = NULL;
 
 
 /*----------------------------------------------------------------------------*/
@@ -93,6 +93,7 @@ int process_schedule_data( size_t len, uint8_t *data )
         pthread_mutex_unlock( &schedule_lock );
         pthread_cond_signal(&cond_var);
         destroy_schedule( s );
+        call_firewall( NULL );
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
         rv = decode_schedule( len, data, &s );
@@ -142,7 +143,6 @@ char *get_current_blocked_macs( void )
  */
 void *scheduler_thread(void *args)
 {
-    const char *firewall_cmd;
     struct timespec tm = { INT_MAX, 0 };
     time_t current_unix_time = 0;
     int rv = ETIMEDOUT;
@@ -162,7 +162,7 @@ void *scheduler_thread(void *args)
     
     firewall_cmd = (const char*) args;
 
-    call_firewall( firewall_cmd, NULL );
+    call_firewall( NULL );
 
     while( __keep_going__ ) {
         int info_period = 3;
@@ -179,7 +179,7 @@ void *scheduler_thread(void *args)
             if (NULL == current_blocked_macs) {
                 if (NULL != blocked_macs) {
                     current_blocked_macs = blocked_macs;
-                    call_firewall( firewall_cmd, current_blocked_macs );
+                    call_firewall( current_blocked_macs );
                 }
             } else {
                 if (NULL != blocked_macs) {
@@ -187,7 +187,7 @@ void *scheduler_thread(void *args)
                         aker_free(current_blocked_macs);
                         current_blocked_macs = blocked_macs;
 
-                        call_firewall( firewall_cmd, current_blocked_macs );
+                        call_firewall( current_blocked_macs );
                     } else {/* No Change In Schedule */
                         if (0 == (info_period++ % 3)) {/* Reduce Clutter */
                             debug_print("scheduler_thread(): No Change\n");
@@ -197,6 +197,7 @@ void *scheduler_thread(void *args)
                 } else {
                     aker_free(current_blocked_macs);
                     current_blocked_macs = NULL;
+                    call_firewall( NULL );
                 }
             }
         }
@@ -217,10 +218,9 @@ void *scheduler_thread(void *args)
 /**
  *  Takes the firewall cmd and the blocked list and makes the call.
  *
- *  @param firewall_cmd the firewall cmd to call
  *  @param blocked      the list of mac addresses to block
  */
-static void call_firewall( const char* firewall_cmd, char *blocked )
+static void call_firewall( char *blocked )
 {
     if( NULL != firewall_cmd ) {
         char *buf;
