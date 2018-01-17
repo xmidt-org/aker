@@ -23,6 +23,7 @@
 
 #include "../src/schedule.h"
 #include "../src/decode.h"
+#include "../src/time.h"
 
 #include "tz1.h"
 #include "tz2.h"
@@ -115,15 +116,95 @@ size_t decode_length_3 = sizeof(decode_buffer_3);
 #include "test4.h" /* Missing Everything i.e. "{ }" */
 #include "unknown.h" /* name:value pairs that are unknown to decode */
 
+void test_schedule(schedule_t *s)
+{
+    /* December 31, 2017 from 12:00:01 AM to 12:05 AM*/
+    time_t start_unix = 1514707200;  /* 12:00:00 AM */
+    time_t end_unix   = 1514707500;  /* 12:05:00 AM - 5 minutes later */
+    time_t t;
+
+    set_unix_time_zone( "PST8PDT" );
+
+    for( t = start_unix; t < end_unix; t++ ) {
+        char *macs;
+        time_t next;
+
+        macs = get_blocked_at_time( s, t );
+        next = get_next_unixtime( s, t );
+        if( t < 1514707210 ) {
+            CU_ASSERT( NULL == macs );
+            CU_ASSERT( 1514707210 == next );
+        }
+        if( (1514707210 <= t) && (t < 1514707220) ) {
+            CU_ASSERT_STRING_EQUAL(macs, "11:22:33:44:55:aa 22:33:44:55:66:bb 44:55:66:77:88:dd");
+            CU_ASSERT( 1514707220 == next );
+        }
+        if( (1514707220 <= t) && (t < 1514707230) ) {
+            CU_ASSERT_STRING_EQUAL(macs, "11:22:33:44:55:aa");
+            CU_ASSERT( 1514707230 == next );
+        }
+        if( 1514707230 <= t ) {
+            CU_ASSERT( NULL == macs );
+            // Next Sunday at 12:00:10 AM.
+            CU_ASSERT( 1515312010 == next );
+        }
+    }
+}
+
+void test_schedule_2(schedule_t *s)
+{
+    /* December 31, 2017 from 12:00:01 AM to 12:05 AM*/
+    time_t start_unix = 1514707200;  /* 12:00:01 AM */
+    time_t end_unix   = 1514707500;  /* 12:05:00 AM - 5 minutes later */
+    time_t t;
+
+    set_unix_time_zone( "PST8PDT" );
+
+    for( t = start_unix; t < end_unix; t++ ) {
+        char *macs;
+        time_t next;
+
+        macs = get_blocked_at_time( s, t );
+        next = get_next_unixtime( s, t );
+        if( t < 1514707210 ) {
+            CU_ASSERT_STRING_EQUAL(macs, "11:22:33:44:55:aa 44:55:66:77:88:dd 44:55:66:77:88:d9");
+            CU_ASSERT( 1514707210 == next );
+        }
+        if( (1514707210 <= t) && (t < 1514707220) ) {
+            CU_ASSERT_STRING_EQUAL(macs, "11:22:33:44:55:aa 22:33:44:55:66:bb 22:33:44:55:66:b0 44:55:66:77:88:dd");
+            CU_ASSERT( 1514707220 == next );
+        }
+        if( (1514707220 <= t) && (t < 1514707230) ) {
+            CU_ASSERT_STRING_EQUAL(macs, "11:22:33:44:55:aa");
+            CU_ASSERT( 1514707230 == next );
+        }
+        if( (1514707230 <= t) && (t < 1514707501) ) {
+            CU_ASSERT_STRING_EQUAL(macs, "22:33:44:55:66:bb 22:33:44:55:66:b0 33:44:55:66:77:cc");
+            CU_ASSERT( 1514707501 == next );
+        }
+        if( 1514707501 <= t ) {
+            CU_ASSERT_STRING_EQUAL(macs, "11:22:33:44:55:aa 44:55:66:77:88:dd 44:55:66:77:88:d9");
+            // Next Sunday at 12:00:10 AM.
+            CU_ASSERT( 1515312010 == next );
+        }
+    }
+}
+
 void decode_test()
 {
     schedule_t *t;
     int ret = decode_schedule(decode_length, decode_buffer, &t);
     CU_ASSERT(0 == ret);
+    print_schedule(t);
+    test_schedule(t);
     destroy_schedule(t);
+
     ret = decode_schedule(decode_length2, decode_buffer2, &t);
     CU_ASSERT(0 == ret);
+    print_schedule(t);
+    test_schedule_2(t);
     destroy_schedule(t);
+
     t = NULL;
     ret = decode_schedule(buffer_corrupt_length, decode_buffer_corrupted, &t);
     CU_ASSERT(0 != ret);

@@ -84,7 +84,7 @@ target_link_libraries (test_process_ret_now ${AKER_COMMON_LIBS})
 #-------------------------------------------------------------------------------
 add_test(NAME test_decode COMMAND ${MEMORY_CHECK} ./test_decode)
 add_executable(test_decode test_decode.c ../src/decode.c ../src/schedule.c
-               ../src/time.c mem_wrapper.c )
+               ../src/time.c mem_wrapper.c ../src/schedule_print.c)
 target_link_libraries (test_decode ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
