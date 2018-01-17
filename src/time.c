@@ -96,7 +96,7 @@ int set_unix_time_zone (const char *time_zone)
        strftime(ftime,sizeof(ftime),"%Z %H%M",mt);
    } else {
        strftime(ftime,sizeof(ftime),"nil %H%M",mt);
-       debug_error("set_unix_time_zone(%s) is invalid\n", time_zone);
+       debug_error("set_unix_time_zone() error, TZ = %s\n", time_zone);
    }
 
    debug_info("time_zone: %s is %s\n", time_zone, ftime);
