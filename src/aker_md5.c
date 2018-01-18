@@ -62,12 +62,12 @@ unsigned char * compute_byte_stream_md5(uint8_t *data, size_t size, unsigned cha
         debug_error("compute_byte_stream_md5()->aker_malloc() failed\n");
         return md5_string;
     }
-    debug_info("MD5 sig: ");
+
     for (cnt = 0; cnt < MD5_SIZE; cnt++) {
         sprintf((char *) &md5_string[cnt * 2], "%02x", md5_sig[cnt]);
     }
     md5_string[MD5_SIZE * 2] = 0;
-    debug_info("%s\n", md5_string);    
+    debug_info("MD5 sig: %s\n", md5_string);    
     
     return md5_string;
 }
