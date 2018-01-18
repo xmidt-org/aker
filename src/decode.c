@@ -250,7 +250,7 @@ int process_map(msgpack_object_map *map, schedule_event_t **t)
                 if (NULL != (*t)) {
                     for (; array_size < (val->via.array.size); array_size++) {
                             (*t)->block[array_size] = ptr->via.u64;
-                            debug_info("Array Element[%d] = %d block[] %d\n",
+                            debug_print("Array Element[%d] = %d block[] %d\n",
                                     array_size, (uint32_t) ptr->via.u64,
                                     (*t)->block[array_size]);
                             ptr++;
