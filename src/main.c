@@ -131,12 +131,12 @@ int main( int argc, char **argv)
                 break;
             case '?':
                 if (strchr(option_string, optopt)) {
-                    debug_error("%s Option %c requires an argument!\n", argv[0], optopt);
+                    printf("%s Option %c requires an argument!\n", argv[0], optopt);
                     aker_help(argv[0], NULL);
                     rv = -7;
                     break;
                 } else {
-                    debug_info("%s Unrecognized option %c\n", argv[0], optopt);
+                    printf("%s Unrecognized option %c\n", argv[0], optopt);
                   }
 
                 break;
@@ -259,12 +259,7 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
 
     while( true ) {
         rv = libparodus_init( &hpd_instance, cfg );
-        if( 0 == rv ) {
-            debug_info("Init for parodus Success..!!\n");
-            break;
-        }
-        else {
-            debug_info("Init for parodus (url %s) failed: '%s'\n", cfg->parodus_url, libparodus_strerror(rv) );
+        if( 0 != rv ) {
             backoff_retry_time = (1 << c) - 1;
             sleep(backoff_retry_time);
             c++;
@@ -273,6 +268,10 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
                 c = 2;
                 backoff_retry_time = 0;
             }
+        }
+        debug_info("Init for parodus (url %s): %d '%s'\n", cfg->parodus_url, rv, libparodus_strerror(rv) );
+        if( 0 == rv ) {
+            break;
         }
         libparodus_shutdown(&hpd_instance);
     }
@@ -284,7 +283,7 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
         if( 0 == rv ) {
             wrp_msg_t response;
 
-            debug_info("Got something from parodus.\n");
+            debug_print("Got something from parodus.\n");
             memset(&response, 0, sizeof(wrp_msg_t));
             rv = process_wrp(data_file, md5_file, wrp_msg, &response);
             if( 0 == rv ) {

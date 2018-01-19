@@ -83,7 +83,7 @@ int verify_md5_signatures(const char *data_file, const char *md5_file)
     memset(data_sig, 0, MD5_SIZE);
     if ( NULL == (data_md5 = compute_file_md5(data_file, data_sig)))
     {
-        printf("verify_md5_signatures() Error computing md5 for %s\n",
+        debug_error("verify_md5_signatures() Error computing md5 for %s\n",
                     data_file);
         return -1;
     }
@@ -91,14 +91,14 @@ int verify_md5_signatures(const char *data_file, const char *md5_file)
     if (0 < read_file_from_disk( md5_file, &md5_sig ))
     {
         if (0 != memcmp(md5_sig, data_md5, MD5_SIZE * 2)) {
-            printf("verify_md5_signatures sig mismatch\n");
+            debug_error("verify_md5_signatures sig mismatch\n");
             ret_val = -2;
         }
         else {
-            printf("verify_md5_signatures() data and md5 signature verified\n");
+            debug_info("verify_md5_signatures() data and md5 signature verified\n");
         }
     } else {
-        printf("verify_md5_signatures failed to read md5_file\n");
+        debug_error("verify_md5_signatures failed to read md5_file\n");
         ret_val = -3;
     }
 

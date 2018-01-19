@@ -58,6 +58,7 @@ int process_wrp(const char *data_file, const char *md5_file,
         case WRP_MSG_TYPE__RETREIVE:
         case WRP_MSG_TYPE__UPDATE:
         case WRP_MSG_TYPE__DELETE:
+            debug_info("Received CRUD message, type = %d\n", msg-> msg_type);
             process_crud(data_file, md5_file, service, endpoint, msg, response);
             break;
 
