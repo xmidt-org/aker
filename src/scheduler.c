@@ -216,7 +216,7 @@ void *scheduler_thread(void *args)
         tm.tv_sec = get_next_unixtime(current_schedule, current_unix_time);
         rv = pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
         if( ETIMEDOUT != rv) {
-            debug_error("pthread_cond_timedwait: %d(%s)\n", rv, strerror(rv));
+            debug_info("pthread_cond_timedwait: %d(%s)\n", rv, strerror(rv));
         }
 
         pthread_mutex_unlock( &schedule_lock );
