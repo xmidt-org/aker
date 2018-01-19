@@ -56,12 +56,6 @@ uint32_t data_sizes[] = {
     scheduler_data3_bin_len
 };
 
-#define TIME_SLOTS 5
-uint32_t weekly_minute_offsets[MAX_WRP_TEST_MSGS][TIME_SLOTS] = {
-    {10, 20, 30, 40, 35}, {10, 20, 30, 40, 50},
-    {11, 23, 25, 43, 19}, {5, 11, 23, 37, 40}
-};
-
 pthread_t scheduler_thread_id;
 const char *firewall_cmd = " ";
 const char *file_name = "scheduler_data.bin";
@@ -109,6 +103,10 @@ void test2()
 
     add_time = -212900;
     result = process_update( file_name, md5_file, data_payloads[3], data_sizes[3] );
+    CU_ASSERT(0 == result);
+
+    add_time = -212800;
+    result = process_delete( file_name, md5_file );
     CU_ASSERT(0 == result);
 
     add_time = 0; // allow absolute to take effect ?
