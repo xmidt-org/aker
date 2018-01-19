@@ -15,10 +15,8 @@
  *
  */
 #include <stdio.h>
-#include <string.h>
 
 #include "schedule.h"
-#include "aker_log.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -50,51 +48,51 @@ void print_schedule( schedule_t *s )
     schedule_event_t *p;
 
     if( NULL == s ) {
-        debug_info( "schedule {}\n" );
+        printf( "schedule {}\n" );
         return;
     }
 
-    debug_info( "schedule {\n" );
+    printf( "schedule {\n" );
 
-    debug_info( "   s->time_zone: %s\n", ((NULL == s->time_zone) ? "NULL" : s->time_zone));
+    printf( "   s->time_zone: %s\n", ((NULL == s->time_zone) ? "NULL" : s->time_zone));
 
-    debug_info( "   s->mac_count: %zd\n", s->mac_count );
+    printf( "   s->mac_count: %zd\n", s->mac_count );
     for( i = 0; i < s->mac_count; i++ ) {
-        debug_info( "       [%zd]: '%s'\n", i, (char*) &s->macs[i].mac[0] );
+        printf( "       [%zd]: '%s'\n", i, (char*) &s->macs[i].mac[0] );
     }
 
     p = s->absolute;
-    debug_info( "   s->absolute:\n" );
+    printf( "   s->absolute:\n" );
     if( NULL == p ) {
-        debug_info( "       NULL\n" );
+    printf( "       NULL\n" );
     }
     while( NULL != p ) {
-        char block_list[128] = {0}, *comma = "", *t;
-        for( i = 0, t = block_list; i < p->block_count; i++ ) {
-            sprintf( t, "%s%3d", comma, p->block[i] );
-            t += (3 + strlen(comma));
+        char *comma = "";
+        printf( "       time: %ld, block_count: %zd [", p->time, p->block_count );
+        for( i = 0; i < p->block_count; i++ ) {
+            printf( "%s%d", comma, p->block[i] );
             comma = ", ";
         }
-        debug_info( "       time: %ld, block_count: %zd [ %s ]\n", p->time, p->block_count, block_list );
+        printf( "]\n" );
         p = p->next;
     }
 
     p = s->weekly;
-    debug_info( "   s->weekly:\n" );
+    printf( "   s->weekly:\n" );
     if( NULL == p ) {
-        debug_info( "       NULL\n" );
+        printf( "       NULL\n" );
     }
     while( NULL != p ) {
-        char block_list[128] = {0}, *comma = "", *t;
-        for( i = 0, t = block_list; i < p->block_count; i++ ) {
-            sprintf( t, "%s%3d", comma, p->block[i] );
-            t += (3 + strlen(comma));
+        char *comma = "";
+        printf( "       time: %ld, block_count: %zd [", p->time, p->block_count );
+        for( i = 0; i < p->block_count; i++ ) {
+            printf( "%s%d", comma, p->block[i] );
             comma = ", ";
         }
-        debug_info( "       time: %ld, block_count: %zd [ %s ]\n", p->time, p->block_count, block_list );
+        printf( "]\n" );
         p = p->next;
     }
-    debug_info( "}\n" );
+    printf( "}\n" );
 }
 
 
