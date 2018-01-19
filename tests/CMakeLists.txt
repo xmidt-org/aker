@@ -80,6 +80,17 @@ add_executable(test_process_ret_now test_process_ret_now.c ../src/process_data.c
 target_link_libraries (test_process_ret_now ${AKER_COMMON_LIBS})
 
 #-------------------------------------------------------------------------------
+#   test_process_is_create_ok
+#-------------------------------------------------------------------------------
+add_test(NAME test_process_is_create_ok COMMAND ${MEMORY_CHECK} ./test_process_is_create_ok)
+add_executable(test_process_is_create_ok test_process_is_create_ok.c ../src/process_data.c
+               ../src/aker_md5.c ../src/md5.c ../src/schedule_print.c
+               ../src/schedule.c ../src/decode.c ../src/time.c 
+               ../src/scheduler.c ../src/aker_msgpack.c mem_wrapper.c )
+
+target_link_libraries (test_process_is_create_ok ${AKER_COMMON_LIBS})
+
+#-------------------------------------------------------------------------------
 #   test_decode
 #-------------------------------------------------------------------------------
 add_test(NAME test_decode COMMAND ${MEMORY_CHECK} ./test_decode)
@@ -130,13 +141,15 @@ ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_process_data.dir/__/src --output-fil
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_process_ret_now.dir/__/src --output-file process_now.info
 COMMAND lcov -q --capture --directory 
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_process_is_create_ok.dir/__/src --output-file process_is_create_ok.info
+COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_wrp_interface.dir/__/src --output-file wrp.info
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_scheduler.dir/__/src --output-file scheduler.info
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_msgpack.dir/__/src --output-file aker_msgpack.info
 
-COMMAND lcov -a md5.info -a decode.info -a process_now.info
+COMMAND lcov -a md5.info -a decode.info -a process_now.info -a process_is_create_ok.info
 -a schedule.info -a process.info -a time.info -a scheduler.info
 -a wrp.info -a aker_msgpack.info --output-file coverage.info
 
