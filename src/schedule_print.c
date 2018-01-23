@@ -40,7 +40,7 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-static void print_indices( schedule_event_t *e );
+void print_indices( schedule_event_t *e );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -85,7 +85,12 @@ void print_schedule( schedule_t *s )
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-static void print_indices( schedule_event_t *e )
+/**
+ *  Print to debug indices of a give schedule event. 
+ *
+ *  @param e schedule event
+ */
+void print_indices( schedule_event_t *e )
 {
     size_t i;
 
