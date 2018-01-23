@@ -86,7 +86,7 @@ void print_schedule( schedule_t *s )
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
 /**
- *  Print to debug indices of a give schedule event. 
+ *  Print to debug, indices of a given schedule event. 
  *
  *  @param e schedule event
  */
