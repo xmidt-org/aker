@@ -15,13 +15,17 @@
  *
  */
 #include <stdio.h>
+#include <string.h>
 
 #include "schedule.h"
+#include "aker_log.h"
+#include "aker_mem.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-/* none */
+#define COMMA ", "
+#define INDEX "ddd"
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -36,7 +40,7 @@
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
-/* none */
+void print_indices( schedule_event_t *e );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -48,55 +52,70 @@ void print_schedule( schedule_t *s )
     schedule_event_t *p;
 
     if( NULL == s ) {
-        printf( "schedule {}\n" );
+        debug_info( "schedule {}\n" );
         return;
     }
 
-    printf( "schedule {\n" );
+    debug_info( "schedule {\n" );
 
-    printf( "   s->time_zone: %s\n", ((NULL == s->time_zone) ? "NULL" : s->time_zone));
+    debug_info( "   s->time_zone: %s\n", ((NULL == s->time_zone) ? "NULL" : s->time_zone));
 
-    printf( "   s->mac_count: %zd\n", s->mac_count );
+    debug_info( "   s->mac_count: %zd\n", s->mac_count );
     for( i = 0; i < s->mac_count; i++ ) {
-        printf( "       [%zd]: '%s'\n", i, (char*) &s->macs[i].mac[0] );
+        debug_info( "       [%zd]: '%s'\n", i, (char*) &s->macs[i].mac[0] );
     }
 
     p = s->absolute;
-    printf( "   s->absolute:\n" );
+    debug_info( "   s->absolute:\n" );
     if( NULL == p ) {
-    printf( "       NULL\n" );
+        debug_info( "       NULL\n" );
     }
-    while( NULL != p ) {
-        char *comma = "";
-        printf( "       time: %ld, block_count: %zd [", p->time, p->block_count );
-        for( i = 0; i < p->block_count; i++ ) {
-            printf( "%s%d", comma, p->block[i] );
-            comma = ", ";
-        }
-        printf( "]\n" );
-        p = p->next;
-    }
+    print_indices( p );
 
     p = s->weekly;
-    printf( "   s->weekly:\n" );
+    debug_info( "   s->weekly:\n" );
     if( NULL == p ) {
-        printf( "       NULL\n" );
+        debug_info( "       NULL\n" );
     }
-    while( NULL != p ) {
-        char *comma = "";
-        printf( "       time: %ld, block_count: %zd [", p->time, p->block_count );
-        for( i = 0; i < p->block_count; i++ ) {
-            printf( "%s%d", comma, p->block[i] );
-            comma = ", ";
-        }
-        printf( "]\n" );
-        p = p->next;
-    }
-    printf( "}\n" );
+    print_indices( p );
+    debug_info( "}\n" );
 }
 
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
-/* none */
+/**
+ *  Print to debug, indices of a given schedule event. 
+ *
+ *  @param e schedule event
+ */
+void print_indices( schedule_event_t *e )
+{
+    size_t i;
+
+    while( NULL != e ) {
+        size_t count = e->block_count;
+        if( 0 < count ) {
+            size_t buf_size = sizeof(char) * (((count - 1) * strlen(COMMA)) + (count * strlen(INDEX)) + 1);
+            char *buf = (char *) aker_malloc( buf_size );
+            if( NULL != buf) {
+                char *t;
+                memset( buf, '\0', buf_size );
+                for( i = 0, t = buf; i < e->block_count; i++ ) {
+                    if( 0 < i) {
+                        strcpy( t, ", " );
+                        t += 2;
+                    }
+                    sprintf( t, "%3d", e->block[i] );
+                    t += 3;
+                }
+            }
+            debug_info( "       time: %ld, block_count: %zd [ %s ]\n", e->time, e->block_count, buf );
+            if( NULL != buf ) {
+                aker_free( buf );
+            }
+        }
+        e = e->next;
+    }
+}
