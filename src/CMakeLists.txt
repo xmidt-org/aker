@@ -13,7 +13,7 @@
 #   limitations under the License.
 
 set(PROJ_AKER aker)
-set(SOURCES wrp_interface.c decode.c time.c schedule.c main.c
+set(SOURCES wrp_interface.c decode.c time.c schedule.c
             process_data.c scheduler.c schedule_print.c
             aker_md5.c md5.c aker_mem.c aker_help.c aker_msgpack.c)
 
@@ -21,7 +21,21 @@ if (NOT BUILD_YOCTO)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W -g -fprofile-arcs -ftest-coverage -O0")
 endif ()
 
-add_executable(aker ${SOURCES})
+add_executable(aker main.c ${SOURCES})
+
+add_executable(aker-cli cli.c ${SOURCES})
+
+target_link_libraries (aker-cli
+    ${CMAKE_THREAD_LIBS_INIT}
+    -lwrp-c
+    -lmsgpackc
+    -ltrower-base64
+    -lm
+    -lcimplog
+    -lpthread
+    -lrt
+    -lcrypt
+    )
 
 target_link_libraries (aker
     ${CMAKE_THREAD_LIBS_INIT}
