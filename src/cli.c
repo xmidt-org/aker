@@ -192,11 +192,11 @@ static int process( const char *filename, int start, int end )
             destroy_schedule( s );
             s = NULL;
         }
+    }
 
-        if( NULL != data ) {
-            aker_free( data );
-            data = NULL;
-        }
+    if( NULL != data ) {
+        aker_free( data );
+        data = NULL;
     }
 
     return rv;
