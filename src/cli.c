@@ -119,12 +119,13 @@ int main( int argc, char **argv)
 static int process( const char *filename, int start, int end )
 {
     uint8_t *data = NULL;
-    schedule_t *s = NULL;
     size_t len;
     int rv = -1;
 
     len = read_file_from_disk( filename, &data );
     if( 0 < len ) {
+        schedule_t *s = NULL;
+
         rv = decode_schedule( len, data, &s );
         if( 0 == rv ) {
             time_t i;
@@ -187,8 +188,14 @@ static int process( const char *filename, int start, int end )
             rv = 0;
         }
 
+        if( NULL != s ) {
+            destroy_schedule( s );
+            s = NULL;
+        }
+
         if( NULL != data ) {
             aker_free( data );
+            data = NULL;
         }
     }
 
