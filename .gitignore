@@ -1,6 +1,9 @@
 # Standard build directory
 build
 
+# ctags
+tags
+
 # Object files
 *.o
 *.ko
