@@ -56,7 +56,8 @@ void test_process_is_create_ok()
 
     CU_ASSERT(0 == process_is_create_ok(file));
 
-    if( fp == fopen(file, "w") ) {
+    fp = fopen(file, "w");
+    if( NULL != fp ) {
         fclose(fp);
         CU_ASSERT(-1 == process_is_create_ok(file));
 
