@@ -22,10 +22,11 @@
 /**
  *  Packs string into msgpack 
  *
+ *  @param status [in]  status code
  *  @param string [in]  string to be packed
  *  @param binary [out] string size
  */
-size_t pack_status_msg(const char *string, void **binary);
+size_t pack_status_msg( int status, const char *string, void **binary );
 
 /**
  *  Packs the actively blocked devices and the time into msgpack payload.

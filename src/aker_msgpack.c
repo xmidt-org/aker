@@ -46,8 +46,9 @@ void pack_msgpack_string( msgpack_packer *pk, const void *string, size_t size );
 /*----------------------------------------------------------------------------*/
 
 /* See aker_msgpack.h for details. */
-size_t pack_status_msg(const char *string, void **binary)
+size_t pack_status_msg(int status, const char *string, void **binary)
 {
+    const char cstr_status[] = "statusCode";
     const char cstr_message[] = "message";
     size_t binary_size = 0;
     msgpack_sbuffer sbuf;
@@ -55,7 +56,10 @@ size_t pack_status_msg(const char *string, void **binary)
 
     msgpack_sbuffer_init(&sbuf);
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
-    msgpack_pack_map(&pk, 1);
+    msgpack_pack_map(&pk, 2);
+
+    pack_msgpack_string(&pk, cstr_status, strlen(cstr_status));
+    msgpack_pack_int32(&pk, status);
 
     pack_msgpack_string(&pk, cstr_message, strlen(cstr_message));
     pack_msgpack_string(&pk, string, strlen(string));

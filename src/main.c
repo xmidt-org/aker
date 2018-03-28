@@ -78,7 +78,7 @@ int main( int argc, char **argv)
         { 0, 0, 0, 0 }
     };
 
-    libpd_cfg_t cfg = { .service_name = "aker",
+    libpd_cfg_t cfg = { .service_name = "iot", //"aker",
                         .receive = true,
                         .keepalive_timeout_secs = 64,
                         .parodus_url = NULL,
