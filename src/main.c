@@ -78,7 +78,7 @@ int main( int argc, char **argv)
         { 0, 0, 0, 0 }
     };
 
-    libpd_cfg_t cfg = { .service_name = "aker",
+    libpd_cfg_t cfg = { .service_name = "iot", //"aker",
                         .receive = true,
                         .keepalive_timeout_secs = 64,
                         .parodus_url = NULL,
@@ -287,6 +287,16 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
             memset(&response, 0, sizeof(wrp_msg_t));
             rv = process_wrp(data_file, md5_file, wrp_msg, &response);
             if( 0 == rv ) {
+                printf("Response Message\n");
+                printf("Type = %d\n", response.msg_type);
+/*
+                printf("transaction_uuid = %s\n", response.transaction_uuid);
+                printf("content_type = %s\n", response.content_type);
+                printf("source = %s\n", response.source);
+                printf("dest   = %s\n", response.dest);
+                printf("include_spans = %d\n", response.include_spans);
+                printf("payload_size = %lu\n", response.payload_size);
+ */
                 libparodus_send(hpd_instance, &response);
             }
             cleanup_wrp(&response);

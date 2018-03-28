@@ -51,7 +51,9 @@
 /*----------------------------------------------------------------------------*/
 void test_pack_status_msg()
 {
-    uint8_t expected[] = { 0x81,
+    uint8_t expected[] = { 0x82,
+                                 0xaa, 's', 't', 'a', 't', 'u', 's', 'C', 'o', 'd', 'e',
+                                 0x01,
                                  0xa7, 'm', 'e', 's', 's', 'a', 'g', 'e',
                                  0xaf, 'I', ' ', 'a', 'm', ' ', 'a', ' ',
                                  'm', 'e', 's', 's', 'a', 'g', 'e', '.' };
@@ -60,7 +62,7 @@ void test_pack_status_msg()
     uint8_t *buf;
 
     buf = NULL;
-    len = pack_status_msg( "I am a message.", (void**) &buf );
+    len = pack_status_msg( 1, "I am a message.", (void**) &buf );
     CU_ASSERT( sizeof(expected)/sizeof(uint8_t) == len );
     CU_ASSERT( NULL != buf );
     CU_ASSERT( 0 == memcmp(expected, buf, len) );
