@@ -33,9 +33,10 @@ target_link_libraries (aker-cli
     -lm
     -lcimplog
     -lpthread
-    -lrt
-    -lcrypt
     )
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (aker-cli -lrt)
+endif()
 
 target_link_libraries (aker
     ${CMAKE_THREAD_LIBS_INIT}
@@ -47,7 +48,9 @@ target_link_libraries (aker
     -lm
     -lcimplog
     -lpthread
-    -lrt
-    -lcrypt
     )
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (aker rt)
+endif()
+
 install (TARGETS aker DESTINATION bin)
