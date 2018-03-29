@@ -148,7 +148,11 @@ endif()
 #-------------------------------------------------------------------------------
 #   test_scheduleR
 #-------------------------------------------------------------------------------
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+add_test(NAME test_scheduler COMMAND ./test_scheduler)
+else()
 add_test(NAME test_scheduler COMMAND ${MEMORY_CHECK} ./test_scheduler)
+endif()
 add_executable(test_scheduler test_scheduler.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
