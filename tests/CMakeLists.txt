@@ -15,8 +15,9 @@
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W -g -fprofile-arcs -ftest-coverage -O0")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -W  -g -fprofile-arcs -ftest-coverage -O0")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage -O0")
-set (AKER_COMMON_LIBS gcov -lcunit -lcimplog -lwrp-c -lpthread -lmsgpackc
-     -lnanomsg -Wl,--no-as-needed -ltrower-base64)
+set (AKER_COMMON_LIBS -lcunit -lcimplog -lwrp-c -lpthread -lmsgpackc
+     -lnanomsg -ltrower-base64)
+set (AKER_LINUX_LIBS gcov -Wl,--no-as-needed)
 
 if(NOT DISABLE_VALGRIND)
 set (MEMORY_CHECK valgrind --leak-check=full --show-reachable=yes -v)
@@ -33,6 +34,9 @@ add_executable(test_schedule test_schedule.c ../src/schedule_print.c
                ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
                ../src/scheduler.c mem_wrapper.c common_test_stubs.c)
 target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_schedule ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_time_changes
@@ -41,6 +45,9 @@ add_test(NAME test_time_changes COMMAND ${MEMORY_CHECK} ./test_time_changes)
 add_executable(test_time_changes test_time_changes.c ../src/schedule_print.c 
                ../src/schedule.c ../src/time.c mem_wrapper.c)
 target_link_libraries (test_time_changes ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_time_changes ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_wrp_interface
@@ -49,6 +56,9 @@ add_test(NAME test_wrp_interface COMMAND ${MEMORY_CHECK} ./test_wrp_interface)
 add_executable(test_wrp_interface test_wrp_interface.c ../src/wrp_interface.c
                mem_wrapper.c )
 target_link_libraries (test_wrp_interface ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_wrp_interface ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_aker_msgpack
@@ -57,7 +67,9 @@ add_test(NAME test_aker_msgpack COMMAND ${MEMORY_CHECK} ./test_aker_msgpack)
 add_executable(test_aker_msgpack test_aker_msgpack.c ../src/aker_msgpack.c
                mem_wrapper.c )
 target_link_libraries (test_aker_msgpack ${AKER_COMMON_LIBS})
-
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_aker_msgpack ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_process_data
@@ -69,6 +81,9 @@ add_executable(test_process_data test_process_data.c ../src/process_data.c
                ../src/scheduler.c ../src/aker_msgpack.c mem_wrapper.c )
 
 target_link_libraries (test_process_data ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_process_data ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_process_ret_now
@@ -78,6 +93,9 @@ add_executable(test_process_ret_now test_process_ret_now.c ../src/process_data.c
                ../src/aker_msgpack.c mem_wrapper.c )
 
 target_link_libraries (test_process_ret_now ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_process_ret_now ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_process_is_create_ok
@@ -89,6 +107,9 @@ add_executable(test_process_is_create_ok test_process_is_create_ok.c ../src/proc
                ../src/scheduler.c ../src/aker_msgpack.c mem_wrapper.c )
 
 target_link_libraries (test_process_is_create_ok ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_process_is_create_ok ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_decode
@@ -97,6 +118,9 @@ add_test(NAME test_decode COMMAND ${MEMORY_CHECK} ./test_decode)
 add_executable(test_decode test_decode.c ../src/decode.c ../src/schedule.c
                ../src/time.c mem_wrapper.c ../src/schedule_print.c)
 target_link_libraries (test_decode ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_decode ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_md5
@@ -107,6 +131,9 @@ add_executable(test_md5 test_md5.c ../src/process_data.c ../src/aker_md5.c
                ../src/decode.c ../src/schedule_print.c ../src/aker_msgpack.c 
                mem_wrapper.c )
 target_link_libraries (test_md5 ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_md5 ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_time
@@ -114,18 +141,26 @@ target_link_libraries (test_md5 ${AKER_COMMON_LIBS})
 add_test(NAME test_time COMMAND ${MEMORY_CHECK} ./test_time)
 add_executable(test_time test_time.c ../src/time.c mem_wrapper.c )
 target_link_libraries (test_time ${AKER_COMMON_LIBS})
-
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_time ${AKER_LINUX_LIBS})
+endif()
 
 #-------------------------------------------------------------------------------
 #   test_scheduleR
 #-------------------------------------------------------------------------------
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+add_test(NAME test_scheduler COMMAND ./test_scheduler)
+else()
 add_test(NAME test_scheduler COMMAND ${MEMORY_CHECK} ./test_scheduler)
+endif()
 add_executable(test_scheduler test_scheduler.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
                ../src/scheduler.c mem_wrapper.c common_test_stubs.c)
 target_link_libraries (test_scheduler ${AKER_COMMON_LIBS})
-
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_scheduler ${AKER_LINUX_LIBS})
+endif()
 
 add_custom_target(coverage
 COMMAND lcov -q --capture --directory 
