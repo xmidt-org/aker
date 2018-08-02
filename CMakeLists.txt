@@ -59,7 +59,7 @@ if (NOT BUILD_YOCTO)
 ExternalProject_Add(trower-base64
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/trower-base64
     GIT_REPOSITORY https://github.com/Comcast/trower-base64.git
-    GIT_TAG "master"
+    GIT_TAG "fbb9440ae2bc1118866baefcea7ff814f16613dd"
     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
 )
 add_library(libtrower-base64 STATIC SHARED IMPORTED)
@@ -98,7 +98,7 @@ add_dependencies(libmsgpack msgpack)
 ExternalProject_Add(mpack
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/libmpack
     GIT_REPOSITORY https://github.com/libmpack/libmpack.git
-    #GIT_TAG "c6e6dbc608366090c12b142b3832604e6aa12f54"
+    GIT_TAG "08be3fab9b7fc84226329d8a97381aef53a1e3b3"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND COMMAND make
     INSTALL_COMMAND COMMAND make install PREFIX=${INSTALL_DIR}
@@ -113,7 +113,7 @@ add_dependencies(libmpack mpack)
 ExternalProject_Add(cimplog
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/cimplog
     GIT_REPOSITORY https://github.com/Comcast/cimplog.git
-    GIT_TAG "master"
+    GIT_TAG "a4e49a60e1f54839123ecd07ba3a1ec7a1aaa180"
     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
 )
 add_library(libcimplog STATIC SHARED IMPORTED)
@@ -126,7 +126,7 @@ ExternalProject_Add(wrp-c
     DEPENDS trower-base64 msgpack cimplog
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/wrp-c
     GIT_REPOSITORY https://github.com/Comcast/wrp-c.git
-    GIT_TAG "master"
+    GIT_TAG "4ab2ea9327fc375ce5384c1a1725c5804303476b"
     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
                   -DMSGPACK_ENABLE_CXX=OFF
                   -DMSGPACK_BUILD_EXAMPLES=OFF
@@ -145,7 +145,7 @@ ExternalProject_Add(libparodus
     DEPENDS trower-base64 msgpack nanomsg wrp-c
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/libparodus
     GIT_REPOSITORY https://github.com/Comcast/libparodus.git
-    GIT_TAG "master"
+    GIT_TAG "6dadaef248687f5e478e519a2e3de6f5c57fea74"
     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
     		  -DMAIN_PROJ_BUILD=ON
     		  -DMAIN_PROJ_LIB_PATH=${LIBRARY_DIR}
