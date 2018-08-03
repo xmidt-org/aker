@@ -139,7 +139,7 @@ time_t get_unix_time(void)
 
 char *get_current_blocked_macs( void )
 {
-    return tests_now[i].macs;
+    return strdup(tests_now[i].macs);
 }
 
 unsigned char *compute_byte_stream_md5(uint8_t *data, size_t length,
