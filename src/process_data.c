@@ -138,7 +138,7 @@ size_t process_retrieve_now( uint8_t **data )
     size_t rv;
 
     current = get_unix_time();
-    macs = strdup(get_current_blocked_macs());
+    macs = get_current_blocked_macs();
 
     rv = pack_now_msg (macs, current, (void**) data);
 
