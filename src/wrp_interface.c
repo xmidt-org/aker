@@ -50,8 +50,8 @@ int process_wrp(const char *data_file, const char *md5_file,
     int rv = 0;
     char *service, *endpoint;
 
-    service = wrp_get_msg_dest_element(WRP_ID_ELEMENT__SERVICE, msg);
-    endpoint = wrp_get_msg_dest_element(WRP_ID_ELEMENT__APPLICATION, msg);
+    service = wrp_get_msg_element(WRP_ID_ELEMENT__SERVICE, msg, DEST);
+    endpoint = wrp_get_msg_element(WRP_ID_ELEMENT__APPLICATION, msg, DEST);
 
     switch (msg->msg_type) {
         case WRP_MSG_TYPE__CREATE:
