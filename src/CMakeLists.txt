@@ -23,20 +23,22 @@ endif ()
 
 add_executable(aker main.c ${SOURCES})
 
-add_executable(aker-cli cli.c ${SOURCES})
+if (NOT BUILD_YOCTO)
+	add_executable(aker-cli cli.c ${SOURCES})
 
-target_link_libraries (aker-cli
-    ${CMAKE_THREAD_LIBS_INIT}
-    -lwrp-c
-    -lmsgpackc
-    -ltrower-base64
-    -lm
-    -lcimplog
-    -lpthread
-    )
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-target_link_libraries (aker-cli -lrt)
-endif()
+	target_link_libraries (aker-cli
+		${CMAKE_THREAD_LIBS_INIT}
+		-lwrp-c
+		-lmsgpackc
+		-ltrower-base64
+		-lm
+		-lcimplog
+		-lpthread
+		)
+	if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	target_link_libraries (aker-cli -lrt)
+	endif()
+endif ()
 
 target_link_libraries (aker
     ${CMAKE_THREAD_LIBS_INIT}
