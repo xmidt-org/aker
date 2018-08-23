@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [1.0.1] - 2018-08-23
 ### Added
-- Command line utility to print out schedule
+- Command line utility to print out schedule.
+- Improved Mac support.
 
 ### Changed
 - Updated to use newer wrp-c downstream that deprecated a function.
+- Made command line utility an optional part of the build.
 
 ### Fixed
 
