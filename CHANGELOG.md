@@ -1,0 +1,32 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
+and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+- none
+
+## [1.0.1] - 2018-08-23
+### Added
+- Command line utility to print out schedule
+
+### Changed
+- Updated to use newer wrp-c downstream that deprecated a function.
+
+### Fixed
+
+### Security
+
+## [1.0.0] - 2018-01-19
+### Added
+- Added the initial implementation.
+
+## [0.0.1] - 2016-08-15
+### Added
+- Initial creation
+
+[Unreleased]: https://github.com/Comcast/aker/compare/1.0.1...HEAD
+[1.0.1]: https://github.com/Comcast/aker/compare/1.0.0...1.0.1
+[1.0.0]: https://github.com/Comcast/aker/compare/08e182618484166436085fe7be4b860375aae0c3...1.0.0
+
