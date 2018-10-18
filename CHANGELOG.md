@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- none
+- Update to use nanomsg nng compatibility
 
 ## [1.0.1] - 2018-08-23
 ### Added
@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Updated to use newer wrp-c downstream that deprecated a function.
 - Made command line utility an optional part of the build.
-- Update to use nanomsg nng compatibility
 
 ### Fixed
 
