@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Updated to use newer wrp-c downstream that deprecated a function.
 - Made command line utility an optional part of the build.
+- Update to use nanomsg nng compatibility
 
 ### Fixed
 
