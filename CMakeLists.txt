@@ -68,14 +68,14 @@ add_dependencies(libtrower-base64 trower-base64)
 
 # nanoMsg external dependency
 #-------------------------------------------------------------------------------
-ExternalProject_Add(nanomsg
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/nanomsg
-    GIT_REPOSITORY https://github.com/nanomsg/nanomsg.git
-    GIT_TAG "96113e933971f095a44cc2bdcb6694e3976c5d2b"
+ExternalProject_Add(nng
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/nng
+    GIT_REPOSITORY https://github.com/nanomsg/nng.git
+    GIT_TAG "v1.0.1"
     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
 )
-add_library(libnanomsg STATIC SHARED IMPORTED)
-add_dependencies(libnanomsg nanomsg)
+add_library(libnng STATIC SHARED IMPORTED)
+add_dependencies(libnng nng)
 
 
 # msgpack-c external dependency
@@ -142,10 +142,11 @@ add_dependencies(libwrp-c wrp-c)
 # libparodus external dependency
 #-------------------------------------------------------------------------------
 ExternalProject_Add(libparodus
-    DEPENDS trower-base64 msgpack nanomsg wrp-c
+    DEPENDS trower-base64 msgpack nng wrp-c
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/libparodus
     GIT_REPOSITORY https://github.com/Comcast/libparodus.git
-    GIT_TAG "6dadaef248687f5e478e519a2e3de6f5c57fea74"
+    #GIT_TAG "6dadaef248687f5e478e519a2e3de6f5c57fea74"
+    GIT_TAG "c1c0fad84004d10caab28f9810e8ad40e6b2451b"
     CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
     		  -DMAIN_PROJ_BUILD=ON
     		  -DMAIN_PROJ_LIB_PATH=${LIBRARY_DIR}
