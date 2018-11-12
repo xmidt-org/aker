@@ -43,7 +43,7 @@ endif ()
 target_link_libraries (aker
     ${CMAKE_THREAD_LIBS_INIT}
     -llibparodus
-    -lnng
+    -lnanomsg
     -lwrp-c
     -lmsgpackc
     -ltrower-base64
