@@ -1,13 +1,5 @@
 language: c
-os:
-    - linux
-    - osx
 
-matrix:
-    include:
-        - os: linux
-          dist: trusty
-          sudo: required
 compiler:
     - gcc
     - clang
@@ -26,7 +18,6 @@ addons:
       - libcunit1-dev
       - libtool-bin
       - valgrind
-
   coverity_scan:
     project:
       name: "Comcast/aker"
