@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/xmidt-org/aker.svg?branch=main)](https://travis-ci.org/xmidt-org/aker)
+[![Build Status](https://travis-ci.com/xmidt-org/aker.svg?branch=main)](https://travis-ci.com/xmidt-org/aker)
 [![codecov.io](http://codecov.io/github/xmidt-org/aker/coverage.svg?branch=main)](http://codecov.io/github/xmidt-org/aker?branch=main)
 [![Coverity](https://img.shields.io/coverity/scan/14083.svg)](https://scan.coverity.com/projects/comcast-aker)
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/aker/blob/main/LICENSE)
