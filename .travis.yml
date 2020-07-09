@@ -19,6 +19,14 @@ env:
         - secure: "Oxi8cvDfADl7IqM5riGSQ+0d1KIUmtCJqvIdxv719l6DoatPEAhePwh1gMtwy+UckMKJvbMGBh7a2YhjR+uODXW9uDe3csgGT4MpcFbPe3M0+K+Jj/vLGAWtVbcrIJiet6JK6nDotsU8r2TBxn/vIFeR7er+dhyP1ZDQJ0PbaHq/IjuvPQK3TQQwD5/ocrFMVb0UJT7TArx5J40dvwUbADaRRycgWrmbk3vZzkT3PSOTE9BzjTw/MyXuBAxx/opJBw4FTCSJbcLzdkDo26mK+b8WjUSCrUxvXt/6dhs+Z8LoBvEOrIYlUX7qoU+YFuFnMBbVDbwiSf40T7edgCDesnwRQa1E8u3M7rQhPXF9L8aQ9oTsER9tLYne8J1zIcSg3fCyrfMytNb3OzDYU9OtA5Yr8y5kkigLRL0mUcPsi+9Ysj0YioqBgcc1WZXXAkYH+DvCxDzEU5W2Qr6vrxOGHKLnVyz4vltca2hpTZhxVhZ4/N9jTdIN9cPTmDwnv8V7mXonpHCmSYW2JcR3tzm3JNCuooLbNZBPSxmfHLcW7UQmVod+cpZ1cCbe0Zu7S8lD51EzoX+1uPyBwo2RTF/CCcGDziyQV9PF0xhsylm7BqVuoW9siZnW2UBJjA0EzkmKvmDdjqJGCqmbPvpDutLGWi5AfhnQzZvkhEYUwzszN3Y="
 
 addons:
+  apt:
+    packages:
+      - libcunit1
+      - libcunit1-doc
+      - libcunit1-dev
+      - libtool-bin
+      - valgrind
+
   coverity_scan:
     project:
       name: "Comcast/aker"
