@@ -135,7 +135,7 @@ jobs:
 
     - stage: coverity
       name: "Coverity build"
-      if: branch = coverity
+      if: branch = main
       os: linux
       dist: trusty
       compiler: gcc
@@ -156,7 +156,7 @@ jobs:
           notification_email: weston_schmidt@alumni.purdue.edu
           build_command_prepend: "mkdir coverity_build && cd coverity_build && cmake .."
           build_command: "make"
-          branch_pattern: coverity
+          branch_pattern: main
       after_success: skip
 
   allow_failures:
