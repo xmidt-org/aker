@@ -48,7 +48,7 @@ jobs:
             - libcunit1
             - libcunit1-doc
             - libcunit1-dev
-            - libtool-bin
+            - libtool
             - valgrind
             - lcov
         sonarcloud:
@@ -68,7 +68,7 @@ jobs:
             - libcunit1
             - libcunit1-doc
             - libcunit1-dev
-            - libtool-bin
+            - libtool
             - valgrind
             - lcov
         sonarcloud:
