@@ -140,6 +140,16 @@ jobs:
       dist: trusty
       compiler: gcc
       addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - libcunit1
+            - libcunit1-doc
+            - libcunit1-dev
+            - libtool
+            - valgrind
+            - lcov
         coverity_scan:
           project:
             name: ${TRAVIS_REPO_SLUG}
