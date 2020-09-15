@@ -135,7 +135,7 @@ jobs:
 
     - stage: coverity
       name: "Coverity build"
-      if: branch = main
+      if: branch = coverity
       os: linux
       dist: trusty
       compiler: gcc
