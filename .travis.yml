@@ -2,7 +2,7 @@ language: c
 
 branches:
   only:
-    - master
+    - main
     - /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
 env:
@@ -67,7 +67,7 @@ jobs:
 
     # How the tag and release targets work
     #
-    # Each time a build is run on the master branch the CHANGELOG.md file is
+    # Each time a build is run on the main branch the CHANGELOG.md file is
     # checked To see if there is a new version tag with details under it.  If a
     # version with details is found then **tag** creates a new tag with the
     # proper version.
@@ -85,7 +85,7 @@ jobs:
     # this issue for systems that rely on the checksum being constant
     - stage: tag
       name: "Tag For Release"
-      if: branch = master && type = push
+      if: branch = main && type = push
       before_script:
         - echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
       script:
@@ -102,7 +102,7 @@ jobs:
 
     - stage: release
       name: "Make a Release"
-      if: branch != master
+      if: branch != main
       script:
         - export VERSION=${TRAVIS_TAG##*v}
         - git archive --format=tar.gz --prefix=${TRAVIS_REPO_NAME}-${VERSION}/ -o ${TRAVIS_REPO_NAME}-${VERSION}.tar.gz ${TRAVIS_TAG}
@@ -124,7 +124,7 @@ jobs:
 
     - stage: coverity
       name: "Coverity build"
-      if: branch = master
+      if: branch = main
       os: linux
       dist: trusty
       compiler: gcc
