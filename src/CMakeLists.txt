@@ -36,7 +36,7 @@ if (NOT BUILD_YOCTO)
 		-lpthread
 		)
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	target_link_libraries (aker-cli -lrt)
+	target_link_libraries (aker-cli -lrt ${CURL_LIBRARIES})
 	endif()
 endif ()
 

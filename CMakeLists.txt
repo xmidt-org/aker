@@ -52,6 +52,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall")
 #-------------------------------------------------------------------------------
 find_package (Threads)
 
+# curl external dependency
+#-------------------------------------------------------------------------------
+include(FindPkgConfig)
+pkg_check_modules(CURL libcurl REQUIRED)
+include_directories(
+  SYSTEM ${CURL_INCLUDE_DIRS}
+)
+
+
 if (NOT BUILD_YOCTO)
 
 # base64 external dependency
