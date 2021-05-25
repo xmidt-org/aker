@@ -33,6 +33,10 @@
 #include "aker_mem.h"
 #include "aker_help.h"
 
+#ifdef INCLUDE_BREAKPAD
+#include "breakpad_wrapper.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -97,14 +101,19 @@ int main( int argc, char **argv)
     signal(SIGINT, sig_handler);
     signal(SIGUSR1, sig_handler);
     signal(SIGUSR2, sig_handler);
-    signal(SIGSEGV, sig_handler);
-    signal(SIGBUS, sig_handler);
     signal(SIGKILL, sig_handler);
-    signal(SIGFPE, sig_handler);
-    signal(SIGILL, sig_handler);
     signal(SIGQUIT, sig_handler);
     signal(SIGHUP, sig_handler);
     signal(SIGALRM, sig_handler);
+#ifdef INCLUDE_BREAKPAD
+    /* breakpad handles the signals SIGSEGV, SIGBUS, SIGFPE, and SIGILL */
+    breakpad_ExceptionHandler();
+#else
+    signal(SIGSEGV, sig_handler);
+    signal(SIGBUS, sig_handler); 
+    signal(SIGFPE, sig_handler);
+    signal(SIGILL, sig_handler);
+#endif  
     
     while( -1 != (item = getopt_long(argc, argv, option_string, options, &opt_index)) ) {
         switch( item ) {
