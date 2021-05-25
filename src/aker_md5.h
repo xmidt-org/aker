@@ -27,13 +27,13 @@ extern "C" {
 /* Returns null terminated ASCII md5 on success, NULL on failure, */
 /* "result" will contain binary md5 */
 /* Returned string must be freed by the caller. */
-extern unsigned char *compute_file_md5(const char *filename, unsigned char result[MD5_SIZE]); 
+extern unsigned char *compute_file_md5(const char *filename, unsigned char *result); 
 
 /* Returns null terminated ASCII md5 on success, NULL on failure, */
 /* "result" will contain binary md5 */
 /* Returned string must be freed by the caller. */
 extern unsigned char *compute_byte_stream_md5(uint8_t *data, size_t length,
-                                   unsigned char result[MD5_SIZE]); 
+                                   unsigned char *result); 
 
 extern int verify_md5_signatures(const char *data_file, const char *md5_file);
 

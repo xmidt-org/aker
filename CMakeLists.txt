@@ -31,7 +31,6 @@ file(MAKE_DIRECTORY ${TEST_RESULTS_DIR})
 include_directories(${INCLUDE_DIR}
                     ${INCLUDE_DIR}/cimplog
                     ${INCLUDE_DIR}/msgpack
-                    ${INCLUDE_DIR}/libmpack
                     ${INCLUDE_DIR}/trower-base64
                     ${INCLUDE_DIR}/wrp-c
                     ${INCLUDE_DIR}/libparodus
@@ -100,21 +99,6 @@ ExternalProject_Add(msgpack
 )
 add_library(libmsgpack STATIC SHARED IMPORTED)
 add_dependencies(libmsgpack msgpack)
-
-
-# libmpack external dependency
-#-------------------------------------------------------------------------------
-ExternalProject_Add(mpack
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/libmpack
-    GIT_REPOSITORY https://github.com/libmpack/libmpack.git
-    GIT_TAG "08be3fab9b7fc84226329d8a97381aef53a1e3b3"
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND COMMAND make
-    INSTALL_COMMAND COMMAND make install PREFIX=${INSTALL_DIR}
-    BUILD_IN_SOURCE 1
-)
-add_library(libmpack STATIC SHARED IMPORTED)
-add_dependencies(libmpack mpack)
 
 
 # cimplog external dependency
