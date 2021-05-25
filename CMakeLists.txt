@@ -54,6 +54,14 @@ find_package (Threads)
 
 if (NOT BUILD_YOCTO)
 
+# curl external dependency
+#-------------------------------------------------------------------------------
+include(FindPkgConfig)
+pkg_check_modules(CURL libcurl REQUIRED)
+include_directories(
+  SYSTEM ${CURL_INCLUDE_DIRS}
+)
+
 # base64 external dependency
 #-------------------------------------------------------------------------------
 ExternalProject_Add(trower-base64
