@@ -32,6 +32,10 @@
 #include "time.h"
 #include "aker_mem.h"
 
+#ifdef INCLUDE_BREAKPAD
+#include "breakpad_wrapper.h"
+#endif
+
 
 /* Local Functions and file-scoped variables */
 static void sig_handler(int sig);
@@ -151,14 +155,19 @@ void *scheduler_thread(void *args)
     signal(SIGINT, sig_handler);
     signal(SIGUSR1, sig_handler);
     signal(SIGUSR2, sig_handler);
-    signal(SIGSEGV, sig_handler);
-    signal(SIGBUS, sig_handler);
     signal(SIGKILL, sig_handler);
-    signal(SIGFPE, sig_handler);
-    signal(SIGILL, sig_handler);
     signal(SIGQUIT, sig_handler);
     signal(SIGHUP, sig_handler);
-    signal(SIGALRM, sig_handler);    
+    signal(SIGALRM, sig_handler);
+#ifdef INCLUDE_BREAKPAD
+    /* breakpad handles the signals SIGSEGV, SIGBUS, SIGFPE, and SIGILL */
+    breakpad_ExceptionHandler();
+#else
+    signal(SIGSEGV, sig_handler);
+    signal(SIGBUS, sig_handler); 
+    signal(SIGFPE, sig_handler);
+    signal(SIGILL, sig_handler);
+#endif      
     
     firewall_cmd = (const char*) args;
 
