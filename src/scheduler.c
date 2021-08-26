@@ -31,6 +31,7 @@
 #include "decode.h"
 #include "time.h"
 #include "aker_mem.h"
+#include "aker_metrics.h"
 
 #ifdef INCLUDE_BREAKPAD
 #include "breakpad_wrapper.h"
@@ -184,6 +185,8 @@ void *scheduler_thread(void *args)
 
             current_unix_time = get_unix_time();
             blocked_macs = get_blocked_at_time(current_schedule, current_unix_time);
+            set_aker_metrics(DBC, 1, current_schedule->mac_count);
+            set_aker_metrics(TZ, 1, current_schedule->time_zone);
             debug_info("Time to process current schedule event is %ld seconds\n", (get_unix_time() - current_unix_time));
 
             if (NULL == current_blocked_macs) {
@@ -219,10 +222,13 @@ void *scheduler_thread(void *args)
         }
 
         if( 0 != schedule_changed ) {
+            set_aker_metrics(SSC, 1, 1);
             call_firewall( firewall_cmd, current_blocked_macs );
         }
 
         tm.tv_sec = get_next_unixtime(current_schedule, current_unix_time);
+	set_aker_metrics(SE, 1, 1);
+	stringify_metrics();
         rv = pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
         if( (0 != rv) && (ETIMEDOUT != rv) ) {
             debug_error("pthread_cond_timedwait error: %d(%s)\n", rv, strerror(rv));
@@ -263,6 +269,7 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
             }
             debug_info( "Firewall command: '%s'\n", buf );
             system( buf );
+            set_aker_metrics(WTC, 1, 1);
             aker_free( buf );
         } else {
             debug_error( "Failed to allocate buffer needed to call firewall cmd.\n" );

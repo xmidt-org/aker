@@ -32,7 +32,7 @@ add_test(NAME test_schedule COMMAND ${MEMORY_CHECK} ./test_schedule)
 add_executable(test_schedule test_schedule.c ../src/schedule_print.c 
                ../src/schedule.c ../src/decode.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
-               ../src/scheduler.c mem_wrapper.c common_test_stubs.c)
+               ../src/scheduler.c mem_wrapper.c common_test_stubs.c ../src/aker_metrics.c)
 target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_schedule ${AKER_LINUX_LIBS})
@@ -78,7 +78,7 @@ add_test(NAME test_process_data COMMAND ${MEMORY_CHECK} ./test_process_data)
 add_executable(test_process_data test_process_data.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/time.c 
-               ../src/scheduler.c ../src/aker_msgpack.c mem_wrapper.c )
+               ../src/scheduler.c ../src/aker_msgpack.c mem_wrapper.c ../src/aker_metrics.c)
 
 target_link_libraries (test_process_data ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -104,7 +104,7 @@ add_test(NAME test_process_is_create_ok COMMAND ${MEMORY_CHECK} ./test_process_i
 add_executable(test_process_is_create_ok test_process_is_create_ok.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/time.c 
-               ../src/scheduler.c ../src/aker_msgpack.c mem_wrapper.c )
+               ../src/scheduler.c ../src/aker_msgpack.c mem_wrapper.c ../src/aker_metrics.c)
 
 target_link_libraries (test_process_is_create_ok ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -129,7 +129,7 @@ add_test(NAME test_md5 COMMAND ${MEMORY_CHECK} ./test_md5)
 add_executable(test_md5 test_md5.c ../src/process_data.c ../src/aker_md5.c 
                ../src/md5.c ../src/scheduler.c ../src/time.c ../src/schedule.c
                ../src/decode.c ../src/schedule_print.c ../src/aker_msgpack.c 
-               mem_wrapper.c )
+               mem_wrapper.c ../src/aker_metrics.c)
 target_link_libraries (test_md5 ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_md5 ${AKER_LINUX_LIBS})
@@ -156,7 +156,7 @@ endif()
 add_executable(test_scheduler test_scheduler.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
-               ../src/scheduler.c mem_wrapper.c common_test_stubs.c)
+               ../src/scheduler.c mem_wrapper.c common_test_stubs.c ../src/aker_metrics.c)
 target_link_libraries (test_scheduler ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_scheduler ${AKER_LINUX_LIBS})

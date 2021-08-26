@@ -32,6 +32,7 @@
 #include "aker_md5.h"
 #include "aker_mem.h"
 #include "aker_help.h"
+#include "aker_metrics.h"
 
 #ifdef INCLUDE_BREAKPAD
 #include "breakpad_wrapper.h"
@@ -97,6 +98,18 @@ int main( int argc, char **argv)
     int rv = 0;
     pthread_t thread_id;
 
+    if( !init_global_metrics() )
+    {
+       debug_error("Aker metrics intialisation failed\n");
+    }
+
+    time_t start_unix_time = 0;
+    debug_info("********** Starting component: aker **********\n ");
+
+    start_unix_time = get_unix_time();
+    debug_info("start_unix_time is %ld\n", start_unix_time);
+    set_aker_metrics(PST, 1, start_unix_time);
+    
     signal(SIGTERM, sig_handler);
     signal(SIGINT, sig_handler);
     signal(SIGUSR1, sig_handler);
@@ -247,6 +260,7 @@ static void import_existing_schedule( const char *data_file, const char *md5_fil
 
     if (0 != verify_md5_signatures(data_file, md5_file)) {
         debug_error("import_existing_schedule() data or md5 corruption\n");
+	set_aker_metrics(MEC, 1, 1);
     }
 
     len = read_file_from_disk( data_file, &data );
