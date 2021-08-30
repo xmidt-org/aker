@@ -176,3 +176,27 @@ int stringify_metrics()
 	return 1;
 }
 
+int get_blocked_mac_count(char* blocked)
+{
+	int count = 0;
+	char* mac =  strndup(blocked, strlen(blocked));
+
+	debug_info("The mac obtained is %s\n", mac);
+	//debug_info("sizeof mac and blocked is %zu and %zu\n", sizeof(mac), sizeof(blocked));
+	// Returns first mac with delimiter as " "
+	char* mac_token = strtok(mac, " ");
+
+	debug_info("The macs blocked are: ");
+	// get count using delimiters present in mac.
+	while(mac_token != NULL)
+	{
+		count++;
+		debug_info("%s\t", mac_token);
+		mac_token = strtok(NULL, " ");
+	}
+
+	debug_info("\n");
+	debug_info("the count is %d\n", count);
+	free(mac);
+	return count;
+}

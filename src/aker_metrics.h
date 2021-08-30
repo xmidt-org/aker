@@ -55,5 +55,7 @@ int init_global_metrics();
 int stringify_metrics();
 
 int set_aker_metrics(int metrics,int num, ... );
+
+int get_blocked_mac_count(char* blocked);
 #endif
 
