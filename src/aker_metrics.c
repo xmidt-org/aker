@@ -167,10 +167,10 @@ int stringify_metrics()
 
 		debug_info("The stringified valued is (%s)\n", str);
 
-#if defined(BUILD_YOCTO)
-		t2_event_s("The akermetric stringified valued is", str);
+//#if defined(BUILD_YOCTO)
+		t2_event_s("akermetric", str);
 		debug_info("akermetric t2 event triggered\n");
-#endif
+//#endif
 
 	}
 	else

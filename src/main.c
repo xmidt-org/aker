@@ -106,6 +106,9 @@ int main( int argc, char **argv)
     time_t start_unix_time = 0;
     debug_info("********** Starting component: aker **********\n ");
 
+    t2_init("aker");
+    debug_info("aker T2 init done\n ");
+
     start_unix_time = get_unix_time();
     debug_info("start_unix_time is %ld\n", start_unix_time);
     set_aker_metrics(PST, 1, start_unix_time);
