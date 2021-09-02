@@ -21,6 +21,10 @@
 #include <stdarg.h>
 #include "time.h"
 
+#if defined(ENABLE_FEATURE_TELEMETRY2_0)
+   #include <telemetry_busmessage_sender.h>
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
@@ -55,6 +59,8 @@ int init_global_metrics();
 int stringify_metrics();
 
 int set_aker_metrics(int metrics,int num, ... );
+
+aker_metrics_t* get_global_metrics(void);
 
 int get_blocked_mac_count(char* blocked);
 #endif

@@ -26,12 +26,12 @@
 static aker_metrics_t *g_metrics = NULL;
 static bool intialised_flag = false;
 
-/*aker_metrics_t* get_global_metrics(void)
+aker_metrics_t* get_global_metrics(void)
 {
 	aker_metrics_t* tmp = NULL;
 	tmp = g_metrics;
 	return tmp;
-}*/
+}
 
 int init_global_metrics()
 {
@@ -166,6 +166,12 @@ int stringify_metrics()
                                                             ",TimeZone,", tmp->timezone);
 
 		debug_info("The stringified valued is (%s)\n", str);
+
+#if defined(BUILD_YOCTO)
+		t2_event_s("The akermetric stringified valued is", str);
+		debug_info("akermetric t2 event triggered\n");
+#endif
+
 	}
 	else
 	{

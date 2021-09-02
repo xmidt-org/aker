@@ -98,11 +98,18 @@ int process_schedule_data( size_t len, uint8_t *data )
         pthread_mutex_unlock( &schedule_lock );
         pthread_cond_signal(&cond_var);
         destroy_schedule( s );
+        debug_info("Schedule Enabled is 0\n");
+        set_aker_metrics(SE, 1, 0);			//Schedule_Enabled is 0 as schedule is empty
+        set_aker_metrics(TZ, 1, "NA");
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
         rv = decode_schedule( len, data, &s );
 
-        if (0 == rv ) {
+        
+        if (0 == rv ) {  
+           /* debug_info("Schedule Enabled is 1\n"); 
+            set_aker_metrics(SE, 1, 1);                    //Schedule_Enabled is 1        
+            set_aker_metrics(TZ, 1, s->time_zone);*/
             schedule_t *tmp;
             print_schedule( s );
             pthread_mutex_lock( &schedule_lock );
@@ -186,7 +193,6 @@ void *scheduler_thread(void *args)
 
             current_unix_time = get_unix_time();
             blocked_macs = get_blocked_at_time(current_schedule, current_unix_time);
-            set_aker_metrics(TZ, 1, current_schedule->time_zone);
             debug_info("Time to process current schedule event is %ld seconds\n", (get_unix_time() - current_unix_time));
 
             if (NULL == current_blocked_macs) {
@@ -222,14 +228,24 @@ void *scheduler_thread(void *args)
         }
 
         if( 0 != schedule_changed ) {
+           if( NULL != current_blocked_macs)
+            {
+                debug_info("Schedule Enabled inside schedular thread is 1\n");
+		debug_info("The mac count is %zu\n", current_schedule->mac_count);
+                set_aker_metrics(SE, 1, 1);
+                set_aker_metrics(TZ, 1, current_schedule->time_zone);
+            }
+           else
+            {
+		debug_info("Schedule Enabled is 0\n");
+                set_aker_metrics(SE, 1, 0);
+                set_aker_metrics(TZ, 1, "NA");
+            }
             call_firewall( firewall_cmd, current_blocked_macs );
         }
 
         tm.tv_sec = get_next_unixtime(current_schedule, current_unix_time);
-	set_aker_metrics(SE, 1, 1);
-	debug_info("Before printing blocked macs\n");
-	debug_info("The currently blocked macs are %s\n",current_blocked_macs);
-	debug_info("Before printing stringify_metrics\n");
+
 	stringify_metrics();
         rv = pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
         if( (0 != rv) && (ETIMEDOUT != rv) ) {
