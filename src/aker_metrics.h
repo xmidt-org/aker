@@ -56,12 +56,14 @@ typedef struct aker_metrics
 
 int init_global_metrics();
 
-int stringify_metrics();
+int stringify_metrics(int flag);
 
 int set_aker_metrics(int metrics,int num, ... );
 
 aker_metrics_t* get_global_metrics(void);
 
 int get_blocked_mac_count(char* blocked);
+
+void destroy_akermetrics();
 #endif
 

@@ -49,7 +49,7 @@ static char *current_blocked_macs = NULL;
 static pthread_mutex_t schedule_lock;
 static pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 
-
+static int metric_flag = 0;
 
 /*----------------------------------------------------------------------------*/
 /*                             External functions                             */
@@ -100,16 +100,13 @@ int process_schedule_data( size_t len, uint8_t *data )
         destroy_schedule( s );
         debug_info("Schedule Enabled is 0\n");
         set_aker_metrics(SE, 1, 0);			//Schedule_Enabled is 0 as schedule is empty
-        set_aker_metrics(TZ, 1, "NA");
+        set_aker_metrics(TZ, 1, "NULL");
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
         rv = decode_schedule( len, data, &s );
 
         
         if (0 == rv ) {  
-           /* debug_info("Schedule Enabled is 1\n"); 
-            set_aker_metrics(SE, 1, 1);                    //Schedule_Enabled is 1        
-            set_aker_metrics(TZ, 1, s->time_zone);*/
             schedule_t *tmp;
             print_schedule( s );
             pthread_mutex_lock( &schedule_lock );
@@ -118,7 +115,6 @@ int process_schedule_data( size_t len, uint8_t *data )
             pthread_mutex_unlock( &schedule_lock );
             pthread_cond_signal(&cond_var);
             destroy_schedule(tmp);
-            set_aker_metrics(SSC, 1, 1);
             debug_info( "process_schedule_data() New schedule\n" );
         } else {
             destroy_schedule( s );
@@ -232,6 +228,7 @@ void *scheduler_thread(void *args)
             {
                 debug_info("Schedule Enabled inside schedular thread is 1\n");
 		debug_info("The mac count is %zu\n", current_schedule->mac_count);
+		set_aker_metrics(SSC, 1, 1);
                 set_aker_metrics(SE, 1, 1);
                 set_aker_metrics(TZ, 1, current_schedule->time_zone);
             }
@@ -239,14 +236,16 @@ void *scheduler_thread(void *args)
             {
 		debug_info("Schedule Enabled is 0\n");
                 set_aker_metrics(SE, 1, 0);
-                set_aker_metrics(TZ, 1, "NA");
+                set_aker_metrics(TZ, 1, "NULL");
             }
             call_firewall( firewall_cmd, current_blocked_macs );
         }
 
         tm.tv_sec = get_next_unixtime(current_schedule, current_unix_time);
 
-	stringify_metrics();
+	stringify_metrics(metric_flag);
+	metric_flag = 0;
+
         rv = pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
         if( (0 != rv) && (ETIMEDOUT != rv) ) {
             debug_error("pthread_cond_timedwait error: %d(%s)\n", rv, strerror(rv));
@@ -288,6 +287,7 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
             }
             debug_info( "Firewall command: '%s'\n", buf );
             system( buf );
+            metric_flag = 1;
             set_aker_metrics(WTC, 1, 1);
             aker_free( buf );
         } else {
@@ -330,4 +330,5 @@ void cleanup (void )
     pthread_mutex_unlock( &schedule_lock );
     pthread_mutex_destroy(&schedule_lock);
     destroy_schedule(current_schedule);
+    destroy_akermetrics();
 }

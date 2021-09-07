@@ -24,7 +24,6 @@
 #include "aker_log.h"
 
 static aker_metrics_t *g_metrics = NULL;
-static bool intialised_flag = false;
 
 aker_metrics_t* get_global_metrics(void)
 {
@@ -48,8 +47,7 @@ int init_global_metrics()
 		metrics->md5_error_count = 0;
 		metrics->process_start_time = 0;
 		metrics->schedule_enabled = 0;
-		metrics->timezone = NULL;
-		intialised_flag = true;
+		metrics->timezone = strndup("NULL", strlen("NULL"));
 
 	}
 	else
@@ -69,12 +67,6 @@ int set_aker_metrics(int metrics,int num, ... )
 {
 	
 	aker_metrics_t * tmp = NULL;
-
-	if(!intialised_flag)
-	{
-		init_global_metrics();
-	}
-
 	tmp = g_metrics;
 
 	va_list valist;
@@ -125,21 +117,11 @@ int set_aker_metrics(int metrics,int num, ... )
 			break;
 
 		case 6:
-			if(tmp->timezone != NULL)
-			{
-				debug_info("Before changing tmp->timezone %d\n", tmp->timezone);
-				tmp->timezone = NULL;
-				tmp->timezone = strdup(va_arg(valist, char*));
-				va_end(valist);
-				debug_info("After changing tmp->timezone %d\n", tmp->timezone);
-			}
-			else
-			{
-				debug_info("Inside timezone NULL\n");
-				tmp->timezone = strdup(va_arg(valist, char*));
-				va_end(valist);
-				debug_info("After changing tmp->timezone %s\n", tmp->timezone);
-			}
+			debug_info("Before changing tmp->timezone %d\n", tmp->timezone);
+			tmp->timezone = NULL;
+			tmp->timezone = strdup(va_arg(valist, char*));
+			va_end(valist);
+			debug_info("After changing tmp->timezone %d\n", tmp->timezone);
 			break;
 
 		default:
@@ -149,33 +131,42 @@ int set_aker_metrics(int metrics,int num, ... )
 	return 1;	
 }
 
-int stringify_metrics()
+int stringify_metrics(int flag)
 {
 	char str[512];
 	aker_metrics_t * tmp = NULL;
 	tmp = g_metrics;
 
-	if(g_metrics != NULL)
+	if(g_metrics != NULL && flag == 1)
 	{
-		snprintf(str, 512, "%s%d%s%d%s%d%s%d%s%ld%s%d%s%s", "DeviceBlockCount,", tmp->device_block_count,
-                                                            ",WindowTransistionCount,", tmp->windows_transistion_count,
-                                                            ",ScheduleSetCount,", tmp->schedule_set_count,
-                                                            ",MD5ErrorCount,", tmp->md5_error_count,
-                                                            ",ProcessStartTime,", tmp->process_start_time,
-                                                            ",ScheduleEnabled,", tmp->schedule_enabled,
-                                                            ",TimeZone,", tmp->timezone);
+		snprintf(str, 512, "%s%d%s%d%s%d%s%d%s%ld%s%d%s%s",
+						"DeviceBlockCount,", tmp->device_block_count,
+                                                  ",WindowTransistionCount,", tmp->windows_transistion_count,
+                                                    ",ScheduleSetCount,", tmp->schedule_set_count,
+                                                    ",MD5ErrorCount,", tmp->md5_error_count,
+                                                    ",ProcessStartTime,", tmp->process_start_time,
+                                                    ",ScheduleEnabled,", tmp->schedule_enabled,
+                                                    ",TimeZone,", tmp->timezone);
 
 		debug_info("The stringified valued is (%s)\n", str);
 
-//#if defined(BUILD_YOCTO)
+#if defined(ENABLE_FEATURE_TELEMETRY2_0)
 		t2_event_s("akermetric", str);
 		debug_info("akermetric t2 event triggered\n");
-//#endif
+#endif
 
 	}
 	else
 	{
-		debug_error("The g_metrics is NULL\n");
+		if(flag == 0)
+		{
+			debug_info("The current stringified value is (DeviceBlockCount, %d, WindowTransistionCount, %d, ScheduleSetCount, %d, MD5ErrorCount, %d, ProcessStartTime, %ld, ScheduleEnabled, %d, TimeZone, %s)\n", tmp->device_block_count, tmp->windows_transistion_count, tmp->schedule_set_count, tmp->md5_error_count, tmp->process_start_time, tmp->schedule_enabled, tmp->timezone);
+
+		}
+		else
+		{
+			debug_error("The g_metrics is NULL\n");
+		}
 		return 0;
 	}
 
@@ -205,4 +196,18 @@ int get_blocked_mac_count(char* blocked)
 	debug_info("the count is %d\n", count);
 	free(mac);
 	return count;
+}
+
+void destroy_akermetrics()
+{
+	if( NULL != g_metrics )
+	{
+		if( NULL != g_metrics->timezone )
+		{
+			free( g_metrics->timezone );
+		}
+
+		free( g_metrics );
+	}
+
 }

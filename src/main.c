@@ -105,9 +105,10 @@ int main( int argc, char **argv)
 
     time_t start_unix_time = 0;
     debug_info("********** Starting component: aker **********\n ");
-
+#if defined(ENABLE_FEATURE_TELEMETRY2_0)
     t2_init("aker");
     debug_info("aker T2 init done\n ");
+#endif
 
     start_unix_time = get_unix_time();
     debug_info("start_unix_time is %ld\n", start_unix_time);
