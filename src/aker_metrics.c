@@ -75,53 +75,46 @@ int set_aker_metrics(int metrics,int num, ... )
 	switch(metrics)
 	{
 		case 0:
-			debug_info("Before changing tmp->device_block_count %d\n", tmp->device_block_count);
 			tmp->device_block_count += va_arg(valist, uint32_t);
 			va_end(valist);
-			debug_info("After changing tmp->device_block_count %d\n", tmp->device_block_count);
+			debug_print("After changing tmp->device_block_count %d\n", tmp->device_block_count);
 			break;
 
 		case 1:
-			debug_info("Before changing tmp->windows_transistion_count %d\n", tmp->windows_transistion_count);
 			tmp->windows_transistion_count += va_arg(valist, uint32_t);
 			va_end(valist);
-			debug_info("After changing tmp->windows_transistion_count %d\n", tmp->windows_transistion_count);
+			debug_print("After changing tmp->windows_transistion_count %d\n", tmp->windows_transistion_count);
 			break;
 
 		case 2:
-			debug_info("Before changing tmp->schedule_set_count %d\n", tmp->schedule_set_count);
 			tmp->schedule_set_count += va_arg(valist, uint32_t);
 			va_end(valist);
-			debug_info("After changing tmp->schedule_set_count %d\n", tmp->schedule_set_count);
+			debug_print("After changing tmp->schedule_set_count %d\n", tmp->schedule_set_count);
 			break;
 
 		case 3:
-			debug_info("Before changing tmp->md5_error_count %d\n", tmp->md5_error_count);
 			tmp->md5_error_count += va_arg(valist, uint32_t);
 			va_end(valist);
-			debug_info("After changing tmp->md5_error_count %d\n", tmp->md5_error_count);
+			debug_print("After changing tmp->md5_error_count %d\n", tmp->md5_error_count);
 			break;
 
 		case 4:
-			debug_info("Before changing tmp->process_start_time %ld\n", (long)tmp->process_start_time);
 			tmp->process_start_time = va_arg(valist, time_t);
 			va_end(valist);
-			debug_info("After changing tmp->process_start_time %ld\n", (long)tmp->process_start_time);
+			debug_print("After changing tmp->process_start_time %ld\n", (long)tmp->process_start_time);
 			break;
 
 		case 5:
-			debug_info("Before changing tmp->schedule_enabled %d\n", tmp->schedule_enabled);
 			tmp->schedule_enabled = va_arg(valist, int);
 			va_end(valist);
-			debug_info("After changing tmp->schedule_enabled %d\n", tmp->schedule_enabled);
+			debug_print("After changing tmp->schedule_enabled %d\n", tmp->schedule_enabled);
 			break;
 
 		case 6:
-			debug_info("Before changing tmp->timezone %d\n", tmp->timezone);
 			tmp->timezone = NULL;
 			tmp->timezone = strdup(va_arg(valist, char*));
 			va_end(valist);
-			debug_info("After changing tmp->timezone %d\n", tmp->timezone);
+			debug_print("After changing tmp->timezone %d\n", tmp->timezone);
 			break;
 
 		default:
@@ -178,22 +171,18 @@ int get_blocked_mac_count(char* blocked)
 	int count = 0;
 	char* mac =  strndup(blocked, strlen(blocked));
 
-	debug_info("The mac obtained is %s\n", mac);
-	//debug_info("sizeof mac and blocked is %zu and %zu\n", sizeof(mac), sizeof(blocked));
+	debug_print("The mac obtained were %s\n", mac);
 	// Returns first mac with delimiter as " "
 	char* mac_token = strtok(mac, " ");
 
-	debug_info("The macs blocked are: ");
 	// get count using delimiters present in mac.
 	while(mac_token != NULL)
 	{
 		count++;
-		debug_info("%s\t", mac_token);
 		mac_token = strtok(NULL, " ");
 	}
 
-	debug_info("\n");
-	debug_info("the count is %d\n", count);
+	debug_print("the count is %d\n", count);
 	free(mac);
 	return count;
 }

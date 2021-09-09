@@ -98,7 +98,6 @@ int process_schedule_data( size_t len, uint8_t *data )
         pthread_mutex_unlock( &schedule_lock );
         pthread_cond_signal(&cond_var);
         destroy_schedule( s );
-        debug_info("Schedule Enabled is 0\n");
         set_aker_metrics(SE, 1, 0);			//Schedule_Enabled is 0 as schedule is empty
         set_aker_metrics(TZ, 1, "NULL");
         debug_info( "process_schedule_data() empty schedule\n" );
@@ -224,17 +223,14 @@ void *scheduler_thread(void *args)
         }
 
         if( 0 != schedule_changed ) {
-           if( NULL != current_blocked_macs)
+           if( NULL != current_blocked_macs)       //To set schedule_enabled parameter
             {
-                debug_info("Schedule Enabled inside schedular thread is 1\n");
-		debug_info("The mac count is %zu\n", current_schedule->mac_count);
 		set_aker_metrics(SSC, 1, 1);
                 set_aker_metrics(SE, 1, 1);
                 set_aker_metrics(TZ, 1, current_schedule->time_zone);
             }
            else
             {
-		debug_info("Schedule Enabled is 0\n");
                 set_aker_metrics(SE, 1, 0);
                 set_aker_metrics(TZ, 1, "NULL");
             }
