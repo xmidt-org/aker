@@ -98,8 +98,8 @@ int process_schedule_data( size_t len, uint8_t *data )
         pthread_mutex_unlock( &schedule_lock );
         pthread_cond_signal(&cond_var);
         destroy_schedule( s );
-        set_aker_metrics(SE, 1, 0);			//Schedule_Enabled is 0 as schedule is empty
-        set_aker_metrics(TZ, 1, "NULL");
+        aker_metric_set_schedule_enabled(0);			//Schedule_Enabled is 0 as schedule is empty
+        aker_metric_set_tz("NULL");
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
         rv = decode_schedule( len, data, &s );
@@ -225,14 +225,14 @@ void *scheduler_thread(void *args)
         if( 0 != schedule_changed ) {
            if( NULL != current_blocked_macs)       //To set schedule_enabled parameter
             {
-		set_aker_metrics(SSC, 1, 1);
-                set_aker_metrics(SE, 1, 1);
-                set_aker_metrics(TZ, 1, current_schedule->time_zone);
+		aker_metric_inc_schedule_set_count();
+                aker_metric_set_schedule_enabled(1);
+                aker_metric_set_tz(current_schedule->time_zone);
             }
            else
             {
-                set_aker_metrics(SE, 1, 0);
-                set_aker_metrics(TZ, 1, "NULL");
+                aker_metric_set_schedule_enabled(0);
+                aker_metric_set_tz("NULL");
             }
             call_firewall( firewall_cmd, current_blocked_macs );
         }
@@ -277,14 +277,14 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
         if( NULL != buf ) {
             if( NULL != blocked ) {
                 sprintf( buf, "%s %s", firewall_cmd, blocked );
-                set_aker_metrics(DBC, 1, get_blocked_mac_count(blocked));
+                aker_metric_inc_device_block_count(get_blocked_mac_count(blocked));
             } else {
                 sprintf( buf, "%s", firewall_cmd );
             }
             debug_info( "Firewall command: '%s'\n", buf );
             system( buf );
             metric_flag = 1;
-            set_aker_metrics(WTC, 1, 1);
+            aker_metric_inc_window_trans_count();
             aker_free( buf );
         } else {
             debug_error( "Failed to allocate buffer needed to call firewall cmd.\n" );

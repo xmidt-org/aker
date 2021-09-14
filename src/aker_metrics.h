@@ -28,14 +28,7 @@
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
-
-#define DBC	0		//for setting device_block_count
-#define WTC	1		//for setting windows_transistion_count
-#define SSC	2		//for setting schedule_set_count
-#define MEC	3		//for setting md5_error_count
-#define PST	4		//for setting process_start_time
-#define SE	5		//for setting schedule_enabled
-#define TZ	6		//for setting timezone
+/* none */
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
@@ -45,25 +38,103 @@ typedef struct aker_metrics
 {
 
 	uint32_t device_block_count;
-	uint32_t windows_transistion_count;
+	uint32_t window_trans_count;
 	uint32_t schedule_set_count;
-	uint32_t md5_error_count;
+	uint32_t md5_err_count;
 	time_t process_start_time;
 	int schedule_enabled;
 	char* timezone;
+	signed int timezone_offset;
 
 }aker_metrics_t;
 
+/*----------------------------------------------------------------------------*/
+/*                             External Functions                             */
+/*----------------------------------------------------------------------------*/
+
+/**
+ *  Sets the device_block_count in the global g_metrics
+ *
+ *  @param val        the number of devices blocked
+ *
+ */
+void aker_metric_inc_device_block_count( uint32_t val );
+
+
+/* Sets the window transition count in the global g_metrics incremented by 1 */
+void aker_metric_inc_window_trans_count();
+
+
+/* Sets the schedule set count in the global g_metrics incremented by 1 */
+void aker_metric_inc_schedule_set_count();
+
+
+/* Sets the md5 error count in the global g_metrics incremented by 1 */
+void aker_metric_inc_md5_err_count();
+
+
+/**
+ *  Sets the Aker process_start_time in the global g_metrics
+ *
+ *  @param val        the time_t value at which the Aker process started
+ *
+ */
+void aker_metric_set_process_start_time( time_t val );
+
+/**
+ *  Sets the schedule_enabled value in the global g_metrics
+ *
+ *  @param val        1 for schedule is set and 0 for not set
+ *
+ */
+void aker_metric_set_schedule_enabled( int val );
+
+/**
+ *  Sets the timezone value in the global g_metrics
+ *
+ *  @param val        the TimeZone set in string
+ *
+ */
+void aker_metric_set_tz( const char *val );
+
+
+/**
+ *  Sets the timezone offset value in the global g_metrics
+ *
+ *  @param val        the timezone offset value
+ *
+ */
+void aker_metric_set_tz_offset( signed int val );
+
+
+/* Initializes the g_metrics values*/
 int init_global_metrics();
 
-int stringify_metrics(int flag);
 
-int set_aker_metrics(int metrics,int num, ... );
+/**
+ *  Sends the aker metrics values with names into a single
+ *  comma separate value via Telemetry event.
+ *
+ *  @param flag        1 to trigger an event and 0 to not trigger an event
+ *
+ */
+void stringify_metrics(int flag);
 
-aker_metrics_t* get_global_metrics(void);
 
-int get_blocked_mac_count(char* blocked);
+/**
+ *  Gives the number of devices blocked
+ *  comma separate value via Telemetry event.
+ *
+ *  @param blocked      pass the blocked macs separated by space
+ *
+ *  @return the total number of devices blocked
+ */
+int get_blocked_mac_count(const char* blocked);
 
+
+/* Destroys the g_metrics already intialized. */
 void destroy_akermetrics();
+
+
 #endif
 

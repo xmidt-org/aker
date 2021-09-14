@@ -19,161 +19,188 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "aker_metrics.h"
 #include "aker_log.h"
 
+/*----------------------------------------------------------------------------*/
+/*                            File Scoped Variables                           */
+/*----------------------------------------------------------------------------*/
+
 static aker_metrics_t *g_metrics = NULL;
+pthread_mutex_t aker_metrics_mut=PTHREAD_MUTEX_INITIALIZER;
 
-aker_metrics_t* get_global_metrics(void)
-{
-	aker_metrics_t* tmp = NULL;
-	tmp = g_metrics;
-	return tmp;
-}
+/*----------------------------------------------------------------------------*/
+/*                             Function Prototypes                            */
+/*----------------------------------------------------------------------------*/
+/* none */
 
+/*----------------------------------------------------------------------------*/
+/*                             Internal Functions                             */
+/*----------------------------------------------------------------------------*/
+/* none */
+
+/*----------------------------------------------------------------------------*/
+/*                             External Functions                             */
+/*----------------------------------------------------------------------------*/
+
+/* See aker_metrics.h for details. */
 int init_global_metrics()
 {
-	aker_metrics_t* metrics;
-	metrics = (aker_metrics_t*)malloc(sizeof(aker_metrics_t));
+	g_metrics = calloc(1, sizeof(aker_metrics_t));
 	
-	if(metrics)
+	if(g_metrics)
 	{
-		memset(metrics, 0, sizeof(aker_metrics_t));
-
-		metrics->device_block_count = 0;
-		metrics->windows_transistion_count = 0;
-		metrics->schedule_set_count = 0;
-		metrics->md5_error_count = 0;
-		metrics->process_start_time = 0;
-		metrics->schedule_enabled = 0;
-		metrics->timezone = strndup("NULL", strlen("NULL"));
+		g_metrics->timezone = strdup("NULL");
 
 	}
 	else
 	{
 		debug_error("malloc failed in metrics\n");
-		return 0;
+		return 1;
 	}
 
-	if(g_metrics == NULL)
-	{
-		g_metrics = metrics;
-	}
-
-	return 1;
+	return 0;
 }
-int set_aker_metrics(int metrics,int num, ... )
+
+/* See aker_metrics.h for details. */
+void aker_metric_inc_device_block_count( uint32_t val )
 {
-	
-	aker_metrics_t * tmp = NULL;
-	tmp = g_metrics;
+	pthread_mutex_lock(&aker_metrics_mut);
 
-	va_list valist;
-	va_start(valist, num);
+        g_metrics->device_block_count += val;
 
-	switch(metrics)
-	{
-		case 0:
-			tmp->device_block_count += va_arg(valist, uint32_t);
-			va_end(valist);
-			debug_print("After changing tmp->device_block_count %d\n", tmp->device_block_count);
-			break;
-
-		case 1:
-			tmp->windows_transistion_count += va_arg(valist, uint32_t);
-			va_end(valist);
-			debug_print("After changing tmp->windows_transistion_count %d\n", tmp->windows_transistion_count);
-			break;
-
-		case 2:
-			tmp->schedule_set_count += va_arg(valist, uint32_t);
-			va_end(valist);
-			debug_print("After changing tmp->schedule_set_count %d\n", tmp->schedule_set_count);
-			break;
-
-		case 3:
-			tmp->md5_error_count += va_arg(valist, uint32_t);
-			va_end(valist);
-			debug_print("After changing tmp->md5_error_count %d\n", tmp->md5_error_count);
-			break;
-
-		case 4:
-			tmp->process_start_time = va_arg(valist, time_t);
-			va_end(valist);
-			debug_print("After changing tmp->process_start_time %ld\n", (long)tmp->process_start_time);
-			break;
-
-		case 5:
-			tmp->schedule_enabled = va_arg(valist, int);
-			va_end(valist);
-			debug_print("After changing tmp->schedule_enabled %d\n", tmp->schedule_enabled);
-			break;
-
-		case 6:
-			tmp->timezone = NULL;
-			tmp->timezone = strdup(va_arg(valist, char*));
-			va_end(valist);
-			debug_print("After changing tmp->timezone %d\n", tmp->timezone);
-			break;
-
-		default:
-			debug_error("The mentioned metrics is not found\n");
-			return 0;
-	}
-	return 1;	
+	pthread_mutex_unlock(&aker_metrics_mut);
 }
 
-int stringify_metrics(int flag)
+/* See aker_metrics.h for details. */
+void aker_metric_inc_window_trans_count()
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+
+	g_metrics->window_trans_count += 1;
+
+	pthread_mutex_unlock(&aker_metrics_mut);
+}
+
+/* See aker_metrics.h for details. */
+void aker_metric_inc_schedule_set_count()
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+
+	g_metrics->schedule_set_count += 1;
+
+	pthread_mutex_unlock(&aker_metrics_mut);
+}
+
+/* See aker_metrics.h for details. */
+void aker_metric_inc_md5_err_count()
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+
+	g_metrics->md5_err_count += 1;
+
+	pthread_mutex_unlock(&aker_metrics_mut);
+}
+
+/* See aker_metrics.h for details. */
+void aker_metric_set_process_start_time( time_t val )
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+
+	g_metrics->process_start_time = val;
+
+	pthread_mutex_unlock(&aker_metrics_mut);
+}
+
+/* See aker_metrics.h for details. */
+void aker_metric_set_schedule_enabled( int val )
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+
+	g_metrics->schedule_enabled = val;
+
+	pthread_mutex_unlock(&aker_metrics_mut);
+}
+
+/* See aker_metrics.h for details. */
+void aker_metric_set_tz( const char *val )
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+
+	g_metrics->timezone = NULL;
+
+	g_metrics->timezone = strdup(val);
+
+	pthread_mutex_unlock(&aker_metrics_mut);
+}
+
+/* See aker_metrics.h for details. */
+void aker_metric_set_tz_offset( signed int val )
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+
+	g_metrics->timezone_offset = val;
+
+	pthread_mutex_unlock(&aker_metrics_mut);
+}
+
+/* See aker_metrics.h for details. */
+void stringify_metrics(int flag)
 {
 	char str[512];
 	aker_metrics_t * tmp = NULL;
 	tmp = g_metrics;
 
-	if(g_metrics != NULL && flag == 1)
+	if(g_metrics != NULL)
 	{
-		snprintf(str, 512, "%s%d%s%d%s%d%s%d%s%ld%s%d%s%s",
-						"DeviceBlockCount,", tmp->device_block_count,
-                                                  ",WindowTransistionCount,", tmp->windows_transistion_count,
-                                                    ",ScheduleSetCount,", tmp->schedule_set_count,
-                                                    ",MD5ErrorCount,", tmp->md5_error_count,
-                                                    ",ProcessStartTime,", tmp->process_start_time,
-                                                    ",ScheduleEnabled,", tmp->schedule_enabled,
-                                                    ",TimeZone,", tmp->timezone);
+		snprintf(str, 512, "DeviceBlockCount,%d,"
+                   "WindowTransistionCount,%d,"
+                   "ScheduleSetCount,%d,"
+                   "MD5ErrorCount,%d,"
+                   "ProcessStartTime,%ld,"
+                   "ScheduleEnabled,%d,"
+                   "TimeZone,%s,"
+                   "TimeZoneOffset,%+d",
+
+                   tmp->device_block_count,
+                   tmp->window_trans_count,
+                   tmp->schedule_set_count,
+                   tmp->md5_err_count,
+                   tmp->process_start_time,
+                   tmp->schedule_enabled,
+                   tmp->timezone,
+                   tmp->timezone_offset);
+
 
 		debug_info("The stringified valued is (%s)\n", str);
 
-#if defined(ENABLE_FEATURE_TELEMETRY2_0)
-		t2_event_s("akermetric", str);
-		debug_info("akermetric t2 event triggered\n");
-#endif
+		if(flag)
+		{
+
+	#if defined(ENABLE_FEATURE_TELEMETRY2_0)
+			t2_event_s("akermetrics", str);
+			debug_info("akermetrics t2 event triggered\n");
+	#endif
+		}
 
 	}
 	else
 	{
-		if(flag == 0)
-		{
-			debug_info("The current stringified value is (DeviceBlockCount, %d, WindowTransistionCount, %d, ScheduleSetCount, %d, MD5ErrorCount, %d, ProcessStartTime, %ld, ScheduleEnabled, %d, TimeZone, %s)\n", tmp->device_block_count, tmp->windows_transistion_count, tmp->schedule_set_count, tmp->md5_error_count, tmp->process_start_time, tmp->schedule_enabled, tmp->timezone);
-
-		}
-		else
-		{
-			debug_error("The g_metrics is NULL\n");
-		}
-		return 0;
+		debug_error("The g_metrics is NULL\n");
 	}
-
-	return 1;
 }
 
-int get_blocked_mac_count(char* blocked)
+/* See aker_metrics.h for details. */
+int get_blocked_mac_count(const char* blocked)
 {
 	int count = 0;
-	char* mac =  strndup(blocked, strlen(blocked));
 
-	debug_print("The mac obtained were %s\n", mac);
+	debug_info("The mac obtained were %s\n", blocked);
+
 	// Returns first mac with delimiter as " "
-	char* mac_token = strtok(mac, " ");
+	char* mac_token = strtok((char *)blocked, " ");
 
 	// get count using delimiters present in mac.
 	while(mac_token != NULL)
@@ -182,13 +209,16 @@ int get_blocked_mac_count(char* blocked)
 		mac_token = strtok(NULL, " ");
 	}
 
-	debug_print("the count is %d\n", count);
-	free(mac);
+	debug_info("the count is %d\n", count);
+	debug_info("The mac after process were %s\n", blocked);
 	return count;
 }
 
+/* See aker_metrics.h for details. */
 void destroy_akermetrics()
 {
+	pthread_mutex_lock(&aker_metrics_mut);
+
 	if( NULL != g_metrics )
 	{
 		if( NULL != g_metrics->timezone )
@@ -197,6 +227,8 @@ void destroy_akermetrics()
 		}
 
 		free( g_metrics );
+		g_metrics = NULL;
 	}
 
+	pthread_mutex_unlock(&aker_metrics_mut);
 }

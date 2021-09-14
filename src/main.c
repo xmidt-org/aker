@@ -98,7 +98,7 @@ int main( int argc, char **argv)
     int rv = 0;
     pthread_t thread_id;
 
-    if( !init_global_metrics() )
+    if( init_global_metrics() )
     {
        debug_error("Aker metrics intialisation failed\n");
     }
@@ -107,12 +107,12 @@ int main( int argc, char **argv)
     debug_info("********** Starting component: aker **********\n ");
 #if defined(ENABLE_FEATURE_TELEMETRY2_0)
     t2_init("aker");
-    debug_info("aker T2 init done\n ");
+    debug_info("aker T2 init done\n");
 #endif
 
     start_unix_time = get_unix_time();
     debug_info("start_unix_time is %ld\n", start_unix_time);
-    set_aker_metrics(PST, 1, start_unix_time);
+    aker_metric_set_process_start_time(start_unix_time);
     
     signal(SIGTERM, sig_handler);
     signal(SIGINT, sig_handler);
@@ -264,7 +264,7 @@ static void import_existing_schedule( const char *data_file, const char *md5_fil
 
     if (0 != verify_md5_signatures(data_file, md5_file)) {
         debug_error("import_existing_schedule() data or md5 corruption\n");
-	set_aker_metrics(MEC, 1, 1);
+        aker_metric_inc_md5_err_count();
     }
 
     len = read_file_from_disk( data_file, &data );
