@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <time.h>
 
 #include "aker_metrics.h"
 #include "aker_log.h"
@@ -137,7 +138,7 @@ void aker_metric_set_tz( const char *val )
 }
 
 /* See aker_metrics.h for details. */
-void aker_metric_set_tz_offset( signed int val )
+void aker_metric_set_tz_offset( long int val )
 {
 	pthread_mutex_lock(&aker_metrics_mut);
 
@@ -162,7 +163,7 @@ void stringify_metrics(int flag)
                    "ProcessStartTime,%ld,"
                    "ScheduleEnabled,%d,"
                    "TimeZone,%s,"
-                   "TimeZoneOffset,%+d",
+                   "TimeZoneOffset,%+ld",
 
                    tmp->device_block_count,
                    tmp->window_trans_count,

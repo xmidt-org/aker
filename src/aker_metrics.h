@@ -44,7 +44,7 @@ typedef struct aker_metrics
 	time_t process_start_time;
 	int schedule_enabled;
 	char* timezone;
-	signed int timezone_offset;
+	long int timezone_offset;
 
 }aker_metrics_t;
 
@@ -104,7 +104,7 @@ void aker_metric_set_tz( const char *val );
  *  @param val        the timezone offset value
  *
  */
-void aker_metric_set_tz_offset( signed int val );
+void aker_metric_set_tz_offset( long int val );
 
 
 /* Initializes the g_metrics values*/
@@ -134,7 +134,6 @@ int get_blocked_mac_count(const char* blocked);
 
 /* Destroys the g_metrics already intialized. */
 void destroy_akermetrics();
-
 
 #endif
 

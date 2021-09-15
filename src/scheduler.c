@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <limits.h>
 #include <errno.h>
+#include <time.h>
 
 #include "schedule.h"
 #include "process_data.h"
@@ -100,6 +101,7 @@ int process_schedule_data( size_t len, uint8_t *data )
         destroy_schedule( s );
         aker_metric_set_schedule_enabled(0);			//Schedule_Enabled is 0 as schedule is empty
         aker_metric_set_tz("NULL");
+	aker_metric_set_tz_offset(0);
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
         rv = decode_schedule( len, data, &s );
@@ -228,11 +230,18 @@ void *scheduler_thread(void *args)
 		aker_metric_inc_schedule_set_count();
                 aker_metric_set_schedule_enabled(1);
                 aker_metric_set_tz(current_schedule->time_zone);
+		set_unix_time_zone(current_schedule->time_zone);
+
+		debug_info("The timezone is %s and %s\n", tzname[0], tzname[1]);
+		debug_info("The offset is %+ld seconds\n", timezone);
+		aker_metric_set_tz_offset(timezone);
+		
             }
            else
             {
                 aker_metric_set_schedule_enabled(0);
                 aker_metric_set_tz("NULL");
+		aker_metric_set_tz_offset(0);
             }
             call_firewall( firewall_cmd, current_blocked_macs );
         }
