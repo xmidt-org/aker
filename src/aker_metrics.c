@@ -130,7 +130,10 @@ void aker_metric_set_tz( const char *val )
 {
 	pthread_mutex_lock(&aker_metrics_mut);
 
-	g_metrics->timezone = NULL;
+	if( g_metrics->timezone )
+	{
+		free(g_metrics->timezone);
+	}
 
 	g_metrics->timezone = strdup(val);
 
@@ -150,6 +153,8 @@ void aker_metric_set_tz_offset( long int val )
 /* See aker_metrics.h for details. */
 void stringify_metrics(int flag)
 {
+	pthread_mutex_lock(&aker_metrics_mut);
+
 	char str[512];
 	aker_metrics_t * tmp = NULL;
 	tmp = g_metrics;
@@ -191,23 +196,30 @@ void stringify_metrics(int flag)
 	{
 		debug_error("The g_metrics is NULL\n");
 	}
+
+	pthread_mutex_unlock(&aker_metrics_mut);
 }
 
 /* See aker_metrics.h for details. */
 int get_blocked_mac_count(const char* blocked)
 {
 	int count = 0;
+	const char *p = blocked;
 
-	debug_info("The mac obtained were %s\n", blocked);
-
-	// Returns first mac with delimiter as " "
-	char* mac_token = strtok((char *)blocked, " ");
-
-	// get count using delimiters present in mac.
-	while(mac_token != NULL)
+	if(NULL != p)
 	{
-		count++;
-		mac_token = strtok(NULL, " ");
+		/* If there are characters, then there there is 1+the number of spaces,
+		* otherwise there are 0 blocked devices. */
+		count = 1;
+
+		while(*p)
+		{
+			if(' ' == *p)
+			{
+				count++;
+			}
+			p++;
+		}
 	}
 
 	debug_info("the count is %d\n", count);
