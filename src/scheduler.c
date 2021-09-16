@@ -256,14 +256,16 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
 
         buf = (char*) aker_malloc( len * sizeof(char) );
         if( NULL != buf ) {
+            int rv;
             if( NULL != blocked ) {
                 sprintf( buf, "%s %s", firewall_cmd, blocked );
             } else {
                 sprintf( buf, "%s", firewall_cmd );
             }
             debug_info( "Firewall command: '%s'\n", buf );
-            (void) system( buf );
+            rv = system( buf );
             aker_free( buf );
+            debug_info( "command result: %d\n", rv );
         } else {
             debug_error( "Failed to allocate buffer needed to call firewall cmd.\n" );
         }
