@@ -135,5 +135,12 @@ int get_blocked_mac_count(const char* blocked);
 /* Destroys the g_metrics already intialized. */
 void destroy_akermetrics();
 
+/**
+ * Gives the global g_metrics for access.
+ *
+ *  @return the g_metrics 
+ */
+aker_metrics_t* get_global_metrics(void);
+
 #endif
 

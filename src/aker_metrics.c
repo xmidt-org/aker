@@ -245,3 +245,15 @@ void destroy_akermetrics()
 
 	pthread_mutex_unlock(&aker_metrics_mut);
 }
+
+/*See aker_metrics.h for details*/
+aker_metrics_t* get_global_metrics(void)
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+
+	aker_metrics_t* tmp = NULL;
+	tmp = g_metrics;
+
+	pthread_mutex_unlock(&aker_metrics_mut);
+	return tmp;
+}

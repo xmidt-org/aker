@@ -162,6 +162,16 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_scheduler ${AKER_LINUX_LIBS})
 endif()
 
+#-------------------------------------------------------------------------------
+#   test_aker_metrics
+#-------------------------------------------------------------------------------
+add_test(NAME test_aker_metrics COMMAND ${MEMORY_CHECK} ./test_aker_metrics)
+add_executable(test_aker_metrics test_aker_metrics.c ../src/aker_metrics.c mem_wrapper.c )
+target_link_libraries (test_aker_metrics ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_aker_metrics ${AKER_LINUX_LIBS})
+endif()
+
 add_custom_target(coverage
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_time.dir/__/src --output-file time.info
@@ -183,6 +193,8 @@ COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_scheduler.dir/__/src --output-file scheduler.info
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_msgpack.dir/__/src --output-file aker_msgpack.info
+COMMAND lcov -q --capture --directory
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_metrics.dir/__/src --output-file aker_metrics.info
 
 COMMAND lcov -a md5.info -a decode.info -a process_now.info -a process_is_create_ok.info
 -a schedule.info -a process.info -a time.info -a scheduler.info
