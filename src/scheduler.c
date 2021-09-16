@@ -262,7 +262,7 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
                 sprintf( buf, "%s", firewall_cmd );
             }
             debug_info( "Firewall command: '%s'\n", buf );
-            system( buf );
+            (void) system( buf );
             aker_free( buf );
         } else {
             debug_error( "Failed to allocate buffer needed to call firewall cmd.\n" );
