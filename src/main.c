@@ -98,11 +98,6 @@ int main( int argc, char **argv)
     int rv = 0;
     pthread_t thread_id;
 
-    if( init_global_metrics() )
-    {
-       debug_error("Aker metrics intialisation failed\n");
-    }
-
     time_t start_unix_time = 0;
     debug_info("********** Starting component: aker **********\n ");
 #if defined(ENABLE_FEATURE_TELEMETRY2_0)

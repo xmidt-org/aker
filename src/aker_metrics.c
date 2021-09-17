@@ -62,12 +62,6 @@ pthread_mutex_t aker_metrics_mut=PTHREAD_MUTEX_INITIALIZER;
 /*----------------------------------------------------------------------------*/
 
 /* See aker_metrics.h for details. */
-int init_global_metrics()
-{
-	return 0;
-}
-
-/* See aker_metrics.h for details. */
 void aker_metric_inc_device_block_count( uint32_t val )
 {
 	pthread_mutex_lock(&aker_metrics_mut);

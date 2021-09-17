@@ -88,10 +88,6 @@ void aker_metric_set_tz( const char *val );
 void aker_metric_set_tz_offset( long int val );
 
 
-/* Initializes the g_metrics values*/
-int init_global_metrics();
-
-
 /**
  *  Sends the aker metrics values with names into a single
  *  comma separate value via Telemetry event.

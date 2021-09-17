@@ -20,13 +20,6 @@
 #include "../src/aker_metrics.h"
 #include "../src/aker_metrics.c"
 
-//To initialize the g_metrics
-void test1()
-{
-    int ret = init_global_metrics();
-    CU_ASSERT(0 == ret);
-}
-
 void test_device_block_count()
 {
     aker_metric_inc_device_block_count(10);
@@ -165,7 +158,6 @@ void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution For test_time ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
-    CU_add_test( *suite, "Init Test 1", test1);
     CU_add_test( *suite, "test_device_block_count", test_device_block_count);
     CU_add_test( *suite, "test_window_trans_count", test_window_trans_count);
     CU_add_test( *suite, "test_schedule_set_count", test_schedule_set_count);
