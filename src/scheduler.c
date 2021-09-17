@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <limits.h>
 #include <errno.h>
+#include <time.h>
 
 #include "schedule.h"
 #include "process_data.h"
@@ -31,6 +32,7 @@
 #include "decode.h"
 #include "time.h"
 #include "aker_mem.h"
+#include "aker_metrics.h"
 
 #ifdef INCLUDE_BREAKPAD
 #include "breakpad_wrapper.h"
@@ -48,7 +50,7 @@ static char *current_blocked_macs = NULL;
 static pthread_mutex_t schedule_lock;
 static pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 
-
+static int metric_flag = 0;
 
 /*----------------------------------------------------------------------------*/
 /*                             External functions                             */
@@ -97,11 +99,15 @@ int process_schedule_data( size_t len, uint8_t *data )
         pthread_mutex_unlock( &schedule_lock );
         pthread_cond_signal(&cond_var);
         destroy_schedule( s );
+        aker_metric_set_schedule_enabled(0);			//Schedule_Enabled is 0 as schedule is empty
+        aker_metric_set_tz("NULL");
+	aker_metric_set_tz_offset(0);
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
         rv = decode_schedule( len, data, &s );
 
-        if (0 == rv ) {
+        
+        if (0 == rv ) {  
             schedule_t *tmp;
             print_schedule( s );
             pthread_mutex_lock( &schedule_lock );
@@ -219,10 +225,32 @@ void *scheduler_thread(void *args)
         }
 
         if( 0 != schedule_changed ) {
+           if( NULL != current_blocked_macs)       //To set schedule_enabled parameter
+            {
+		aker_metric_inc_schedule_set_count();
+                aker_metric_set_schedule_enabled(1);
+                aker_metric_set_tz(current_schedule->time_zone);
+		set_unix_time_zone(current_schedule->time_zone);
+
+		debug_info("The timezone is %s and %s\n", tzname[0], tzname[1]);
+		debug_info("The offset is %+ld seconds\n", timezone);
+		aker_metric_set_tz_offset(timezone);
+		
+            }
+           else
+            {
+                aker_metric_set_schedule_enabled(0);
+                aker_metric_set_tz("NULL");
+		aker_metric_set_tz_offset(0);
+            }
             call_firewall( firewall_cmd, current_blocked_macs );
         }
 
         tm.tv_sec = get_next_unixtime(current_schedule, current_unix_time);
+
+	stringify_metrics(metric_flag);
+	metric_flag = 0;
+
         rv = pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
         if( (0 != rv) && (ETIMEDOUT != rv) ) {
             debug_error("pthread_cond_timedwait error: %d(%s)\n", rv, strerror(rv));
@@ -259,11 +287,14 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
             int rv;
             if( NULL != blocked ) {
                 sprintf( buf, "%s %s", firewall_cmd, blocked );
+                aker_metric_inc_device_block_count(get_blocked_mac_count(blocked));
             } else {
                 sprintf( buf, "%s", firewall_cmd );
             }
             debug_info( "Firewall command: '%s'\n", buf );
             rv = system( buf );
+            metric_flag = 1;
+            aker_metric_inc_window_trans_count();
             aker_free( buf );
             debug_info( "command result: %d\n", rv );
         } else {
@@ -306,4 +337,5 @@ void cleanup (void )
     pthread_mutex_unlock( &schedule_lock );
     pthread_mutex_destroy(&schedule_lock);
     destroy_schedule(current_schedule);
+    destroy_akermetrics();
 }
