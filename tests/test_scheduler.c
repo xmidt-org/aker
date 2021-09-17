@@ -30,7 +30,6 @@
 #include "../src/aker_mem.h"
 #include "../src/scheduler.h"
 #include "../src/process_data.h"
-#include "../src/aker_metrics.h"
 #include "test_scheduler.h"
 
 #include "scheduler_data0.h"
@@ -75,7 +74,7 @@ void test2()
 {
     int result;
     int cnt;
-
+    
     for (cnt = 0; cnt < MAX_WRP_TEST_MSGS; cnt++) {
         result = process_update( file_name, md5_file, data_payloads[cnt], data_sizes[cnt] );
         printf( "got: %d\n", result );
@@ -105,8 +104,6 @@ void test2()
     add_time = -212900;
     result = process_update( file_name, md5_file, data_payloads[3], data_sizes[3] );
     CU_ASSERT(0 == result);
-
-    init_global_metrics();
 
     add_time = -212800;
     result = process_delete( file_name, md5_file );
@@ -140,7 +137,7 @@ void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution For Scheduler---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
-   //CU_add_test( *suite, "Scheduler Test 1", test1);
+    CU_add_test( *suite, "Scheduler Test 1", test1);
     CU_add_test( *suite, "Scheduler Test 2", test2);
     CU_add_test( *suite, "Scheduler Test 3", test3);
 }

@@ -166,7 +166,7 @@ endif()
 #   test_aker_metrics
 #-------------------------------------------------------------------------------
 add_test(NAME test_aker_metrics COMMAND ${MEMORY_CHECK} ./test_aker_metrics)
-add_executable(test_aker_metrics test_aker_metrics.c ../src/aker_metrics.c mem_wrapper.c )
+add_executable(test_aker_metrics test_aker_metrics.c mem_wrapper.c )
 target_link_libraries (test_aker_metrics ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_aker_metrics ${AKER_LINUX_LIBS})

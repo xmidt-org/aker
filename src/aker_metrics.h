@@ -18,7 +18,6 @@
 #define __AKER_METRICS_H__
 
 #include <stdint.h>
-#include <stdarg.h>
 #include "time.h"
 
 #if defined(ENABLE_FEATURE_TELEMETRY2_0)
@@ -29,24 +28,6 @@
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
 /* none */
-
-/*----------------------------------------------------------------------------*/
-/*                               Data Structures                              */
-/*----------------------------------------------------------------------------*/
-
-typedef struct aker_metrics
-{
-
-	uint32_t device_block_count;
-	uint32_t window_trans_count;
-	uint32_t schedule_set_count;
-	uint32_t md5_err_count;
-	time_t process_start_time;
-	int schedule_enabled;
-	char* timezone;
-	long int timezone_offset;
-
-}aker_metrics_t;
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
@@ -132,15 +113,7 @@ void stringify_metrics(int flag);
 int get_blocked_mac_count(const char* blocked);
 
 
-/* Destroys the g_metrics already intialized. */
+/* Destroys the metrics resoureces. */
 void destroy_akermetrics();
 
-/**
- * Gives the global g_metrics for access.
- *
- *  @return the g_metrics 
- */
-aker_metrics_t* get_global_metrics(void);
-
 #endif
-
