@@ -229,14 +229,23 @@ void *scheduler_thread(void *args)
             {
 		aker_metric_inc_schedule_set_count();
                 aker_metric_set_schedule_enabled(1);
-                aker_metric_set_tz(current_schedule->time_zone);
-		set_unix_time_zone(current_schedule->time_zone);
+		if(current_schedule->time_zone != NULL)
+		{
+			aker_metric_set_tz(current_schedule->time_zone);
+			set_unix_time_zone(current_schedule->time_zone);
 
-		debug_print("The timezone is %s and %s\n", tzname[0], tzname[1]);
-		debug_print("The offset is %+ld seconds\n", timezone);
+			debug_print("The timezone is %s and %s\n", tzname[0], tzname[1]);
+			debug_print("The offset is %+ld seconds\n", timezone);
 
-		//"timezone" parameter is not defined in aker code and will be set from tzset()
-		aker_metric_set_tz_offset(timezone);
+			//"timezone" parameter is not defined in aker code and will be set from tzset()
+			aker_metric_set_tz_offset(timezone);
+		}
+		else
+		{
+			debug_info("The timezone set is NULL\n");
+			aker_metric_set_tz("NULL");
+			aker_metric_set_tz_offset(0);
+		}
 		
             }
            else
