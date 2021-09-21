@@ -174,7 +174,7 @@ void stringify_metrics(int flag)
 	                   g_metrics.timezone_offset);
 	pthread_mutex_unlock(&aker_metrics_mut);
 
-	debug_info("The stringified valued is (%s)\n", str);
+	debug_info("The stringified value is (%s)\n", str);
 
 	if(flag)
 	{

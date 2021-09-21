@@ -232,8 +232,10 @@ void *scheduler_thread(void *args)
                 aker_metric_set_tz(current_schedule->time_zone);
 		set_unix_time_zone(current_schedule->time_zone);
 
-		debug_info("The timezone is %s and %s\n", tzname[0], tzname[1]);
-		debug_info("The offset is %+ld seconds\n", timezone);
+		debug_print("The timezone is %s and %s\n", tzname[0], tzname[1]);
+		debug_print("The offset is %+ld seconds\n", timezone);
+
+		//"timezone" parameter is not defined in aker code and will be set from tzset()
 		aker_metric_set_tz_offset(timezone);
 		
             }
