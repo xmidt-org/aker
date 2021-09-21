@@ -174,13 +174,13 @@ void stringify_metrics(int flag)
 	                   g_metrics.timezone_offset);
 	pthread_mutex_unlock(&aker_metrics_mut);
 
-	debug_info("The stringified valued is (%s)\n", str);
+	debug_info("The stringified value is (%s)\n", str);
 
 	if(flag)
 	{
 	#if defined(ENABLE_FEATURE_TELEMETRY2_0)
-		t2_event_s("akermetrics", str);
-		debug_info("akermetrics t2 event triggered\n");
+		t2_event_s("Akermetrics", str);
+		debug_info("Akermetrics t2 event triggered\n");
 	#endif
 	}
 }
@@ -207,8 +207,8 @@ int get_blocked_mac_count(const char* blocked)
 		}
 	}
 
-	debug_info("the count is %d\n", count);
-	debug_info("The mac after process were %s\n", blocked);
+	debug_print("the count is %d\n", count);
+	debug_print("The mac after process were %s\n", blocked);
 	return count;
 }
 
