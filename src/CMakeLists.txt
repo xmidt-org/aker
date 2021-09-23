@@ -24,7 +24,7 @@ endif ()
 add_executable(aker main.c ${SOURCES})
 
 if (NOT BUILD_YOCTO)
-	add_executable(aker-cli cli.c ${SOURCES})
+	add_executable(aker-cli cli.c libparodus_mock.c ${SOURCES})
 
 	target_link_libraries (aker-cli
 		${CMAKE_THREAD_LIBS_INIT}

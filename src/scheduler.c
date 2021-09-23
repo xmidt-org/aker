@@ -40,6 +40,7 @@
 
 
 /* Local Functions and file-scoped variables */
+static void calculate_report_jitter( uint32_t rate, uint32_t *jitter );
 static void sig_handler(int sig);
 static void cleanup(void);
 static void *scheduler_thread(void *args);
@@ -49,8 +50,6 @@ static schedule_t *current_schedule = NULL;
 static char *current_blocked_macs = NULL;
 static pthread_mutex_t schedule_lock;
 static pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
-
-static int metric_flag = 0;
 
 /*----------------------------------------------------------------------------*/
 /*                             External functions                             */
@@ -99,9 +98,9 @@ int process_schedule_data( size_t len, uint8_t *data )
         pthread_mutex_unlock( &schedule_lock );
         pthread_cond_signal(&cond_var);
         destroy_schedule( s );
-        aker_metric_set_schedule_enabled(0);			//Schedule_Enabled is 0 as schedule is empty
+        aker_metric_set_schedule_enabled(0);    //Schedule_Enabled is 0 as schedule is empty
         aker_metric_set_tz("NULL");
-	aker_metric_set_tz_offset(0);
+        aker_metric_set_tz_offset(0);
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
         rv = decode_schedule( len, data, &s );
@@ -154,8 +153,12 @@ void *scheduler_thread(void *args)
 {
     const char *firewall_cmd;
     struct timespec tm = { INT_MAX, 0 };
+    time_t last_report_time = INT_MAX;
+    time_t next_report_time = INT_MAX;
     time_t current_unix_time = 0;
     int rv = ETIMEDOUT;
+    uint32_t last_report_rate = 0;
+    uint32_t report_jitter = 0; /* seconds */
     
     signal(SIGTERM, sig_handler);
     signal(SIGINT, sig_handler);
@@ -225,42 +228,63 @@ void *scheduler_thread(void *args)
         }
 
         if( 0 != schedule_changed ) {
-           if( NULL != current_blocked_macs)       //To set schedule_enabled parameter
-            {
-		aker_metric_inc_schedule_set_count();
+           if( NULL != current_blocked_macs ) { //To set schedule_enabled parameter
+                aker_metric_inc_schedule_set_count();
                 aker_metric_set_schedule_enabled(1);
-		if(current_schedule->time_zone != NULL)
-		{
-			aker_metric_set_tz(current_schedule->time_zone);
-			set_unix_time_zone(current_schedule->time_zone);
+                if(current_schedule->time_zone != NULL) {
+                    aker_metric_set_tz(current_schedule->time_zone);
+                    set_unix_time_zone(current_schedule->time_zone);
 
-			debug_print("The timezone is %s and %s\n", tzname[0], tzname[1]);
-			debug_print("The offset is %+ld seconds\n", timezone);
+                    debug_print("The timezone is %s and %s\n", tzname[0], tzname[1]);
+                    debug_print("The offset is %+ld seconds\n", timezone);
 
-			//"timezone" parameter is not defined in aker code and will be set from tzset()
-			aker_metric_set_tz_offset(timezone);
-		}
-		else
-		{
-			debug_info("The timezone set is NULL\n");
-			aker_metric_set_tz("NULL");
-			aker_metric_set_tz_offset(0);
-		}
-		
-            }
-           else
-            {
+                    //"timezone" parameter is not defined in aker code and will be set from tzset()
+                    aker_metric_set_tz_offset(timezone);
+                } else {
+                    debug_info("The timezone set is NULL\n");
+                    aker_metric_set_tz("NULL");
+                    aker_metric_set_tz_offset(0);
+                }
+            } else {
                 aker_metric_set_schedule_enabled(0);
                 aker_metric_set_tz("NULL");
-		aker_metric_set_tz_offset(0);
+                aker_metric_set_tz_offset(0);
             }
             call_firewall( firewall_cmd, current_blocked_macs );
+
+            /* Only if the reporting rate changes, calculate a new report rate jitter */
+            if( last_report_rate != current_schedule->report_rate_s ) {
+                last_report_rate = current_schedule->report_rate_s;
+
+                /* Remove the previously calculated jitter so we don't compound
+                 * the jitter. */
+                last_report_time -= report_jitter;
+                calculate_report_jitter( current_schedule->report_rate_s,
+                                         &report_jitter );
+                last_report_time += report_jitter;
+            }
+        }
+
+        /* Report if it is time. */
+        if( next_report_time <= current_unix_time ) {
+            aker_metrics_report(current_unix_time);
+            last_report_time = current_unix_time;
+            next_report_time = INT_MAX;
+        }
+
+        /* Never report if disabled */
+        next_report_time = INT_MAX;
+        if( current_schedule && (0 < current_schedule->report_rate_s) ) {
+            /* Calculate the next report time. */
+            next_report_time = last_report_time + current_schedule->report_rate_s;
         }
 
         tm.tv_sec = get_next_unixtime(current_schedule, current_unix_time);
 
-	stringify_metrics(metric_flag);
-	metric_flag = 0;
+        /* Choose the earlier time of reporting or the next event. */
+        if( next_report_time < tm.tv_sec ) {
+            tm.tv_sec = next_report_time;
+        }
 
         rv = pthread_cond_timedwait(&cond_var, &schedule_lock, &tm);
         if( (0 != rv) && (ETIMEDOUT != rv) ) {
@@ -304,7 +328,6 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
             }
             debug_info( "Firewall command: '%s'\n", buf );
             rv = system( buf );
-            metric_flag = 1;
             aker_metric_inc_window_trans_count();
             aker_free( buf );
             debug_info( "command result: %d\n", rv );
@@ -312,6 +335,18 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
             debug_error( "Failed to allocate buffer needed to call firewall cmd.\n" );
         }
     }
+}
+
+static void calculate_report_jitter( uint32_t rate, uint32_t *jitter )
+{
+    if( 0 == rate ) {
+        *jitter = 0;
+        return;
+    }
+
+    /* This doesn't need to be a high quality random number, just somewhat
+     * random. */
+    *jitter = rand() % rate;
 }
 
 static void sig_handler(int sig)

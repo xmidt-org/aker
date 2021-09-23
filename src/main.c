@@ -33,6 +33,7 @@
 #include "aker_mem.h"
 #include "aker_help.h"
 #include "aker_metrics.h"
+#include "time.h"
 
 #ifdef INCLUDE_BREAKPAD
 #include "breakpad_wrapper.h"
@@ -64,14 +65,14 @@ size_t max_macs = INT_MAX;
 /*----------------------------------------------------------------------------*/
 static void sig_handler(int sig);
 static void import_existing_schedule( const char *data_file, const char *md5_file );
-static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file );
+static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file, const char *device_id );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
 int main( int argc, char **argv)
 {
-    const char *option_string = "p:c:w:d:f:m:h::";
+    const char *option_string = "p:c:w:d:f:m:i:h::";
     static const struct option options[] = {
         { "help",         optional_argument, 0, 'h' },
         { "parodus-url",  required_argument, 0, 'p' },
@@ -80,6 +81,7 @@ int main( int argc, char **argv)
         { "data-file",    required_argument, 0, 'd' },
         { "md5-file",     required_argument, 0, 'f' },
         { "max-macs",     required_argument, 0, 'm' },
+        { "device-id",    required_argument, 0, 'i' },
         { 0, 0, 0, 0 }
     };
 
@@ -93,6 +95,7 @@ int main( int argc, char **argv)
     char *firewall_cmd = NULL;
     char *data_file = NULL;
     char *md5_file = NULL;
+    char *device_id = "mac:000000000000";
     int item = 0;
     int opt_index = 0;
     int rv = 0;
@@ -147,6 +150,11 @@ int main( int argc, char **argv)
             case 'm':
                 max_macs = atoi(optarg);
                 break;
+            case 'i':
+                /* This is basically a constant for the program.  No need to
+                 * duplicate, just point to the original arguement. */
+                device_id = optarg;
+                break;
             case 'h':
                 aker_help(argv[0], optarg);
                 break;
@@ -170,7 +178,7 @@ int main( int argc, char **argv)
     if (max_macs <= 0) {
         max_macs = INT_MAX;
     }
-    
+
     if( (rv == 0) &&
         (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
@@ -182,7 +190,7 @@ int main( int argc, char **argv)
 
         import_existing_schedule( data_file, md5_file );
         
-        main_loop(&cfg, data_file, md5_file);
+        main_loop(&cfg, data_file, md5_file, device_id);
         rv = 0;
     } else {
         if ((NULL == cfg.parodus_url)) {
@@ -270,7 +278,7 @@ static void import_existing_schedule( const char *data_file, const char *md5_fil
 }
 
 
-static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
+static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file, const char *device_id )
 {
     int rv;
     wrp_msg_t *wrp_msg;
@@ -297,6 +305,8 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
         }
         libparodus_shutdown(&hpd_instance);
     }
+
+    aker_metric_init(device_id, hpd_instance);
 
     debug_print("starting the main loop...\n");
     while( true ) {
