@@ -95,7 +95,7 @@ int main( int argc, char **argv)
     char *firewall_cmd = NULL;
     char *data_file = NULL;
     char *md5_file = NULL;
-    char *device_id = "mac:000000000000";
+    const char *device_id = "mac:000000000000";
     int item = 0;
     int opt_index = 0;
     int rv = 0;

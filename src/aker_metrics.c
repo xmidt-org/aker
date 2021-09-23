@@ -121,7 +121,7 @@ static void pack_string(msgpack_packer *pk, const struct metric_label *l, const 
     msgpack_pack_str_body(pk, s, len );
 }
 
-static void pack_row_map(msgpack_packer *pk, struct aker_metrics *m)
+static void pack_row_map(msgpack_packer *pk, const struct aker_metrics *m)
 {
     msgpack_pack_map(pk, 7);
     pack_long__(pk, &METRIC_TS__, m->snapshot);
@@ -133,7 +133,7 @@ static void pack_row_map(msgpack_packer *pk, struct aker_metrics *m)
     pack_string(pk, &METRIC_TZ__, &m->timezone[0]);
 }
 
-static void pack_rows(msgpack_packer *pk, struct aker_metrics *m, size_t count)
+static void pack_rows(msgpack_packer *pk, const struct aker_metrics *m, size_t count)
 {
     pack_label(pk, &METRIC_ROWS);
     msgpack_pack_array(pk, count);
