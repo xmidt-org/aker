@@ -113,7 +113,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t)
                     decode_string_type(key, val, &s);
                 }
                 else if (0 == strncmp(key->via.str.ptr, REPORT_RATE_STR, key->via.str.size)) {
-                    s->report_rate_s = val->via.u64;
+                    s->report_rate_s = (uint32_t) val->via.u64;
                     if( s->report_rate_s < MINIMUM_REPORTING_RATE ) {
                         s->report_rate_s = MINIMUM_REPORTING_RATE;
                     }

@@ -269,7 +269,6 @@ void *scheduler_thread(void *args)
         if( next_report_time <= current_unix_time ) {
             aker_metrics_report(current_unix_time);
             last_report_time = current_unix_time;
-            next_report_time = INT_MAX;
         }
 
         /* Never report if disabled */
