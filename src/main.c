@@ -95,7 +95,7 @@ int main( int argc, char **argv)
     char *firewall_cmd = NULL;
     char *data_file = NULL;
     char *md5_file = NULL;
-    const char *device_id = "mac:000000000000";
+    const char *device_id = NULL;
     int item = 0;
     int opt_index = 0;
     int rv = 0;
@@ -184,7 +184,8 @@ int main( int argc, char **argv)
         (NULL != cfg.client_url) &&
         (NULL != firewall_cmd) &&
         (NULL != data_file) &&
-        (NULL != md5_file) )
+        (NULL != md5_file) &&
+        (NULL != device_id) )
     {
         scheduler_start( &thread_id, firewall_cmd );
 
@@ -212,7 +213,11 @@ int main( int argc, char **argv)
         if ((NULL == md5_file)) {
             debug_error("%s md5_file not specified!\n", argv[0]);
             rv = -5;
-        }        
+        }
+        if ((NULL == device_id)) {
+            debug_error("%s device_id not specified!\n", argv[0]);
+            rv = -6;
+        }
      }
     
     if (rv != 0) {
