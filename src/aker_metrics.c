@@ -276,7 +276,7 @@ void aker_metric_set_tz( const char *val )
             len = MAX_TIMEZONE;
         }
         memcpy(&g_metrics.timezone[0], val, len);
-        g_metrics.timezone[MAX_TIMEZONE] = '\0';
+        g_metrics.timezone[len] = '\0';
 	} else {
         memset(&g_metrics.timezone[0], 0, MAX_TIMEZONE);
     }

@@ -118,6 +118,11 @@ void test_timezone()
     aker_metric_set_tz("America/New_York");
     CU_ASSERT_STRING_EQUAL(g_metrics.timezone, "America/New_York");
 
+    /* Make sure to check a shorter string in place to ensure the string is
+     * terminated properly.  This catches the issue Guru found. */
+    aker_metric_set_tz("NULL");
+    CU_ASSERT_STRING_EQUAL(g_metrics.timezone, "NULL");
+
     aker_metric_set_tz(NULL);
     CU_ASSERT_STRING_EQUAL(g_metrics.timezone, "");
 
