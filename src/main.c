@@ -39,6 +39,11 @@
 #include "breakpad_wrapper.h"
 #endif
 
+#if defined(ENABLE_FEATURE_TELEMETRY2_0)
+   #include <telemetry_busmessage_sender.h>
+#endif
+
+
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
