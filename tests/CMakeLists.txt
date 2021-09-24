@@ -33,7 +33,7 @@ add_executable(test_schedule test_schedule.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
                ../src/scheduler.c mem_wrapper.c common_test_stubs.c
-               ../src/aker_metrics.c ../src/libparodus_mock.c)
+               ../src/aker_metrics.c libparodus_mock.c)
 target_link_libraries (test_schedule ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_schedule ${AKER_LINUX_LIBS})
@@ -80,7 +80,7 @@ add_executable(test_process_data test_process_data.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/time.c 
                ../src/scheduler.c ../src/aker_msgpack.c mem_wrapper.c
-               ../src/aker_metrics.c ../src/libparodus_mock.c)
+               ../src/aker_metrics.c libparodus_mock.c)
 
 target_link_libraries (test_process_data ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -107,7 +107,7 @@ add_executable(test_process_is_create_ok test_process_is_create_ok.c ../src/proc
                ../src/aker_md5.c ../src/md5.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/time.c 
                ../src/scheduler.c ../src/aker_msgpack.c mem_wrapper.c
-               ../src/aker_metrics.c ../src/libparodus_mock.c)
+               ../src/aker_metrics.c libparodus_mock.c)
 
 target_link_libraries (test_process_is_create_ok ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -132,7 +132,7 @@ add_test(NAME test_md5 COMMAND ${MEMORY_CHECK} ./test_md5)
 add_executable(test_md5 test_md5.c ../src/process_data.c ../src/aker_md5.c 
                ../src/md5.c ../src/scheduler.c ../src/time.c ../src/schedule.c
                ../src/decode.c ../src/schedule_print.c ../src/aker_msgpack.c 
-               mem_wrapper.c ../src/aker_metrics.c ../src/libparodus_mock.c)
+               mem_wrapper.c ../src/aker_metrics.c libparodus_mock.c)
 target_link_libraries (test_md5 ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_md5 ${AKER_LINUX_LIBS})
@@ -160,7 +160,7 @@ add_executable(test_scheduler test_scheduler.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
                ../src/scheduler.c mem_wrapper.c common_test_stubs.c
-               ../src/libparodus_mock.c)
+               libparodus_mock.c)
 target_link_libraries (test_scheduler ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_scheduler ${AKER_LINUX_LIBS})
@@ -178,7 +178,7 @@ add_executable(test_reporter test_reporter.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
                ../src/scheduler.c mem_wrapper.c
-               ../src/time.c ../src/libparodus_mock.c)
+               ../src/time.c libparodus_mock.c)
 target_compile_definitions(test_reporter PUBLIC MINIMUM_REPORTING_RATE=1)
 target_link_libraries (test_reporter ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
