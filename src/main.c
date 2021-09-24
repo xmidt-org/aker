@@ -109,7 +109,7 @@ int main( int argc, char **argv)
 #endif
 
     start_unix_time = get_unix_time();
-    srand(start_unix_time);
+    srand((unsigned int)start_unix_time);
     debug_info("start_unix_time is %ld\n", start_unix_time);
     aker_metric_set_process_start_time(start_unix_time);
     
@@ -195,27 +195,27 @@ int main( int argc, char **argv)
         main_loop(&cfg, data_file, md5_file, device_id);
         rv = 0;
     } else {
-        if ((NULL == cfg.parodus_url)) {
+        if (!cfg.parodus_url) {
             debug_error("%s parodus_url not specified!\n", argv[0]);
             rv = -1;
         }
-        if ((NULL == cfg.client_url)) {
+        if (!cfg.client_url) {
             debug_error("%s client_url not specified !\n", argv[0]);
             rv = -2;
         }
-        if ((NULL == firewall_cmd)) {
+        if (!firewall_cmd) {
             debug_error("%s firewall_cmd not specified!\n", argv[0]);
             rv = -3;
         }
-        if ((NULL == data_file)) {
+        if (!data_file) {
             debug_error("%s data_file not specified!\n", argv[0]);
             rv = -4;
         }
-        if ((NULL == md5_file)) {
+        if (!md5_file) {
             debug_error("%s md5_file not specified!\n", argv[0]);
             rv = -5;
         }
-        if ((NULL == device_id)) {
+        if (!device_id) {
             debug_error("%s device_id not specified!\n", argv[0]);
             rv = -6;
         }
