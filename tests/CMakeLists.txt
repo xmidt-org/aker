@@ -160,17 +160,37 @@ add_executable(test_scheduler test_scheduler.c ../src/schedule_print.c
                ../src/schedule.c ../src/decode.c ../src/process_data.c
                ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
                ../src/scheduler.c mem_wrapper.c common_test_stubs.c
-               ../src/aker_metrics.c ../src/libparodus_mock.c)
+               ../src/libparodus_mock.c)
 target_link_libraries (test_scheduler ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_scheduler ${AKER_LINUX_LIBS})
 endif()
 
 #-------------------------------------------------------------------------------
+#   test_reporter
+#-------------------------------------------------------------------------------
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+add_test(NAME test_reporter COMMAND ./test_reporter)
+else()
+add_test(NAME test_reporter COMMAND ${MEMORY_CHECK} ./test_reporter)
+endif()
+add_executable(test_reporter test_reporter.c ../src/schedule_print.c
+               ../src/schedule.c ../src/decode.c ../src/process_data.c
+               ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
+               ../src/scheduler.c mem_wrapper.c
+               ../src/time.c ../src/libparodus_mock.c)
+target_compile_definitions(test_reporter PUBLIC MINIMUM_REPORTING_RATE=1)
+target_link_libraries (test_reporter ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_reporter ${AKER_LINUX_LIBS})
+endif()
+
+
+#-------------------------------------------------------------------------------
 #   test_aker_metrics
 #-------------------------------------------------------------------------------
 add_test(NAME test_aker_metrics COMMAND ${MEMORY_CHECK} ./test_aker_metrics)
-add_executable(test_aker_metrics test_aker_metrics.c mem_wrapper.c)
+add_executable(test_aker_metrics test_aker_metrics.c mem_wrapper.c )
 target_link_libraries (test_aker_metrics ${AKER_COMMON_LIBS})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_aker_metrics ${AKER_LINUX_LIBS})
@@ -196,13 +216,15 @@ ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_wrp_interface.dir/__/src --output-fi
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_scheduler.dir/__/src --output-file scheduler.info
 COMMAND lcov -q --capture --directory
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_reporter.dir/__/src --output-file reporter.info
+COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_msgpack.dir/__/src --output-file aker_msgpack.info
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_metrics.dir --output-file aker_metrics.info
 
 COMMAND lcov -a md5.info -a decode.info -a process_now.info -a process_is_create_ok.info
--a schedule.info -a process.info -a time.info -a scheduler.info
--a wrp.info -a aker_msgpack.info -a aker_metrics.info --output-file coverage.info
+-a schedule.info -a process.info -a time.info -a scheduler.info -a reporter.info
+-a wrp.info -a aker_msgpack.info --output-file coverage.info
 
 COMMAND genhtml coverage.info
 WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

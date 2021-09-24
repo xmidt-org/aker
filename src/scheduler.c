@@ -153,7 +153,7 @@ void *scheduler_thread(void *args)
 {
     const char *firewall_cmd;
     struct timespec tm = { INT_MAX, 0 };
-    time_t last_report_time = INT_MAX;
+    time_t last_report_time;
     time_t next_report_time = INT_MAX;
     time_t current_unix_time = 0;
     int rv = ETIMEDOUT;
@@ -181,6 +181,8 @@ void *scheduler_thread(void *args)
     firewall_cmd = (const char*) args;
 
     call_firewall( firewall_cmd, NULL );
+
+    last_report_time = get_unix_time();
 
     while( __keep_going__ ) {
         int info_period = 3;

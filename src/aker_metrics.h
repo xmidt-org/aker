@@ -96,7 +96,7 @@ void aker_metric_set_tz_offset( long int val );
 /**
  *  Sends the aker metrics to the specified endpoints.
  */
-void aker_metrics_report();
+void aker_metrics_report(time_t now);
 
 
 /**

@@ -109,6 +109,7 @@ int main( int argc, char **argv)
 #endif
 
     start_unix_time = get_unix_time();
+    srand(start_unix_time);
     debug_info("start_unix_time is %ld\n", start_unix_time);
     aker_metric_set_process_start_time(start_unix_time);
     
