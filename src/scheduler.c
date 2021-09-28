@@ -233,7 +233,7 @@ void *scheduler_thread(void *args)
            if( NULL != current_blocked_macs ) { //To set schedule_enabled parameter
                 aker_metric_inc_schedule_set_count();
                 aker_metric_set_schedule_enabled(1);
-                if(current_schedule->time_zone != NULL) {
+                if(current_schedule && current_schedule->time_zone != NULL) {
                     aker_metric_set_tz(current_schedule->time_zone);
                     set_unix_time_zone(current_schedule->time_zone);
 
@@ -255,7 +255,9 @@ void *scheduler_thread(void *args)
             call_firewall( firewall_cmd, current_blocked_macs );
 
             /* Only if the reporting rate changes, calculate a new report rate jitter */
-            if( last_report_rate != current_schedule->report_rate_s ) {
+            if( current_schedule && 
+                last_report_rate != current_schedule->report_rate_s )
+            {
                 last_report_rate = current_schedule->report_rate_s;
 
                 /* Remove the previously calculated jitter so we don't compound
