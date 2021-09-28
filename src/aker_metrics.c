@@ -151,6 +151,8 @@ static void build_and_send_wrp( time_t time )
     wrp_msg_t msg;
     char source[256];
 
+    memset(&msg, 0, sizeof(wrp_msg_t));
+
     /* Only send the number of valid rows to prevent bogus metrics data
      * from being sent. */
     valid_count++;
