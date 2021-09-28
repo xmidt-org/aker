@@ -21,29 +21,66 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <time.h>
+#include <msgpack.h>
+#include <wrp-c/wrp-c.h>
+#include <libparodus.h>
+
+#if defined(ENABLE_FEATURE_TELEMETRY2_0)
+   #include <telemetry_busmessage_sender.h>
+#endif
 
 #include "aker_metrics.h"
 #include "aker_log.h"
+#include "aker_mem.h"
+
+
+/*----------------------------------------------------------------------------*/
+/*                                   Macros                                   */
+/*----------------------------------------------------------------------------*/
+#define MAX_TIMEZONE    255
+#define MAKE_TOKEN(str)                  \
+    {                                    \
+        .s = str, .len = sizeof(str) - 1 \
+    }
 
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
 struct aker_metrics
 {
+	time_t snapshot;                /* only used for old samples */
+
 	uint32_t device_block_count;
 	uint32_t window_trans_count;
 	uint32_t schedule_set_count;
 	uint32_t md5_err_count;
-	time_t process_start_time;
 	int schedule_enabled;
-	char* timezone;
+	char timezone[MAX_TIMEZONE+1];
 	long int timezone_offset;
+};
+
+struct metric_label {
+    const char *s;
+    size_t len;
 };
 
 /*----------------------------------------------------------------------------*/
 /*                            File Scoped Variables                           */
 /*----------------------------------------------------------------------------*/
+const struct metric_label METRIC_PS__ = MAKE_TOKEN( "ps" );
+const struct metric_label METRIC_ID__ = MAKE_TOKEN( "id" );
+const struct metric_label METRIC_ROWS = MAKE_TOKEN( "rows" );
+const struct metric_label METRIC_TS__ = MAKE_TOKEN( "ts" );
+const struct metric_label METRIC_OFF_ = MAKE_TOKEN( "off" );
+const struct metric_label METRIC_DBC_ = MAKE_TOKEN( "dbc" );
+const struct metric_label METRIC_WTC_ = MAKE_TOKEN( "wtc" );
+const struct metric_label METRIC_SSC_ = MAKE_TOKEN( "ssc" );
+const struct metric_label METRIC_MD5_ = MAKE_TOKEN( "md5" );
+const struct metric_label METRIC_TZ__ = MAKE_TOKEN( "tz" );
 
+static time_t g_process_start_time;
+static const char *g_device_id;
+static libpd_instance_t g_libpd;
 static struct aker_metrics g_metrics;
 pthread_mutex_t aker_metrics_mut=PTHREAD_MUTEX_INITIALIZER;
 
@@ -55,11 +92,119 @@ pthread_mutex_t aker_metrics_mut=PTHREAD_MUTEX_INITIALIZER;
 /*----------------------------------------------------------------------------*/
 /*                             Internal Functions                             */
 /*----------------------------------------------------------------------------*/
-/* none */
+static void pack_uint32(msgpack_packer *pk, const struct metric_label *l, uint32_t d)
+{
+    msgpack_pack_str(pk, l->len );
+    msgpack_pack_str_body(pk, l->s, l->len );
+    msgpack_pack_unsigned_int(pk, d);
+}
+
+static void pack_long__(msgpack_packer *pk, const struct metric_label *l, long d)
+{
+    msgpack_pack_str(pk, l->len );
+    msgpack_pack_str_body(pk, l->s, l->len );
+    msgpack_pack_long(pk, d);
+}
+
+static void pack_label(msgpack_packer *pk, const struct metric_label *l)
+{
+    msgpack_pack_str(pk, l->len );
+    msgpack_pack_str_body(pk, l->s, l->len );
+}
+
+static void pack_string(msgpack_packer *pk, const struct metric_label *l, const char*s)
+{
+    size_t len = strlen(s);
+
+    pack_label(pk, l);
+    msgpack_pack_str(pk, len );
+    msgpack_pack_str_body(pk, s, len );
+}
+
+static void pack_row_map(msgpack_packer *pk, const struct aker_metrics *m)
+{
+    msgpack_pack_map(pk, 7);
+    pack_long__(pk, &METRIC_TS__, m->snapshot);
+    pack_long__(pk, &METRIC_OFF_, m->timezone_offset);
+    pack_uint32(pk, &METRIC_DBC_, m->device_block_count);
+    pack_uint32(pk, &METRIC_WTC_, m->window_trans_count);
+    pack_uint32(pk, &METRIC_SSC_, m->schedule_set_count);
+    pack_uint32(pk, &METRIC_MD5_, m->md5_err_count);
+    pack_string(pk, &METRIC_TZ__, &m->timezone[0]);
+}
+
+static void pack_rows(msgpack_packer *pk, const struct aker_metrics *m, size_t count)
+{
+    pack_label(pk, &METRIC_ROWS);
+    msgpack_pack_array(pk, count);
+    for(size_t i = 0; i < count; i++) {
+        pack_row_map(pk, &m[i]);
+    }
+}
+
+static void build_and_send_wrp( time_t time )
+{
+    static int valid_count = 0;
+    static struct aker_metrics old[3];
+    msgpack_sbuffer sbuf;
+    msgpack_packer pk;
+    wrp_msg_t msg;
+    char source[256];
+
+    memset(&msg, 0, sizeof(wrp_msg_t));
+
+    /* Only send the number of valid rows to prevent bogus metrics data
+     * from being sent. */
+    valid_count++;
+    if( 3 < valid_count ) {
+        valid_count = 3;
+    }
+
+    /* Record the time of this snapshot so it is consistent going forward. */
+    g_metrics.snapshot = time;
+
+    /* Rotate the 3 we're keeping for redundancy */
+    memcpy(&old[2], &old[1], sizeof(struct aker_metrics));
+    memcpy(&old[1], &old[0], sizeof(struct aker_metrics));
+    memcpy(&old[0], &g_metrics, sizeof(struct aker_metrics));
+
+    /* Build the msgpack payload */
+    msgpack_sbuffer_init(&sbuf);
+    msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
+    msgpack_pack_map(&pk, 3);
+
+    pack_long__(&pk, &METRIC_PS__, g_process_start_time);
+    pack_string(&pk, &METRIC_ID__, g_device_id);
+    pack_rows(&pk, old, valid_count);
+
+    /* Build the source since it should be mac:000000000000/aker */
+    snprintf( source, 256, "%s/aker", g_device_id );
+
+    /* Populate the rest of the wrp for the event. */
+    msg.msg_type = WRP_MSG_TYPE__EVENT;
+    msg.u.event.content_type = "application/msgpack";
+    msg.u.event.source = source;
+    msg.u.event.dest = "event:metrics.aker";
+    msg.u.event.payload = sbuf.data;
+    msg.u.event.payload_size = sbuf.size;
+
+    /* Send it if we can. */
+    if( g_libpd ) {
+        libparodus_send(g_libpd, &msg);
+    }
+
+    /* Clean up */
+    msgpack_sbuffer_destroy(&sbuf);
+}
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
+void aker_metric_init( const char *device_id, libpd_instance_t libpd )
+{
+    g_device_id = device_id;
+    g_libpd = libpd;
+}
 
 /* See aker_metrics.h for details. */
 void aker_metric_inc_device_block_count( uint32_t val )
@@ -106,7 +251,7 @@ void aker_metric_set_process_start_time( time_t val )
 {
 	pthread_mutex_lock(&aker_metrics_mut);
 
-	g_metrics.process_start_time = val;
+	g_process_start_time = val;
 
 	pthread_mutex_unlock(&aker_metrics_mut);
 }
@@ -126,15 +271,17 @@ void aker_metric_set_tz( const char *val )
 {
 	pthread_mutex_lock(&aker_metrics_mut);
 
-	if( g_metrics.timezone )
-	{
-		free(g_metrics.timezone);
-	}
-
 	if( val )
 	{
-		g_metrics.timezone = strdup(val);
-	}
+        size_t len = strlen(val);
+        if( MAX_TIMEZONE < len ) {
+            len = MAX_TIMEZONE;
+        }
+        memcpy(&g_metrics.timezone[0], val, len);
+        g_metrics.timezone[len] = '\0';
+	} else {
+        memset(&g_metrics.timezone[0], 0, MAX_TIMEZONE);
+    }
 
 	pthread_mutex_unlock(&aker_metrics_mut);
 }
@@ -150,11 +297,12 @@ void aker_metric_set_tz_offset( long int val )
 }
 
 /* See aker_metrics.h for details. */
-void stringify_metrics(int flag)
+void aker_metrics_report_to_log()
 {
 	char str[512];
 
 	pthread_mutex_lock(&aker_metrics_mut);
+    
 	snprintf(str, 512, "DeviceBlockCount,%d,"
 	                   "WindowTransistionCount,%d,"
 	                   "ScheduleSetCount,%d,"
@@ -168,21 +316,25 @@ void stringify_metrics(int flag)
 	                   g_metrics.window_trans_count,
 	                   g_metrics.schedule_set_count,
 	                   g_metrics.md5_err_count,
-	                   g_metrics.process_start_time,
+	                   g_process_start_time,
 	                   g_metrics.schedule_enabled,
-	                   (NULL == g_metrics.timezone) ? "NULL" : g_metrics.timezone,
+	                   ('\0' == g_metrics.timezone[0]) ? "NULL" : g_metrics.timezone,
 	                   g_metrics.timezone_offset);
 	pthread_mutex_unlock(&aker_metrics_mut);
 
 	debug_info("The stringified value is (%s)\n", str);
 
-	if(flag)
-	{
-	#if defined(ENABLE_FEATURE_TELEMETRY2_0)
-		t2_event_s("Akermetrics", str);
-		debug_info("Akermetrics t2 event triggered\n");
-	#endif
-	}
+#if defined(ENABLE_FEATURE_TELEMETRY2_0)
+    t2_event_s("Akermetrics", str);
+    debug_info("Akermetrics t2 event triggered\n");
+#endif
+}
+
+void aker_metrics_report(time_t now)
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+	build_and_send_wrp(now);
+	pthread_mutex_unlock(&aker_metrics_mut);
 }
 
 /* See aker_metrics.h for details. */
@@ -216,11 +368,6 @@ int get_blocked_mac_count(const char* blocked)
 void destroy_akermetrics()
 {
 	pthread_mutex_lock(&aker_metrics_mut);
-	if( NULL != g_metrics.timezone )
-	{
-		free( g_metrics.timezone );
-		g_metrics.timezone = NULL;
-	}
     memset(&g_metrics, 0, sizeof(struct aker_metrics));
 	pthread_mutex_unlock(&aker_metrics_mut);
 }

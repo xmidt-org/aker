@@ -29,9 +29,13 @@
 #define RELATIVE_TIME_STR "time"
 #define UNIX_TIME_STR     "unix_time"
 #define INDEXES_STR       "indexes"
+#define REPORT_RATE_STR   "report_rate"
 /* Currently AKER will not do any validation on time_zone string */
 #define TIME_ZONE         "time_zone" /* REF: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones */
 
+#ifndef MINIMUM_REPORTING_RATE
+#define MINIMUM_REPORTING_RATE 3600
+#endif
 
 
 #define UNPACKED_BUFFER_SIZE 2048
@@ -109,6 +113,14 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t)
                 }
                 else if (0 == strncmp(key->via.str.ptr, TIME_ZONE, key->via.str.size)) {
                     decode_string_type(key, val, &s);
+                }
+                else if (0 == strncmp(key->via.str.ptr, REPORT_RATE_STR, key->via.str.size)) {
+                    s->report_rate_s = (uint32_t) val->via.u64;
+                    if( (0 < s->report_rate_s) &&
+                        (s->report_rate_s < MINIMUM_REPORTING_RATE) )
+                    {
+                        s->report_rate_s = MINIMUM_REPORTING_RATE;
+                    }
                 }
                 else {
                      debug_error("decode_schedule() can't handle object %d\n", obj.type);

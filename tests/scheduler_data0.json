@@ -1,9 +1,4 @@
 {
- "Unknown": [
-  {
-   "Unknown_Array": [2,5,7,1001]
-  } 
- ],
  "weekly": [
    {
      "time": 10,
@@ -46,6 +41,7 @@
        2
      ]
    }
- ]
+ ],
+ "report_rate": 3600
 }
 

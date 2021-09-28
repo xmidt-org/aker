@@ -175,6 +175,55 @@ int main( int argc, char *argv[] )
    return rv;
 }
 
+
+void aker_metrics_report_to_log(void)
+{
+}
+
+
+void aker_metrics_report(time_t time)
+{
+    (void) time;
+}
+
+void aker_metric_set_schedule_enabled(int val)
+{
+    (void) val;
+}
+
+void aker_metric_set_tz(const char *val)
+{
+    (void) val;
+}
+
+void aker_metric_set_tz_offset(long int val)
+{
+    (void) val;
+}
+
+void aker_metric_inc_device_block_count(uint32_t val)
+{
+    (void) val;
+}
+
+void aker_metric_inc_window_trans_count()
+{
+}
+
+void aker_metric_inc_schedule_set_count()
+{
+}
+
+void destroy_akermetrics()
+{
+}
+
+int get_blocked_mac_count(const char* blocked)
+{
+    (void) blocked;
+    return 0;
+}
+
 time_t convert_unix_time_to_weekly(time_t unixtime)
 {
     time_t seconds_since_sunday_midnght;

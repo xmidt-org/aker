@@ -33,10 +33,16 @@
 #include "aker_mem.h"
 #include "aker_help.h"
 #include "aker_metrics.h"
+#include "time.h"
 
 #ifdef INCLUDE_BREAKPAD
 #include "breakpad_wrapper.h"
 #endif
+
+#if defined(ENABLE_FEATURE_TELEMETRY2_0)
+   #include <telemetry_busmessage_sender.h>
+#endif
+
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -64,14 +70,14 @@ size_t max_macs = INT_MAX;
 /*----------------------------------------------------------------------------*/
 static void sig_handler(int sig);
 static void import_existing_schedule( const char *data_file, const char *md5_file );
-static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file );
+static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file, const char *device_id );
 
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
 int main( int argc, char **argv)
 {
-    const char *option_string = "p:c:w:d:f:m:h::";
+    const char *option_string = "p:c:w:d:f:m:i:h::";
     static const struct option options[] = {
         { "help",         optional_argument, 0, 'h' },
         { "parodus-url",  required_argument, 0, 'p' },
@@ -80,6 +86,7 @@ int main( int argc, char **argv)
         { "data-file",    required_argument, 0, 'd' },
         { "md5-file",     required_argument, 0, 'f' },
         { "max-macs",     required_argument, 0, 'm' },
+        { "device-id",    required_argument, 0, 'i' },
         { 0, 0, 0, 0 }
     };
 
@@ -93,6 +100,7 @@ int main( int argc, char **argv)
     char *firewall_cmd = NULL;
     char *data_file = NULL;
     char *md5_file = NULL;
+    const char *device_id = NULL;
     int item = 0;
     int opt_index = 0;
     int rv = 0;
@@ -106,6 +114,7 @@ int main( int argc, char **argv)
 #endif
 
     start_unix_time = get_unix_time();
+    srand((unsigned int)start_unix_time);
     debug_info("start_unix_time is %ld\n", start_unix_time);
     aker_metric_set_process_start_time(start_unix_time);
     
@@ -147,6 +156,11 @@ int main( int argc, char **argv)
             case 'm':
                 max_macs = atoi(optarg);
                 break;
+            case 'i':
+                /* This is basically a constant for the program.  No need to
+                 * duplicate, just point to the original arguement. */
+                device_id = optarg;
+                break;
             case 'h':
                 aker_help(argv[0], optarg);
                 break;
@@ -170,41 +184,46 @@ int main( int argc, char **argv)
     if (max_macs <= 0) {
         max_macs = INT_MAX;
     }
-    
+
     if( (rv == 0) &&
         (NULL != cfg.parodus_url) &&
         (NULL != cfg.client_url) &&
         (NULL != firewall_cmd) &&
         (NULL != data_file) &&
-        (NULL != md5_file) )
+        (NULL != md5_file) &&
+        (NULL != device_id) )
     {
         scheduler_start( &thread_id, firewall_cmd );
 
         import_existing_schedule( data_file, md5_file );
         
-        main_loop(&cfg, data_file, md5_file);
+        main_loop(&cfg, data_file, md5_file, device_id);
         rv = 0;
     } else {
-        if ((NULL == cfg.parodus_url)) {
+        if (!cfg.parodus_url) {
             debug_error("%s parodus_url not specified!\n", argv[0]);
             rv = -1;
         }
-        if ((NULL == cfg.client_url)) {
+        if (!cfg.client_url) {
             debug_error("%s client_url not specified !\n", argv[0]);
             rv = -2;
         }
-        if ((NULL == firewall_cmd)) {
+        if (!firewall_cmd) {
             debug_error("%s firewall_cmd not specified!\n", argv[0]);
             rv = -3;
         }
-        if ((NULL == data_file)) {
+        if (!data_file) {
             debug_error("%s data_file not specified!\n", argv[0]);
             rv = -4;
         }
-        if ((NULL == md5_file)) {
+        if (!md5_file) {
             debug_error("%s md5_file not specified!\n", argv[0]);
             rv = -5;
-        }        
+        }
+        if (!device_id) {
+            debug_error("%s device_id not specified!\n", argv[0]);
+            rv = -6;
+        }
      }
     
     if (rv != 0) {
@@ -270,7 +289,7 @@ static void import_existing_schedule( const char *data_file, const char *md5_fil
 }
 
 
-static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
+static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file, const char *device_id )
 {
     int rv;
     wrp_msg_t *wrp_msg;
@@ -297,6 +316,8 @@ static int main_loop(libpd_cfg_t *cfg, char *data_file, char *md5_file )
         }
         libparodus_shutdown(&hpd_instance);
     }
+
+    aker_metric_init(device_id, hpd_instance);
 
     debug_print("starting the main loop...\n");
     while( true ) {

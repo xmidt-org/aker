@@ -57,6 +57,12 @@ typedef struct schedule {
 
     size_t mac_count;               /* The count of the macs. */
     mac_address *macs;              /* The shared list of mac addresses to block. */
+
+    uint32_t report_rate_s;         /* 0      = none (default)
+                                     * 3600   = 1 hour (minimum)
+                                     * 86400  = daily
+                                     * 604800 = weekly
+                                     */
 } schedule_t;
 
 /*----------------------------------------------------------------------------*/

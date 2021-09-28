@@ -18,11 +18,8 @@
 #define __AKER_METRICS_H__
 
 #include <stdint.h>
-#include "time.h"
-
-#if defined(ENABLE_FEATURE_TELEMETRY2_0)
-   #include <telemetry_busmessage_sender.h>
-#endif
+#include <time.h>
+#include <libparodus.h>
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -32,6 +29,14 @@
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
+
+/**
+ *  Initializes the metrics subsystem.
+ *
+ *  @param device_id  the device id to use when needed
+ *  @param libpd      the libpd to use for sending messages
+ */
+void aker_metric_init(const char *device_id, libpd_instance_t libpd);
 
 /**
  *  Sets the device_block_count in the global g_metrics
@@ -89,13 +94,15 @@ void aker_metric_set_tz_offset( long int val );
 
 
 /**
- *  Sends the aker metrics values with names into a single
- *  comma separate value via Telemetry event.
- *
- *  @param flag        1 to trigger an event and 0 to not trigger an event
- *
+ *  Sends the aker metrics to the specified endpoints.
  */
-void stringify_metrics(int flag);
+void aker_metrics_report(time_t now);
+
+
+/**
+ *  Sends the aker metrics to the log.
+ */
+void aker_metrics_report_to_log(void);
 
 
 /**

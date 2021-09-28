@@ -75,8 +75,10 @@ int __validate_mac( const char *mac, size_t len );
 void test_decoder( void )
 {
     uint8_t data[] = {
-        0x83,
-            0xaf, 'w', 'e', 'e', 'k', 'l', 'y', '-', 's', 'c', 'h', 'e', 'd', 'u', 'l', 'e',
+        0x84,
+            0xab, 'r', 'e', 'p', 'o', 'r', 't', '_', 'r', 'a', 't', 'e',
+            0xcd, 0x0e, 0x10,
+            0xa6, 'w', 'e', 'e', 'k', 'l', 'y',
             0x93,
                 0x82,
                     0xa4, 't', 'i', 'm', 'e',
@@ -165,6 +167,9 @@ void run_schedule_test( schedule_test_t *t )
 
     s = create_schedule();
     CU_ASSERT( NULL != s );
+
+    /* Seed the report rate */
+    s->report_rate_s = 3600;
 
     rv = create_mac_table( s, 5 );
     CU_ASSERT( 0 == rv );

@@ -55,6 +55,7 @@ void print_schedule( schedule_t *s )
     printf( "schedule {\n" );
 
     printf( "   s->time_zone: %s\n", ((NULL == s->time_zone) ? "NULL" : s->time_zone));
+    printf( "   s->report_rate: %u\n", s->report_rate_s);
 
     printf( "   s->mac_count: %zd\n", s->mac_count );
     for( i = 0; i < s->mac_count; i++ ) {
