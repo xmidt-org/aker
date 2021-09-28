@@ -50,6 +50,7 @@ static schedule_t *current_schedule = NULL;
 static char *current_blocked_macs = NULL;
 static pthread_mutex_t schedule_lock;
 static pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
+static int report_metrics_to_log = 0;
 
 /*----------------------------------------------------------------------------*/
 /*                             External functions                             */
@@ -275,8 +276,11 @@ void *scheduler_thread(void *args)
             last_report_time = current_unix_time;
         }
 
-        /* Always report this to the log. */
-        aker_metrics_report_to_log();
+        /* Report this to the log when something has happened. */
+        if( 0 < report_metrics_to_log ) {
+            aker_metrics_report_to_log();
+            report_metrics_to_log = 0;
+        }
 
         /* Never report if disabled */
         next_report_time = INT_MAX;
@@ -337,6 +341,7 @@ static void call_firewall( const char* firewall_cmd, char *blocked )
             aker_metric_inc_window_trans_count();
             aker_free( buf );
             debug_info( "command result: %d\n", rv );
+            report_metrics_to_log = 1;
         } else {
             debug_error( "Failed to allocate buffer needed to call firewall cmd.\n" );
         }
