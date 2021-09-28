@@ -175,6 +175,12 @@ int main( int argc, char *argv[] )
    return rv;
 }
 
+
+void aker_metrics_report_to_log(void)
+{
+}
+
+
 void aker_metrics_report(time_t time)
 {
     (void) time;

@@ -295,13 +295,11 @@ void aker_metric_set_tz_offset( long int val )
 }
 
 /* See aker_metrics.h for details. */
-void aker_metrics_report(time_t now)
+void aker_metrics_report_to_log()
 {
 	char str[512];
 
 	pthread_mutex_lock(&aker_metrics_mut);
-
-    build_and_send_wrp(now);
     
 	snprintf(str, 512, "DeviceBlockCount,%d,"
 	                   "WindowTransistionCount,%d,"
@@ -328,6 +326,13 @@ void aker_metrics_report(time_t now)
     t2_event_s("Akermetrics", str);
     debug_info("Akermetrics t2 event triggered\n");
 #endif
+}
+
+void aker_metrics_report(time_t now)
+{
+	pthread_mutex_lock(&aker_metrics_mut);
+	build_and_send_wrp(now);
+	pthread_mutex_unlock(&aker_metrics_mut);
 }
 
 /* See aker_metrics.h for details. */

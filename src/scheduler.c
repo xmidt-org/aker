@@ -273,6 +273,9 @@ void *scheduler_thread(void *args)
             last_report_time = current_unix_time;
         }
 
+        /* Always report this to the log. */
+        aker_metrics_report_to_log();
+
         /* Never report if disabled */
         next_report_time = INT_MAX;
         if( current_schedule && (0 < current_schedule->report_rate_s) ) {

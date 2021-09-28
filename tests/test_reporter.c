@@ -84,6 +84,7 @@ const char data1[] = "\x84"
                                 "\xb1""44:55:66:77:88:dd"
                         "\xa7""index"
                             "\x92"  "\x00" "\x02";
+
 /* Start the scheduler thread without any schedule data */
 void test1()
 {
@@ -153,6 +154,10 @@ int main( int argc, char *argv[] )
 int32_t get_max_mac_limit()
 {
     return 100;
+}
+
+void aker_metrics_report_to_log(void)
+{
 }
 
 void aker_metrics_report(time_t time)

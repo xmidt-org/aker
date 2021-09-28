@@ -100,6 +100,12 @@ void aker_metrics_report(time_t now);
 
 
 /**
+ *  Sends the aker metrics to the log.
+ */
+void aker_metrics_report_to_log(void);
+
+
+/**
  *  Gives the number of devices blocked
  *  comma separate value via Telemetry event.
  *
