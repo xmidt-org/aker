@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [1.1.0] - 2021-09-29
+## [v1.1.0] - 2021-09-29
 ### Added
 - Provide operational metrics as a metric message through xmidt and a log message
 
