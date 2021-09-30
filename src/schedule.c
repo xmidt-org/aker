@@ -132,7 +132,7 @@ int insert_event(schedule_event_t **head, schedule_event_t *e )
     }
 
     e->next = cur;
-    if( (prev) && (e->time == prev->time) ) {
+    if( (NULL != prev) && (e->time == prev->time) ) {
         /* A duplicate entry is a mistake in the schedule. */
         return -1;
     } else if( (NULL == prev) || (e->time < prev->time) ) {

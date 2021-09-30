@@ -206,63 +206,7 @@ size_t decode_length_infinite_loop = sizeof(decode_infinite_loop) - 1;
 #include "test3.h" /* Missing Arrays */
 #include "test4.h" /* Missing Everything i.e. "{ }" */
 #include "unknown.h" /* name:value pairs that are unknown to decode */
-void xxd(const void *buffer, size_t length, FILE *stream)
-{
-    const char hex[17] = "0123456789abcdef";
-    char text[16];
-    const char *data = (const char *)buffer;
-    const char *end;
-    size_t line = 0;
 
-    if (!buffer || !length) {
-        return;
-    }
-
-    end = &data[length];
-
-    while (data < end) {
-        size_t i;
-        char *text_ptr = text;
-
-        /* Output the '0000000:' portion */
-        fputc(hex[0x0f & (line >> 24)], stream);
-        fputc(hex[0x0f & (line >> 20)], stream);
-        fputc(hex[0x0f & (line >> 16)], stream);
-        fputc(hex[0x0f & (line >> 12)], stream);
-        fputc(hex[0x0f & (line >> 8)], stream);
-        fputc(hex[0x0f & (line >> 4)], stream);
-        fputc(hex[0x0f & line], stream);
-        fputc(':', stream);
-        fputc(' ', stream);
-
-        for (i = 0; i < 16; i++) {
-            if (data < end) {
-                fputc(hex[0x0f & (*data >> 4)], stream);
-                fputc(hex[0x0f & (*data)], stream);
-                if ((' ' <= *data) && (*data <= '~')) {
-                    *text_ptr++ = *data;
-                } else {
-                    *text_ptr++ = '.';
-                }
-                data++;
-            } else {
-                fputc(' ', stream);
-                fputc(' ', stream);
-                *text_ptr++ = ' ';
-            }
-            if (0x01 == (0x01 & i)) {
-                fputc(' ', stream);
-            }
-        }
-        line += 16;
-        fputc(' ', stream);
-
-        for (i = 0; i < 16; i++) {
-            fputc(text[i], stream);
-        }
-        fputc('\n', stream);
-    }
-}
 void test_schedule(schedule_t *s)
 {
     /* December 31, 2017 from 12:00:01 AM to 12:05 AM*/
