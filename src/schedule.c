@@ -117,12 +117,12 @@ schedule_event_t* copy_schedule_event( schedule_event_t *e )
 
 
 /* See schedule.h for details. */
-void insert_event(schedule_event_t **head, schedule_event_t *e )
+int insert_event(schedule_event_t **head, schedule_event_t *e )
 {
     schedule_event_t *cur, *prev;
 
     if( (NULL == head) || (NULL == e) ) {
-        return;
+        return 0;
     }
 
     cur = prev = *head;
@@ -132,11 +132,16 @@ void insert_event(schedule_event_t **head, schedule_event_t *e )
     }
 
     e->next = cur;
-    if( (NULL == prev) || (e->time < prev->time) ) {
+    if( (prev) && (e->time == prev->time) ) {
+        /* A duplicate entry is a mistake in the schedule. */
+        return -1;
+    } else if( (NULL == prev) || (e->time < prev->time) ) {
         *head = e;
     } else {
         prev->next = e;
     }
+
+    return 0;
 }
 
 
@@ -160,7 +165,7 @@ int finalize_schedule( schedule_t *s )
                 e = copy_schedule_event( p );
                 if( NULL != e ) {
                     e->time = p->time - SECONDS_IN_A_WEEK;
-                    insert_event( &s->weekly, e );
+                    rv = insert_event( &s->weekly, e );
                 } else {
                     rv = -1;
                 }

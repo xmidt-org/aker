@@ -107,8 +107,10 @@ schedule_event_t* create_schedule_event( size_t block_count );
  *
  *  @param head the pointer to the list head
  *  @param e    the schedule_event_t pointer to add to the list
+ *
+ *  @return 0 on success, -1 otherwise
  */
-void insert_event(schedule_event_t **head, schedule_event_t *e );
+int insert_event(schedule_event_t **head, schedule_event_t *e );
 
 
 /**
