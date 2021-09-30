@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Fixed [Issue #178](https://github.com/xmidt-org/aker/issues/178)
 
+
 ## [1.0.1] - 2018-08-23
 ### Added
 - Command line utility to print out schedule.
