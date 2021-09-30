@@ -51,6 +51,7 @@
      ]
    }
  ],
- "report_rate": 3600
+ "report_rate": 3600,
+ "ignore": "this parameter"
 }
 

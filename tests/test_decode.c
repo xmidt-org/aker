@@ -114,6 +114,93 @@ uint8_t decode_buffer_3[] = {
 };
 size_t decode_length_3 = sizeof(decode_buffer_3);
 
+char decode_buffer_4[] = "\x85"
+                            "\xa6""weekly"
+                                "\x95"
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x0a"
+                                        "\xa7""indexes"
+                                            "\x93" /* [ */ "\x00" "\x01" "\x03" /* ] */
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x14"
+                                        "\xa7""indexes"
+                                            "\x92" /* [ */ "\x00" "\x04" /* ] */
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x1e"
+                                        "\xa7""indexes" "\xc0"
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x28"
+                                        "\xa7""indexes"
+                                            "\x91" /* [ */ "\x00" /* ] */
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x32"
+                                        "\xa7""indexes"
+                                            "\x93" /* [ */ "\x03" "\x05" "\xcd\x03\x8f" /* ] */
+                            "\xa4""macs"
+                                "\x9a"
+                                    "\xb1""11:22:33:44:55:aa"
+                                    "\xb1""22:33:44:55:66:bb"
+                                    "\xb1""33:44:55:66:77:cc"
+                                    "\xb1""44:55:66:77:88:dd"
+                                    "\xb1""55:33:44:55:66:bb"
+                                    "\xb1""66:44:55:66:77:cc"
+                                    "\xb1""77:55:66:77:88:dd"
+                                    "\xb1""88:33:44:55:66:bb"
+                                    "\xb1""99:44:55:66:77:cc"
+                                    "\xb1""00:55:66:77:88:dd"
+                            "\xa8""absolute"
+                                "\x91"
+                                    "\x82"
+                                        "\xa9""unix_time" /* : */ "\xce""\x5a\x0b\x4a\xa8"
+                                        "\xa7""indexes"   /* : */ "\x93" /* [ */ "\x00" "\x02" "\x09" /* ] */
+                            "\xab""report_rate" /* : */ "\xcd""\x0e\x10"
+                            "\xa6""ignore"      /* : */ "\xae""this parameter";
+size_t decode_length_4 = sizeof(decode_buffer_4) - 1;
+
+char decode_infinite_loop[] = "\x85"
+                            "\xa6""weekly"
+                                "\x95"
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x0a"
+                                        "\xa7""indexes"
+                                            "\x93" /* [ */ "\x00" "\x01" "\x03" /* ] */
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x14"
+                                        "\xa7""indexes"
+                                            "\x92" /* [ */ "\x00" "\x04" /* ] */
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x1e"
+                                        "\xa7""indexes" "\xc0"
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x28"
+                                        "\xa7""indexes"
+                                            "\x91" /* [ */ "\x00" /* ] */
+                                    "\x82"
+                                        "\xa4""time" /*: */ "\x0a"
+                                        "\xa7""indexes"
+                                            "\x93" /* [ */ "\x03" "\x05" "\xcd\x03\x8f" /* ] */
+                            "\xa4""macs"
+                                "\x9a"
+                                    "\xb1""11:22:33:44:55:aa"
+                                    "\xb1""22:33:44:55:66:bb"
+                                    "\xb1""33:44:55:66:77:cc"
+                                    "\xb1""44:55:66:77:88:dd"
+                                    "\xb1""55:33:44:55:66:bb"
+                                    "\xb1""66:44:55:66:77:cc"
+                                    "\xb1""77:55:66:77:88:dd"
+                                    "\xb1""88:33:44:55:66:bb"
+                                    "\xb1""99:44:55:66:77:cc"
+                                    "\xb1""00:55:66:77:88:dd"
+                            "\xa8""absolute"
+                                "\x91"
+                                    "\x82"
+                                        "\xa9""unix_time" /* : */ "\xce""\x5a\x0b\x4a\xa8"
+                                        "\xa7""indexes"   /* : */ "\x93" /* [ */ "\x00" "\x02" "\x09" /* ] */
+                            "\xab""report_rate" /* : */ "\xcd""\x0e\x10"
+                            "\xa6""ignore"      /* : */ "\xae""this parameter";
+size_t decode_length_infinite_loop = sizeof(decode_infinite_loop) - 1;
+
+
 #include "test1.h" /* Empty Arrays */
 #include "test2.h" /* NULL Index */
 #include "test3.h" /* Missing Arrays */
@@ -259,11 +346,37 @@ void decode_test()
     CU_ASSERT(NULL == t);
 }
 
+void decode_test_with_extras()
+{
+    schedule_t *t;
+    int ret;
+
+    t = NULL;
+    ret = decode_schedule(decode_length_4, (uint8_t*)decode_buffer_4, &t);
+    CU_ASSERT(0 == ret);
+    CU_ASSERT(NULL != t);
+    destroy_schedule(t);
+}
+
+void decode_test_with_duplicate_time()
+{
+    schedule_t *t;
+    int ret;
+
+    t = NULL;
+    ret = decode_schedule(decode_length_infinite_loop, (uint8_t*)decode_infinite_loop, &t);
+    CU_ASSERT(0 != ret);
+    CU_ASSERT(NULL == t);
+}
+
+
 void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution ---------\n");
     *suite = CU_add_suite( "tests", NULL, NULL );
     CU_add_test( *suite, "Decode Test", decode_test);
+    CU_add_test( *suite, "Decode Test With Extra Item", decode_test_with_extras);
+    CU_add_test( *suite, "Decode Test With Duplicate Time", decode_test_with_duplicate_time);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -94,11 +94,17 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t)
             while (size-- > 0) {
                 if (0 == strncmp(key->via.str.ptr, WEEKLY_SCHEDULE, key->via.str.size)) {
                     debug_print("Found %s\n", WEEKLY_SCHEDULE);
-                    decode_schedule_table(key, val, &s->weekly);
+                    if( 0 != decode_schedule_table(key, val, &s->weekly) ) {
+                        debug_error("decode_schedule():weekly schedule error\n");
+                        ret_val = -9;
+                    }
                 }
                 else if (0 == strncmp(key->via.str.ptr, ABSOLUTE_SCHEDULE, key->via.str.size)) {
                     debug_print("Found %s\n", ABSOLUTE_SCHEDULE);
-                    decode_schedule_table(key, val, &s->absolute);
+                    if( 0 != decode_schedule_table(key, val, &s->absolute) ) {
+                        debug_error("decode_schedule():absolute schedule error\n");
+                        ret_val = -10;
+                    }
                 }
                 else if (0 == strncmp(key->via.str.ptr, MACS, key->via.str.size)) {
                     debug_print("Found %s\n", MACS);
@@ -123,7 +129,7 @@ int decode_schedule(size_t len, uint8_t * buf, schedule_t **t)
                     }
                 }
                 else {
-                     debug_error("decode_schedule() can't handle object %d\n", obj.type);
+                     debug_error("decode_schedule() ignoring unknown object %d\n", obj.type);
                 }
                 p++;
                 key = &p->key;
@@ -185,7 +191,9 @@ int decode_schedule_table (msgpack_object *key, msgpack_object *val, schedule_ev
         if (ptr->type == MSGPACK_OBJECT_MAP) {
             for (i = 0; i < count; i++) {
                 if (0 == process_map(&ptr->via.map, &temp)) {
-                    insert_event(t, temp);
+                    if (0 != insert_event(t, temp)) {
+                        return -1;
+                    }
                 }
                 ptr++;
            }

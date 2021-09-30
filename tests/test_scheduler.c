@@ -57,7 +57,7 @@ uint32_t data_sizes[] = {
 };
 
 pthread_t scheduler_thread_id;
-const char *firewall_cmd = " ";
+const char *firewall_cmd = "echo";
 const char *file_name = "scheduler_data.bin";
 const char *md5_file  = "md5.md5";
 
@@ -69,7 +69,6 @@ void test1()
     CU_ASSERT(0 == result);
 }
 
-
 void test2()
 {
     int result;
@@ -77,7 +76,7 @@ void test2()
     
     for (cnt = 0; cnt < MAX_WRP_TEST_MSGS; cnt++) {
         result = process_update( file_name, md5_file, data_payloads[cnt], data_sizes[cnt] );
-        printf( "got: %d\n", result );
+        printf( "got[%d]: %d\n", cnt, result );
         CU_ASSERT(0 == result);
     }
     malloc_fail = true;
