@@ -36,7 +36,8 @@
 #include "scheduler_data1.h"
 #include "scheduler_data2.h"
 #include "scheduler_data3.h"
-#define MAX_WRP_TEST_MSGS 4
+#include "scheduler_data4.h"
+#define MAX_WRP_TEST_MSGS 5
 
 // Tuesday, November 14, 2017 11:57:28 AM PST = 1510689448
 static time_t kUnixCurrentTime = 1510689448;
@@ -46,14 +47,16 @@ unsigned char *data_payloads[] = {
     scheduler_data0_bin,
     scheduler_data1_bin,
     scheduler_data2_bin,
-    scheduler_data3_bin
+    scheduler_data3_bin,
+    scheduler_data4_bin,
 };
 
 uint32_t data_sizes[] = {
     scheduler_data0_bin_len,
     scheduler_data1_bin_len,
     scheduler_data2_bin_len,
-    scheduler_data3_bin_len
+    scheduler_data3_bin_len,
+    scheduler_data4_bin_len,
 };
 
 pthread_t scheduler_thread_id;

@@ -183,8 +183,11 @@ int decode_schedule_table (msgpack_object *key, msgpack_object *val, schedule_ev
         int count = val->via.array.size; 
         int i;
         schedule_event_t *temp = NULL;
-        
-        if (count <= 0) {
+
+        /* An empty list is ok, but an invalid size is an error. */
+        if (count == 0) {
+            return 0;
+        } else if (count < 0) {
             return -1;
         }
 

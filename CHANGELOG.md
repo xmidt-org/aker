@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+- Fixed [Issue #180](https://github.com/xmidt-org/aker/issues/180)
+
 ## [v1.1.0] - 2021-09-29
 ### Added
 - Provide operational metrics as a metric message through xmidt and a log message

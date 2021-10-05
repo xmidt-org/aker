@@ -1,0 +1,55 @@
+{
+  "weekly": [
+    {
+      "time": 86400,
+      "indexes": [
+        0,
+        1
+      ]
+    },
+    {
+      "time": 115200,
+      "indexes": []
+    },
+    {
+      "time": 172800,
+      "indexes": [
+        0,
+        1
+      ]
+    },
+    {
+      "time": 201600,
+      "indexes": []
+    },
+    {
+      "time": 259200,
+      "indexes": [
+        0,
+        1
+      ]
+    },
+    {
+      "time": 288000,
+      "indexes": []
+    },
+    {
+      "time": 345600,
+      "indexes": [
+        0,
+        1
+      ]
+    },
+    {
+      "time": 478500,
+      "indexes": []
+    }
+  ],
+  "macs": [
+    "d6:0b:68:4f:15:a0",
+    "c4:84:66:29:0f:9d"
+  ],
+  "time_zone": "PST8PDT",
+  "absolute": [],
+  "report_rate": 120
+}
