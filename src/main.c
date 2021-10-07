@@ -48,7 +48,7 @@
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
 #define LIBPD_CLOSED_MSG_RECEIVED 2
-
+#define MAC_ADDRESS_LENGTH 16                      //mac:000000000000
 /*----------------------------------------------------------------------------*/
 /*                               Data Structures                              */
 /*----------------------------------------------------------------------------*/
@@ -196,9 +196,19 @@ int main( int argc, char **argv)
         scheduler_start( &thread_id, firewall_cmd );
 
         import_existing_schedule( data_file, md5_file );
-        
-        main_loop(&cfg, data_file, md5_file, device_id);
-        rv = 0;
+
+        debug_info("The device_id field obtained is %s\n", device_id);
+
+        if(strlen(device_id) != MAC_ADDRESS_LENGTH)
+        {
+            debug_error("The mac address is not valid\n");
+            rv = -6;
+        }
+        else
+        {
+            main_loop(&cfg, data_file, md5_file, device_id);
+            rv = 0;
+        }
     } else {
         if (!cfg.parodus_url) {
             debug_error("%s parodus_url not specified!\n", argv[0]);
