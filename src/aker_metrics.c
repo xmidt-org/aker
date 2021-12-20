@@ -299,18 +299,11 @@ void aker_metric_set_tz_offset( long int val )
 /* See aker_metrics.h for details. */
 void aker_metrics_report_to_log()
 {
-	char str[512];
+	char str[128];
 
 	pthread_mutex_lock(&aker_metrics_mut);
     
-	snprintf(str, 512, "DeviceBlockCount,%d,"
-	                   "WindowTransistionCount,%d,"
-	                   "ScheduleSetCount,%d,"
-	                   "MD5ErrorCount,%d,"
-	                   "ProcessStartTime,%ld,"
-	                   "ScheduleEnabled,%d,"
-	                   "TimeZone,%s,"
-	                   "TimeZoneOffset,%+ld",
+	snprintf(str, 128, "%d,%d,%d,%d,%ld,%d,%s,%+ld",
 
 	                   g_metrics.device_block_count,
 	                   g_metrics.window_trans_count,
