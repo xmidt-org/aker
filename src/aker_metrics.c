@@ -315,10 +315,10 @@ void aker_metrics_report_to_log()
 	                   g_metrics.timezone_offset);
 	pthread_mutex_unlock(&aker_metrics_mut);
 
-	debug_info("The stringified value is (%s)\n", str);
+	debug_info("The stringified value is %s\n", str);
 
 #if defined(ENABLE_FEATURE_TELEMETRY2_0)
-    t2_event_s("Akermetrics", str);
+    t2_event_s("Akermetrics_split", str);
     debug_info("Akermetrics t2 event triggered\n");
 #endif
 }
