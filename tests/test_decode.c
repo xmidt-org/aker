@@ -447,3 +447,9 @@ int32_t get_max_mac_limit(void)
 {
     return 2048;
 }
+
+void set_gmtoff(long int timezoneoff)
+{
+    (void)timezoneoff;
+    return;
+}

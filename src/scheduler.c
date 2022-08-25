@@ -142,7 +142,6 @@ char *get_current_blocked_macs( void )
     return macs;
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
 /*----------------------------------------------------------------------------*/
@@ -239,10 +238,9 @@ void *scheduler_thread(void *args)
                     set_unix_time_zone(current_schedule->time_zone);
 
                     debug_print("The timezone is %s and %s\n", tzname[0], tzname[1]);
-                    debug_print("The offset is %+ld seconds\n", timezone);
-
+                    debug_print("The offset using tm_gmtoff is %+ld seconds\n", get_gmtoff());
                     //"timezone" parameter is not defined in aker code and will be set from tzset()
-                    aker_metric_set_tz_offset(timezone);
+                    aker_metric_set_tz_offset(get_gmtoff());
                 } else {
                     debug_info("The timezone set is NULL\n");
                     aker_metric_set_tz("NULL");
@@ -395,4 +393,5 @@ void cleanup (void )
     pthread_mutex_destroy(&schedule_lock);
     destroy_schedule(current_schedule);
     destroy_akermetrics();
+    reset_gmtoff();
 }

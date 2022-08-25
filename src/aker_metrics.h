@@ -119,4 +119,21 @@ int get_blocked_mac_count(const char* blocked);
 /* Destroys the metrics resoureces. */
 void destroy_akermetrics();
 
+/**
+ *  Sets the timezone offset value in the global g_timezoneoff
+ *
+ *  @param timezoneoff  the timezone offset value
+ *
+ */
+void set_gmtoff(long int timezoneoff);
+
+/**
+ *  Gets the timezone offset value in the global g_timezoneoff.
+ */
+long int get_gmtoff();
+
+/**
+ *  Resets the timezone offset value in the global g_timezoneoff to 0
+ */
+void reset_gmtoff();
 #endif

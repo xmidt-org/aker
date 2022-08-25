@@ -20,6 +20,7 @@
 
 #include "time.h"
 #include "aker_log.h"
+#include "aker_metrics.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                   Macros                                   */
@@ -99,8 +100,9 @@ int set_unix_time_zone (const char *time_zone)
        debug_error("set_unix_time_zone() error, TZ = %s\n", time_zone);
    }
 
+   set_gmtoff(mt->tm_gmtoff);
    debug_info("time_zone: %s is %s\n", time_zone, ftime);
-   
+
    return rv;
 }
 /*----------------------------------------------------------------------------*/

@@ -203,3 +203,19 @@ int get_blocked_mac_count(const char* blocked)
     (void) blocked;
     return 0;
 }
+
+void set_gmtoff(long int timezoneoff)
+{
+    (void)timezoneoff;
+    return;
+}
+
+long int get_gmtoff()
+{
+    return 0;
+}
+
+void reset_gmtoff()
+{
+    return;
+}

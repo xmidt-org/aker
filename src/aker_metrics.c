@@ -83,6 +83,7 @@ static const char *g_device_id;
 static libpd_instance_t g_libpd;
 static struct aker_metrics g_metrics;
 pthread_mutex_t aker_metrics_mut=PTHREAD_MUTEX_INITIALIZER;
+static long int g_timezoneoff = 0;
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
@@ -294,6 +295,28 @@ void aker_metric_set_tz_offset( long int val )
 	g_metrics.timezone_offset = val;
 
 	pthread_mutex_unlock(&aker_metrics_mut);
+}
+
+void set_gmtoff(long int timezoneoff)
+{
+    pthread_mutex_lock( &aker_metrics_mut );
+    g_timezoneoff = timezoneoff;
+    pthread_mutex_unlock( &aker_metrics_mut );
+}
+
+long int get_gmtoff()
+{
+    pthread_mutex_lock( &aker_metrics_mut );
+    long int temp = g_timezoneoff;
+    pthread_mutex_unlock( &aker_metrics_mut );
+    return temp;
+}
+
+void reset_gmtoff()
+{
+    pthread_mutex_lock( &aker_metrics_mut );
+    g_timezoneoff = 0;
+    pthread_mutex_unlock( &aker_metrics_mut );
 }
 
 /* See aker_metrics.h for details. */

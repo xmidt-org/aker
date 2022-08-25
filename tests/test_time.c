@@ -81,3 +81,8 @@ int main( int argc, char *argv[] )
     return rv;
 }
 
+void set_gmtoff(long int timezoneoff)
+{
+    (void)timezoneoff;
+    return;
+}
