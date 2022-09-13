@@ -297,13 +297,6 @@ void aker_metric_set_tz_offset( long int val )
 	pthread_mutex_unlock(&aker_metrics_mut);
 }
 
-void set_gmtoff(long int timezoneoff)
-{
-    pthread_mutex_lock( &aker_metrics_mut );
-    g_timezoneoff = timezoneoff;
-    pthread_mutex_unlock( &aker_metrics_mut );
-}
-
 long int get_gmtoff()
 {
     pthread_mutex_lock( &aker_metrics_mut );
@@ -317,6 +310,35 @@ void reset_gmtoff()
     pthread_mutex_lock( &aker_metrics_mut );
     g_timezoneoff = 0;
     pthread_mutex_unlock( &aker_metrics_mut );
+}
+
+void tz_offset_calc( char * tzbuf)
+{
+	long int tzoff = 0;
+	debug_info("%s\n", &tzbuf[1]);
+	debug_info("%s\n", &tzbuf[3]);
+	if(tzbuf != 0)
+	{
+		int hr = 0;
+		int min = atoi(&tzbuf[3]) * 60;
+		debug_print("The min is %+d\n", min);
+		hr = (atoi(&tzbuf[1]) / 100) * 3600;
+		debug_print("The hr is %+d\n", hr);
+		
+		if( strstr(tzbuf, "+"))
+		{
+			tzoff = hr + min;
+		}
+		else
+		{
+			tzoff = (hr + min) * -1;
+		}
+	}
+	debug_print("The time diff value is %+ld\n", tzoff);
+
+	pthread_mutex_lock( &aker_metrics_mut );
+	g_timezoneoff = tzoff;
+	pthread_mutex_unlock( &aker_metrics_mut );
 }
 
 /* See aker_metrics.h for details. */

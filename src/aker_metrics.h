@@ -120,14 +120,6 @@ int get_blocked_mac_count(const char* blocked);
 void destroy_akermetrics();
 
 /**
- *  Sets the timezone offset value in the global g_timezoneoff
- *
- *  @param timezoneoff  the timezone offset value
- *
- */
-void set_gmtoff(long int timezoneoff);
-
-/**
  *  Gets the timezone offset value in the global g_timezoneoff.
  */
 long int get_gmtoff();
@@ -136,4 +128,12 @@ long int get_gmtoff();
  *  Resets the timezone offset value in the global g_timezoneoff to 0
  */
 void reset_gmtoff();
+
+/**
+ *  Calculates and sets the timezone offset value in the global g_timezoneoff
+ *
+ *  @param tzbuf  the timezone offset string value (eg.+0530)
+ *
+ */
+void tz_offset_calc( char * tzbuf);
 #endif

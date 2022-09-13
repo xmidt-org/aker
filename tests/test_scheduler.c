@@ -253,9 +253,9 @@ int32_t get_max_mac_limit(void)
     return 2048;
 }
 
-void set_gmtoff(long int timezoneoff)
+void tz_offset_calc( char * tzbuf)
 {
-    (void)timezoneoff;
+    (void)tzbuf;
     return;
 }
 

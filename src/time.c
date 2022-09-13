@@ -87,6 +87,7 @@ int set_unix_time_zone (const char *time_zone)
    struct tm *mt;
    time_t mtt;
    char ftime[10];
+   char tzbuf[6];
    int rv = 0;
 
    setenv("TZ", time_zone, 1);
@@ -95,12 +96,13 @@ int set_unix_time_zone (const char *time_zone)
    mt = localtime(&mtt);
    if (0 != mt->tm_zone[0]) {
        strftime(ftime,sizeof(ftime),"%Z %H%M",mt);
+       strftime(tzbuf,sizeof(tzbuf),"%z",mt);
    } else {
        strftime(ftime,sizeof(ftime),"nil %H%M",mt);
        debug_error("set_unix_time_zone() error, TZ = %s\n", time_zone);
    }
 
-   set_gmtoff(mt->tm_gmtoff);
+   tz_offset_calc(tzbuf);
    debug_info("time_zone: %s is %s\n", time_zone, ftime);
 
    return rv;
