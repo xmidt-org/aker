@@ -126,12 +126,22 @@ static void pack_row_map(msgpack_packer *pk, const struct aker_metrics *m)
 {
     msgpack_pack_map(pk, 7);
     pack_long__(pk, &METRIC_TS__, m->snapshot);
-    pack_long__(pk, &METRIC_OFF_, m->timezone_offset);
+   // pack_long__(pk, &METRIC_OFF_, m->timezone_offset);
     pack_uint32(pk, &METRIC_DBC_, m->device_block_count);
     pack_uint32(pk, &METRIC_WTC_, m->window_trans_count);
     pack_uint32(pk, &METRIC_SSC_, m->schedule_set_count);
     pack_uint32(pk, &METRIC_MD5_, m->md5_err_count);
     pack_string(pk, &METRIC_TZ__, &m->timezone[0]);
+    if('\0' == m->timezone[0])
+    {
+        pack_long__(pk, &METRIC_OFF_, 0);
+        debug_info("Inside pack +0 for off\n");
+    }
+    else
+    {
+        pack_long__(pk, &METRIC_OFF_, get_tz_offset());
+        debug_info("Inside pack %+ld for off\n", get_tz_offset());
+    }
 }
 
 static void pack_rows(msgpack_packer *pk, const struct aker_metrics *m, size_t count)
@@ -312,6 +322,18 @@ void reset_gmtoff()
     pthread_mutex_unlock( &aker_metrics_mut );
 }
 
+long int get_tz_offset()
+{
+    time_t t;
+    struct tm *local;
+
+    t = time(NULL);
+    local = localtime(&t);
+
+    return local->tm_gmtoff;
+}
+
+/*
 void tz_offset_calc( char * tzbuf)
 {
 	long int tzoff = 0;
@@ -340,7 +362,7 @@ void tz_offset_calc( char * tzbuf)
 	g_timezoneoff = tzoff;
 	pthread_mutex_unlock( &aker_metrics_mut );
 }
-
+*/
 /* See aker_metrics.h for details. */
 void aker_metrics_report_to_log()
 {
@@ -364,7 +386,9 @@ void aker_metrics_report_to_log()
 	                   g_process_start_time,
 	                   g_metrics.schedule_enabled,
 	                   ('\0' == g_metrics.timezone[0]) ? "NULL" : g_metrics.timezone,
-	                   g_metrics.timezone_offset);
+	                   ('\0' == g_metrics.timezone[0]) ? 0 : get_tz_offset());
+	                   //('\0' == g_metrics.timezone[0]) ? "NULL" : g_metrics.timezone,
+	                   //g_metrics.timezone_offset);
 	pthread_mutex_unlock(&aker_metrics_mut);
 
 	debug_info("The stringified value is (%s)\n", str);

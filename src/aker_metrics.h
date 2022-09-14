@@ -135,5 +135,6 @@ void reset_gmtoff();
  *  @param tzbuf  the timezone offset string value (eg.+0530)
  *
  */
-void tz_offset_calc( char * tzbuf);
+//void tz_offset_calc( char * tzbuf);
+long int get_tz_offset();
 #endif
