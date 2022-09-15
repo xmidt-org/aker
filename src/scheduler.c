@@ -100,7 +100,7 @@ int process_schedule_data( size_t len, uint8_t *data )
         pthread_cond_signal(&cond_var);
         destroy_schedule( s );
         aker_metric_set_schedule_enabled(0);    //Schedule_Enabled is 0 as schedule is empty
-        aker_metric_set_tz("NULL");
+        aker_metric_set_tz(NULL);
         //aker_metric_set_tz_offset(0);
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
@@ -243,12 +243,12 @@ void *scheduler_thread(void *args)
                     //aker_metric_set_tz_offset(get_gmtoff());
                 } else {
                     debug_info("The timezone set is NULL\n");
-                    aker_metric_set_tz("NULL");
+                    aker_metric_set_tz(NULL);
                     //aker_metric_set_tz_offset(0);
                 }
             } else {
                 aker_metric_set_schedule_enabled(0);
-                aker_metric_set_tz("NULL");
+                aker_metric_set_tz(NULL);
                 //aker_metric_set_tz_offset(0);
             }
             call_firewall( firewall_cmd, current_blocked_macs );

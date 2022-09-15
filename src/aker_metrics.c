@@ -131,14 +131,15 @@ static void pack_row_map(msgpack_packer *pk, const struct aker_metrics *m)
     pack_uint32(pk, &METRIC_WTC_, m->window_trans_count);
     pack_uint32(pk, &METRIC_SSC_, m->schedule_set_count);
     pack_uint32(pk, &METRIC_MD5_, m->md5_err_count);
-    pack_string(pk, &METRIC_TZ__, &m->timezone[0]);
     if('\0' == m->timezone[0])
     {
+        pack_string(pk, &METRIC_TZ__, "NULL");
         pack_long__(pk, &METRIC_OFF_, 0);
         debug_info("Inside pack +0 for off\n");
     }
     else
     {
+        pack_string(pk, &METRIC_TZ__, &m->timezone[0]);
         pack_long__(pk, &METRIC_OFF_, get_tz_offset());
         debug_info("Inside pack %+ld for off\n", get_tz_offset());
     }
