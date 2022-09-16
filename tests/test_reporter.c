@@ -203,19 +203,3 @@ int get_blocked_mac_count(const char* blocked)
     (void) blocked;
     return 0;
 }
-
-void tz_offset_calc( char * tzbuf)
-{
-    (void)tzbuf;
-    return;
-}
-
-long int get_gmtoff()
-{
-    return 0;
-}
-
-void reset_gmtoff()
-{
-    return;
-}

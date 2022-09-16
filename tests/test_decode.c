@@ -447,9 +447,3 @@ int32_t get_max_mac_limit(void)
 {
     return 2048;
 }
-
-void tz_offset_calc( char * tzbuf)
-{
-    (void)tzbuf;
-    return;
-}

@@ -101,7 +101,6 @@ int process_schedule_data( size_t len, uint8_t *data )
         destroy_schedule( s );
         aker_metric_set_schedule_enabled(0);    //Schedule_Enabled is 0 as schedule is empty
         aker_metric_set_tz(NULL);
-        //aker_metric_set_tz_offset(0);
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
         rv = decode_schedule( len, data, &s );
@@ -237,19 +236,14 @@ void *scheduler_thread(void *args)
                     aker_metric_set_tz(current_schedule->time_zone);
                     set_unix_time_zone(current_schedule->time_zone);
 
-                    //debug_print("The timezone is %s and %s\n", tzname[0], tzname[1]);
-                    //debug_print("The offset using tm_gmtoff is %+ld seconds\n", get_gmtoff());
-                    //"timezone" parameter is not defined in aker code and will be set from tzset()
-                    //aker_metric_set_tz_offset(get_gmtoff());
+                    debug_print("The timezone is %s and %s\n", tzname[0], tzname[1]);
                 } else {
                     debug_info("The timezone set is NULL\n");
                     aker_metric_set_tz(NULL);
-                    //aker_metric_set_tz_offset(0);
                 }
             } else {
                 aker_metric_set_schedule_enabled(0);
                 aker_metric_set_tz(NULL);
-                //aker_metric_set_tz_offset(0);
             }
             call_firewall( firewall_cmd, current_blocked_macs );
 
@@ -393,5 +387,4 @@ void cleanup (void )
     pthread_mutex_destroy(&schedule_lock);
     destroy_schedule(current_schedule);
     destroy_akermetrics();
-    reset_gmtoff();
 }

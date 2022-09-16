@@ -81,8 +81,3 @@ int main( int argc, char *argv[] )
     return rv;
 }
 
-void tz_offset_calc( char * tzbuf)
-{
-    (void)tzbuf;
-    return;
-}

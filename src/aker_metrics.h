@@ -85,15 +85,6 @@ void aker_metric_set_tz( const char *val );
 
 
 /**
- *  Sets the timezone offset value in the global g_metrics
- *
- *  @param val        the timezone offset value
- *
- */
-void aker_metric_set_tz_offset( long int val );
-
-
-/**
  *  Sends the aker metrics to the specified endpoints.
  */
 void aker_metrics_report(time_t now);
@@ -119,22 +110,12 @@ int get_blocked_mac_count(const char* blocked);
 /* Destroys the metrics resoureces. */
 void destroy_akermetrics();
 
-/**
- *  Gets the timezone offset value in the global g_timezoneoff.
- */
-long int get_gmtoff();
 
 /**
- *  Resets the timezone offset value in the global g_timezoneoff to 0
- */
-void reset_gmtoff();
-
-/**
- *  Calculates and sets the timezone offset value in the global g_timezoneoff
+ *  Calculates and returns the timezone offset value set in current process
  *
- *  @param tzbuf  the timezone offset string value (eg.+0530)
+ *  @return the timezone offset value in secs (eg.for +0600 the offset return is +14400)
  *
  */
-//void tz_offset_calc( char * tzbuf);
 long int get_tz_offset();
 #endif
