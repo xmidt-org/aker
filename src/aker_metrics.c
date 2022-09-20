@@ -82,6 +82,7 @@ static const char *g_device_id;
 static libpd_instance_t g_libpd;
 static struct aker_metrics g_metrics;
 pthread_mutex_t aker_metrics_mut=PTHREAD_MUTEX_INITIALIZER;
+static long int get_tz_offset();
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
@@ -293,7 +294,8 @@ void aker_metric_set_tz( const char *val )
 	pthread_mutex_unlock(&aker_metrics_mut);
 }
 
-long int get_tz_offset()
+/*Calculates timezone offset value set in current process (eg.for +0400 the offset return is +14400)*/
+static long int get_tz_offset()
 {
     time_t t;
     struct tm *local;

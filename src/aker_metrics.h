@@ -109,13 +109,4 @@ int get_blocked_mac_count(const char* blocked);
 
 /* Destroys the metrics resoureces. */
 void destroy_akermetrics();
-
-
-/**
- *  Calculates and returns the timezone offset value set in current process
- *
- *  @return the timezone offset value in secs (eg.for +0600 the offset return is +14400)
- *
- */
-long int get_tz_offset();
 #endif
