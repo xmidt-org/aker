@@ -6,8 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v1.2.0] - 2022-09-21
+### Added
+- Assurance metrics added.
+- MAC addrss validation added.
+
 ### Fixed
 - Fixed [Issue #180](https://github.com/xmidt-org/aker/issues/180)
+- Assurance metrics timezone offset was corrected.
 
 ## [v1.1.0] - 2021-09-29
 ### Added
@@ -38,8 +44,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial creation
 
-[Unreleased]: https://github.com/Comcast/aker/compare/1.1.0...HEAD
-[1.1.0]: https://github.com/Comcast/aker/compare/1.0.1...1.1.0
-[1.0.1]: https://github.com/Comcast/aker/compare/1.0.0...1.0.1
-[1.0.0]: https://github.com/Comcast/aker/compare/08e182618484166436085fe7be4b860375aae0c3...1.0.0
+[Unreleased]: https://github.com/xmidt-org/aker/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/xmidt-org/aker/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/xmidt-org/aker/compare/1.0.1...v1.1.0
+[1.0.1]: https://github.com/xmidt-org/aker/compare/1.0.0...1.0.1
+[1.0.0]: https://github.com/xmidt-org/aker/compare/08e182618484166436085fe7be4b860375aae0c3...1.0.0
 
