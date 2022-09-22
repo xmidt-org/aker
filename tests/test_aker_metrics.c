@@ -129,20 +129,6 @@ void test_timezone()
     destroy_akermetrics();
 }
 
-void test_timezone_offset()
-{
-    aker_metric_set_tz_offset(+19600);
-    CU_ASSERT((+19600) == g_metrics.timezone_offset);
-
-    aker_metric_set_tz_offset(-18800);
-    CU_ASSERT((-18800) == g_metrics.timezone_offset);
-
-    aker_metric_set_tz_offset(+0);
-    CU_ASSERT((0) == g_metrics.timezone_offset);
-
-    destroy_akermetrics();
-}
-
 void test_blocked_mac_count()
 {
     int val = 0;
@@ -289,7 +275,6 @@ void test_complete()
     aker_metric_inc_schedule_set_count();
     aker_metric_inc_md5_err_count();
     aker_metric_set_tz( "foo" );
-    aker_metric_set_tz_offset( 60 );
 
     __check = report_0;
     __check_len = sizeof(report_0) - 1;
@@ -325,7 +310,6 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "test_process_start_time", test_process_start_time);
     CU_add_test( *suite, "test_schedule_enabled", test_schedule_enabled);
     CU_add_test( *suite, "test_timezone", test_timezone);
-    CU_add_test( *suite, "test_timezone_offset", test_timezone_offset);
     CU_add_test( *suite, "test_blocked_mac_count", test_blocked_mac_count);
     CU_add_test( *suite, "test_complete", test_complete);
 }

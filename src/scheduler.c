@@ -100,8 +100,7 @@ int process_schedule_data( size_t len, uint8_t *data )
         pthread_cond_signal(&cond_var);
         destroy_schedule( s );
         aker_metric_set_schedule_enabled(0);    //Schedule_Enabled is 0 as schedule is empty
-        aker_metric_set_tz("NULL");
-        aker_metric_set_tz_offset(0);
+        aker_metric_set_tz(NULL);
         debug_info( "process_schedule_data() empty schedule\n" );
     } else {
         rv = decode_schedule( len, data, &s );
@@ -141,7 +140,6 @@ char *get_current_blocked_macs( void )
 
     return macs;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal functions                             */
@@ -239,19 +237,13 @@ void *scheduler_thread(void *args)
                     set_unix_time_zone(current_schedule->time_zone);
 
                     debug_print("The timezone is %s and %s\n", tzname[0], tzname[1]);
-                    debug_print("The offset is %+ld seconds\n", timezone);
-
-                    //"timezone" parameter is not defined in aker code and will be set from tzset()
-                    aker_metric_set_tz_offset(timezone);
                 } else {
                     debug_info("The timezone set is NULL\n");
-                    aker_metric_set_tz("NULL");
-                    aker_metric_set_tz_offset(0);
+                    aker_metric_set_tz(NULL);
                 }
             } else {
                 aker_metric_set_schedule_enabled(0);
-                aker_metric_set_tz("NULL");
-                aker_metric_set_tz_offset(0);
+                aker_metric_set_tz(NULL);
             }
             call_firewall( firewall_cmd, current_blocked_macs );
 

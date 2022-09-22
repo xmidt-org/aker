@@ -56,7 +56,6 @@ struct aker_metrics
 	uint32_t md5_err_count;
 	int schedule_enabled;
 	char timezone[MAX_TIMEZONE+1];
-	long int timezone_offset;
 };
 
 struct metric_label {
@@ -83,6 +82,7 @@ static const char *g_device_id;
 static libpd_instance_t g_libpd;
 static struct aker_metrics g_metrics;
 pthread_mutex_t aker_metrics_mut=PTHREAD_MUTEX_INITIALIZER;
+static long int get_tz_offset();
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
@@ -125,12 +125,20 @@ static void pack_row_map(msgpack_packer *pk, const struct aker_metrics *m)
 {
     msgpack_pack_map(pk, 7);
     pack_long__(pk, &METRIC_TS__, m->snapshot);
-    pack_long__(pk, &METRIC_OFF_, m->timezone_offset);
     pack_uint32(pk, &METRIC_DBC_, m->device_block_count);
     pack_uint32(pk, &METRIC_WTC_, m->window_trans_count);
     pack_uint32(pk, &METRIC_SSC_, m->schedule_set_count);
     pack_uint32(pk, &METRIC_MD5_, m->md5_err_count);
-    pack_string(pk, &METRIC_TZ__, &m->timezone[0]);
+    if('\0' == m->timezone[0])
+    {
+        pack_string(pk, &METRIC_TZ__, "NULL");
+        pack_long__(pk, &METRIC_OFF_, 0);
+    }
+    else
+    {
+        pack_string(pk, &METRIC_TZ__, &m->timezone[0]);
+        pack_long__(pk, &METRIC_OFF_, get_tz_offset());
+    }
 }
 
 static void pack_rows(msgpack_packer *pk, const struct aker_metrics *m, size_t count)
@@ -286,14 +294,16 @@ void aker_metric_set_tz( const char *val )
 	pthread_mutex_unlock(&aker_metrics_mut);
 }
 
-/* See aker_metrics.h for details. */
-void aker_metric_set_tz_offset( long int val )
+/*Calculates timezone offset value set in current process (eg.for +0400 the offset return is +14400)*/
+static long int get_tz_offset()
 {
-	pthread_mutex_lock(&aker_metrics_mut);
+    time_t t;
+    struct tm *local;
 
-	g_metrics.timezone_offset = val;
+    t = time(NULL);
+    local = localtime(&t);
 
-	pthread_mutex_unlock(&aker_metrics_mut);
+    return local->tm_gmtoff;
 }
 
 /* See aker_metrics.h for details. */
@@ -312,7 +322,8 @@ void aker_metrics_report_to_log()
 	                   g_process_start_time,
 	                   g_metrics.schedule_enabled,
 	                   ('\0' == g_metrics.timezone[0]) ? "NULL" : g_metrics.timezone,
-	                   g_metrics.timezone_offset);
+	                   ('\0' == g_metrics.timezone[0]) ? 0 : get_tz_offset());
+
 	pthread_mutex_unlock(&aker_metrics_mut);
 
 	debug_info("The stringified value is %s\n", str);
