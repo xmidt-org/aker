@@ -15,7 +15,7 @@
 cmake_minimum_required(VERSION 2.8.7)
 
 project(aker)
-set(VERSION "1.1.0")
+set(VERSION "1.2.0")
 
 include(ExternalProject)
 include(CTest)
