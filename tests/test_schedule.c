@@ -128,8 +128,20 @@ void test_decoder( void )
 
 time_t convert_unix_time_to_weekly( time_t unixtime )
 {
-    //printf( "unix: %ld -> rel: %ld\n", unixtime, (unixtime - 1234000 + 11) );
-    return unixtime - 1234000 + 11;
+    time_t seconds_since_sunday_midnght;
+    time_t t = unixtime;
+    struct tm ts;
+
+    ts = *localtime(&t);
+
+    seconds_since_sunday_midnght = (ts.tm_wday * 24 * 3600) +
+            (ts.tm_hour * 3600) +
+            (ts.tm_min * 60) +
+            ts.tm_sec;
+
+
+    //printf( "unix: %ld -> rel: %ld\n", unixtime, seconds_since_sunday_midnght);
+    return seconds_since_sunday_midnght;
 }
 
 
@@ -162,6 +174,9 @@ void run_schedule_test( schedule_test_t *t )
     int rv;
     uint8_t i, j;
     time_t next_unixtime;
+
+    /* Ensure the TZ is consistent for the tests. */
+    set_unix_time_zone("UTC");
 
     CU_ASSERT( NULL != t );
 
@@ -230,8 +245,8 @@ void test_simple_case( void )
     char *mac_id[] = { "11:22:33:44:55:66", "22:33:44:55:66:aa", "33:44:55:66:aa:BB", };
 
     input_t absolute[] = { 
-        { .time = 1234000, .block_count = 2, .block = { 2, 1 }, },
-        { .time = 1234010, .block_count = 1, .block = { 2 }, },
+        { .time = 864010, .block_count = 2, .block = { 2, 1 }, },
+        { .time = 864015, .block_count = 1, .block = { 2 }, },
     };
     
     input_t weekly[] = {
@@ -240,12 +255,16 @@ void test_simple_case( void )
     };
     
     block_test_t b_test[] = {
-        { .unixtime = 1233999, .macs = "22:33:44:55:66:aa",                   .next_unixtime = 1234000, },
-        { .unixtime = 1234000, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
-        { .unixtime = 1234001, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
-        { .unixtime = 1234010, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 1234012, },
-        { .unixtime = 1234011, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 1234012, },
-        { .unixtime = 1234012, .macs = "11:22:33:44:55:66",                   .next_unixtime = 1234013, },
+        { .unixtime = 864000, .macs = "22:33:44:55:66:aa",                   .next_unixtime = 864010, },
+        { .unixtime = 864009, .macs = "22:33:44:55:66:aa",                   .next_unixtime = 864010, },
+        { .unixtime = 864010, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 864015, },
+        { .unixtime = 864011, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 864015, },
+        { .unixtime = 864014, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 864015, },
+        { .unixtime = 864015, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 864023, },
+        { .unixtime = 864016, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 864023, },
+        { .unixtime = 864023, .macs = "11:22:33:44:55:66",                   .next_unixtime = 864024, },
+        { .unixtime = 864024, .macs = "22:33:44:55:66:aa",                   .next_unixtime = 1468823, },
+        { .unixtime = 864025, .macs = "22:33:44:55:66:aa",                   .next_unixtime = 1468823, },
     };
     
     schedule_test_t test = { .macs = mac_id,       .macs_size = sizeof(mac_id),
@@ -263,7 +282,7 @@ void test_another_usecase( void )
 
     input_t absolute[] = { 
         { .time = 0,       .block_count = 2, .block = { 2, 1 }, },
-        { .time = 1234010, .block_count = 1, .block = { 2 }, },
+        { .time = 864015,  .block_count = 1, .block = { 2 }, },
     };
 
     input_t weekly[] = {
@@ -272,12 +291,12 @@ void test_another_usecase( void )
     };
 
     block_test_t b_test[] = {
-        { .unixtime = 1233999, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
-        { .unixtime = 1234000, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
-        { .unixtime = 1234001, .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 1234010, },
-        { .unixtime = 1234010, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 1234012, },
-        { .unixtime = 1234011, .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 1234012, },
-        { .unixtime = 1234012, .macs = "11:22:33:44:55:66",                   .next_unixtime = 1234013, },
+        { .unixtime = 864,     .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 864015, },
+        { .unixtime = 864014,  .macs = "33:44:55:66:aa:BB 22:33:44:55:66:aa", .next_unixtime = 864015, },
+        { .unixtime = 864015,  .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 864023, },
+        { .unixtime = 864022,  .macs = "33:44:55:66:aa:BB",                   .next_unixtime = 864023, },
+        { .unixtime = 864023,  .macs = "11:22:33:44:55:66",                   .next_unixtime = 864024, },
+        { .unixtime = 864024,  .macs = "22:33:44:55:66:aa",                   .next_unixtime = 1468823, },
     };
 
     schedule_test_t test = { .macs = mac_id,       .macs_size = sizeof(mac_id),
@@ -359,8 +378,6 @@ void test_only_one_absolute( void )
 
 void test_only_one_weekly( void )
 {
-    #define WEEKLY_23_NEXT_WEEK 1234012 + SECONDS_IN_A_WEEK
-
     char *mac_id[] = { "11:22:33:44:55:66", "22:33:44:55:66:aa", "33:44:55:66:aa:BB", "44:55:66:aa:BB:cc", "55:66:aa:BB:cc:DD", };
 
     input_t weekly[] = {
@@ -368,13 +385,11 @@ void test_only_one_weekly( void )
     };
 
     block_test_t b_test[] = {
-        { .unixtime = 1233999, .macs = "11:22:33:44:55:66", .next_unixtime = 1234012, },
-        { .unixtime = 1234000, .macs = "11:22:33:44:55:66", .next_unixtime = 1234012, },
-        { .unixtime = 1234001, .macs = "11:22:33:44:55:66", .next_unixtime = 1234012, },
-        { .unixtime = 1234010, .macs = "11:22:33:44:55:66", .next_unixtime = 1234012, },
-        { .unixtime = 1234011, .macs = "11:22:33:44:55:66", .next_unixtime = 1234012, },
-        { .unixtime = 1234012, .macs = "11:22:33:44:55:66", .next_unixtime = WEEKLY_23_NEXT_WEEK, },
-        { .unixtime = 1234013, .macs = "11:22:33:44:55:66", .next_unixtime = WEEKLY_23_NEXT_WEEK, },
+        { .unixtime = 864000, .macs = "11:22:33:44:55:66", .next_unixtime = 864023, },
+        { .unixtime = 864001, .macs = "11:22:33:44:55:66", .next_unixtime = 864023, },
+        { .unixtime = 864022, .macs = "11:22:33:44:55:66", .next_unixtime = 864023, },
+        { .unixtime = 864023, .macs = "11:22:33:44:55:66", .next_unixtime = 1468823, },
+        { .unixtime = 864024, .macs = "11:22:33:44:55:66", .next_unixtime = 1468823, },
     };
 
     schedule_test_t test = { .macs = mac_id,       .macs_size = sizeof(mac_id),
