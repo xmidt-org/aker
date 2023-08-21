@@ -32,7 +32,6 @@ jobs:
         run: |
           sudo apt update
           sudo apt-get -y install valgrind libcunit1 libcunit1-doc libcunit1-dev libcurl4-openssl-dev libtool gcovr
-          pip install codecov
 
       - name: Make Build Directory
         run: mkdir build
@@ -59,7 +58,7 @@ jobs:
 
       - name: Upload SonarCloud
         run: |
-          build/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dproject.settings=.sonar-project.properties -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          build/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dproject.settings=.sonar-project.properties -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }} -Dsonar.organization=${{ github.repository_owner }} -Dsonar.login=${{ secrets.SONAR_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
