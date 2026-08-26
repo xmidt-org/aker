@@ -26,6 +26,7 @@
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
 #define NOTIFICATION_ADVANCE_TIME_SEC     900   /* 15 minutes before event */
+#define NOTIFICATION_LATE_THRESHOLD_SEC   5     /* Max seconds late to still send notification */
 #define SCHEDULED_TIME_TOLERANCE_SEC      60    /* Tolerance for timeline comparison */
 #define MAX_WEEKS_AHEAD                   2     /* Build timeline 2 weeks ahead */
 

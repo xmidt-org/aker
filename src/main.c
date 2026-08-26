@@ -33,6 +33,7 @@
 #include "aker_mem.h"
 #include "aker_help.h"
 #include "aker_metrics.h"
+#include "aker_rbus.h"
 #include "time.h"
 
 #ifdef INCLUDE_BREAKPAD
@@ -112,6 +113,11 @@ int main( int argc, char **argv)
     t2_init("aker");
     debug_info("aker T2 init done\n");
 #endif
+
+    /* Initialize RBUS for notification telemetry */
+    if (aker_rbus_init() != 0) {
+        debug_error("Failed to initialize RBUS, continuing without RBUS notifications\n");
+    }
 
     start_unix_time = get_unix_time();
     srand((unsigned int)start_unix_time);
@@ -239,6 +245,9 @@ int main( int argc, char **argv)
     if (rv != 0) {
         debug_error("%s  program terminating\n", argv[0]);
     }
+
+    /* Cleanup RBUS */
+    aker_rbus_uninit();
 
     if( NULL != md5_file )          aker_free( md5_file );
     if( NULL != data_file )         aker_free( data_file );

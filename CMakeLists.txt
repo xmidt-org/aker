@@ -36,6 +36,7 @@ include_directories(${INCLUDE_DIR}
                     ${INCLUDE_DIR}/trower-base64
                     ${INCLUDE_DIR}/wrp-c
                     ${INCLUDE_DIR}/libparodus
+                    ${INCLUDE_DIR}/rbus
                    )
 
 # Compile options/flags
@@ -149,6 +150,40 @@ ExternalProject_Add(libparodus
 )
 add_library(liblibparodus STATIC SHARED IMPORTED)
 add_dependencies(liblibparodus libparodus)
+
+# cJSON external dependency (for RBUS)
+#-------------------------------------------------------------------------------
+if (NOT BUILD_GIT)
+ExternalProject_Add(cJSON
+    PREFIX ${PREFIX_DIR}/cJSON
+    GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
+    GIT_TAG "39853e5148dad8dc5d32ea2b00943cf4a0c6f120"
+    CMAKE_ARGS += -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
+)
+add_library(libcJSON STATIC IMPORTED)
+add_dependencies(libcJSON cJSON)
+endif()
+
+# RBUS external dependency (if not in Yocto)
+#-------------------------------------------------------------------------------
+if (NOT BUILD_GIT)
+ExternalProject_Add(rbus
+     DEPENDS cJSON
+     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_prefix/rbus
+     GIT_REPOSITORY https://github.com/rdkcentral/rbus.git
+     GIT_TAG main
+     CMAKE_ARGS += -DBUILD_FOR_DESKTOP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_TESTING=OFF
+)
+
+add_library(librbuscore STATIC SHARED IMPORTED)
+add_dependencies(librbuscore rbuscore)
+
+add_library(librtMessage STATIC SHARED IMPORTED)
+add_dependencies(librtMessage rtMessage)
+
+add_library(librbus STATIC SHARED IMPORTED)
+add_dependencies(librbus rbus)
+endif ()
 
 endif()
 

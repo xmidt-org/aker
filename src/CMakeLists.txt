@@ -16,7 +16,7 @@ set(PROJ_AKER aker)
 set(SOURCES wrp_interface.c decode.c time.c schedule.c
             process_data.c scheduler.c schedule_print.c
             aker_md5.c md5.c aker_mem.c aker_help.c aker_msgpack.c aker_metrics.c
-            aker_notification.c)
+            aker_notification.c aker_rbus.c)
 
 if (NOT BUILD_YOCTO)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W -g -fprofile-arcs -ftest-coverage -O0")
@@ -35,6 +35,7 @@ if (NOT BUILD_YOCTO)
 		-lm
 		-lcimplog
 		-lpthread
+		-lrbus
 		)
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	target_link_libraries (aker-cli -lrt ${CURL_LIBRARIES})
@@ -51,6 +52,7 @@ target_link_libraries (aker
     -lm
     -lcimplog
     -lpthread
+    -lrbus
     )
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (aker rt)

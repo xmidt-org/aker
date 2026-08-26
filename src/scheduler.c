@@ -34,6 +34,7 @@
 #include "aker_mem.h"
 #include "aker_metrics.h"
 #include "aker_notification.h"
+#include "aker_rbus.h"
 
 #ifdef INCLUDE_BREAKPAD
 #include "breakpad_wrapper.h"
@@ -276,6 +277,9 @@ void *scheduler_thread(void *args)
         /* Build notification timeline ONLY when schedule structure changes (new schedule received)
          * NOT when blocking state changes (time advances) */
         if( 0 != schedule_structure_changed ) {
+            /* Reset RBUS notification counter for new schedule */
+            aker_rbus_reset_notification_count();
+
             if( notification_timeline ) {
                 destroy_timeline_collection(notification_timeline);
                 notification_timeline = NULL;

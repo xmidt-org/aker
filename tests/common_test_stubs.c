@@ -16,6 +16,7 @@
  */
 #include <time.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 // can't include time.c 
 int set_unix_time_zone (const char *time_zone)
@@ -26,4 +27,11 @@ int set_unix_time_zone (const char *time_zone)
    tzset();
 
    return rv;
+}
+
+// Stub for T2 telemetry function (used in aker_notification.c and aker_metrics.c)
+void t2_event_s(const char *marker, const char *value)
+{
+    // Stub implementation for tests - just log to console
+    printf("[T2_STUB] Marker: %s, Value: %s\n", marker ? marker : "NULL", value ? value : "NULL");
 }
