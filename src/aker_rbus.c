@@ -37,6 +37,20 @@ static bool g_rbus_initialized = false;
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
 /*----------------------------------------------------------------------------*/
+#ifdef UNIT_TESTING
+/* Not static: exposed (non-public, not in aker_rbus.h) so unit tests can call
+ * them directly without a live RBUS broker. Only compiled this way for test
+ * builds; production keeps these fully static/encapsulated. */
+rbusError_t notification_count_get_handler(
+    rbusHandle_t handle,
+    rbusProperty_t property,
+    rbusGetHandlerOptions_t* opts);
+
+rbusError_t notification_count_set_handler(
+    rbusHandle_t handle,
+    rbusProperty_t property,
+    rbusSetHandlerOptions_t* opts);
+#else
 static rbusError_t notification_count_get_handler(
     rbusHandle_t handle,
     rbusProperty_t property,
@@ -46,6 +60,7 @@ static rbusError_t notification_count_set_handler(
     rbusHandle_t handle,
     rbusProperty_t property,
     rbusSetHandlerOptions_t* opts);
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*                             Internal Functions                             */
@@ -54,7 +69,11 @@ static rbusError_t notification_count_set_handler(
 /**
  * @brief RBUS GET handler for NotificationCount property
  */
+#ifdef UNIT_TESTING
+rbusError_t notification_count_get_handler(
+#else
 static rbusError_t notification_count_get_handler(
+#endif
     rbusHandle_t handle,
     rbusProperty_t property,
     rbusGetHandlerOptions_t* opts)
@@ -83,7 +102,11 @@ static rbusError_t notification_count_get_handler(
  * 
  * Note: Setting is only allowed for reset to 0 (administrative purposes)
  */
+#ifdef UNIT_TESTING
+rbusError_t notification_count_set_handler(
+#else
 static rbusError_t notification_count_set_handler(
+#endif
     rbusHandle_t handle,
     rbusProperty_t property,
     rbusSetHandlerOptions_t* opts)
