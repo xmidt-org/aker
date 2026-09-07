@@ -176,6 +176,7 @@ add_executable(test_scheduler test_scheduler.c ../src/schedule_print.c
                mem_wrapper.c common_test_stubs.c
                libparodus_mock.c)
 target_link_libraries (test_scheduler ${AKER_COMMON_LIBS})
+target_compile_definitions(test_scheduler PUBLIC UNIT_TESTING)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_scheduler ${AKER_LINUX_LIBS})
 endif()
@@ -212,6 +213,33 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_aker_metrics ${AKER_LINUX_LIBS})
 endif()
 
+#-------------------------------------------------------------------------------
+#   test_aker_notification
+#-------------------------------------------------------------------------------
+add_test(NAME test_aker_notification COMMAND ${MEMORY_CHECK} ./test_aker_notification)
+add_executable(test_aker_notification test_aker_notification.c ../src/schedule_print.c
+               ../src/schedule.c ../src/decode.c ../src/process_data.c
+               ../src/aker_md5.c ../src/md5.c ../src/aker_msgpack.c
+               ../src/scheduler.c ../src/aker_notification.c
+               ${AKER_RBUS_SRC}
+               mem_wrapper.c common_test_stubs.c
+               ../src/aker_metrics.c libparodus_mock.c)
+target_link_libraries (test_aker_notification ${AKER_COMMON_LIBS})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_aker_notification ${AKER_LINUX_LIBS})
+endif()
+
+#-------------------------------------------------------------------------------
+#   test_aker_rbus
+#-------------------------------------------------------------------------------
+add_test(NAME test_aker_rbus COMMAND ${MEMORY_CHECK} ./test_aker_rbus)
+add_executable(test_aker_rbus test_aker_rbus.c ../src/aker_rbus.c)
+target_link_libraries (test_aker_rbus ${AKER_COMMON_LIBS})
+target_compile_definitions(test_aker_rbus PUBLIC UNIT_TESTING)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+target_link_libraries (test_aker_rbus ${AKER_LINUX_LIBS})
+endif()
+
 add_custom_target(coverage
 COMMAND lcov -q --capture --directory 
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_time.dir/__/src --output-file time.info
@@ -237,10 +265,14 @@ COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_msgpack.dir/__/src --output-file aker_msgpack.info
 COMMAND lcov -q --capture --directory
 ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_metrics.dir --output-file aker_metrics.info
+COMMAND lcov -q --capture --directory
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_notification.dir/__/src --output-file aker_notification.info
+COMMAND lcov -q --capture --directory
+${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/test_aker_rbus.dir/__/src --output-file aker_rbus.info
 
 COMMAND lcov -a md5.info -a decode.info -a process_now.info -a process_is_create_ok.info
 -a schedule.info -a process.info -a time.info -a scheduler.info -a reporter.info
--a wrp.info -a aker_msgpack.info --output-file coverage.info
+-a wrp.info -a aker_msgpack.info -a aker_notification.info -a aker_rbus.info --output-file coverage.info
 
 COMMAND genhtml coverage.info
 WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

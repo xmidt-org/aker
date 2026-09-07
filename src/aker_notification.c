@@ -467,18 +467,27 @@ static mac_block_period_t* build_periods_for_mac(
     }
 
     current = events;
-    timeline_event_t *prev_event = NULL;
+    /* Tracks the timestamp of the last absolute event seen so ALL weekly events
+     * tied to that same timestamp are skipped, not just the one immediately
+     * following it (schedule wrap-around can duplicate a weekly event at the
+     * same tie point, breaking a prev_event-only check). */
+    time_t last_absolute_time = 0;
+    bool has_last_absolute_time = false;
     while (current) {
         bool mac_in_current_list = false;
 
         /* Skip weekly events if there was an absolute event at the same time (absolute takes precedence) */
-        if (!current->is_absolute && prev_event &&
-            prev_event->event_time == current->event_time && prev_event->is_absolute) {
+        if (!current->is_absolute && has_last_absolute_time &&
+            last_absolute_time == current->event_time) {
             debug_print("build_periods_for_mac: MAC %u - Skipping weekly event at %ld, absolute event already processed\n",
                        mac_index, current->event_time);
-            prev_event = current;
             current = current->next;
             continue;
+        }
+
+        if (current->is_absolute) {
+            last_absolute_time = current->event_time;
+            has_last_absolute_time = true;
         }
 
         /* Check if this MAC is in the current event's block list */
@@ -647,7 +656,6 @@ static mac_block_period_t* build_periods_for_mac(
             currently_blocked = false;
         }
 
-        prev_event = current;
         current = current->next;
     }
 

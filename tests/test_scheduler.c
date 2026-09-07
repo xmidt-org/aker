@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <ctype.h>
 #include <signal.h>
+#include <unistd.h>
 
 #include <CUnit/Basic.h>
 
@@ -38,6 +39,10 @@
 #include "scheduler_data3.h"
 #include "scheduler_data4.h"
 #define MAX_WRP_TEST_MSGS 5
+
+/* Not static: exposed by scheduler.c purely for this unit test, so the 10-day
+ * auto-rebuild branch can be observed without waiting 10 real days. */
+extern int g_timeline_auto_rebuild_count;
 
 // Tuesday, November 14, 2017 11:57:28 AM PST = 1510689448
 static time_t kUnixCurrentTime = 1510689448;
@@ -135,6 +140,30 @@ void test3()
     }
 }
 
+/* Fakes 11 days elapsing via the existing add_time test hook (no real 10-day
+ * wait, no threshold change) to exercise scheduler_thread()'s 10-day stale-
+ * timeline auto-rebuild branch, observed via the g_timeline_auto_rebuild_count
+ * counter since notification_timeline itself is not exposed to tests. */
+void test4()
+{
+    int result;
+    int before;
+
+    add_time = 0;
+    result = process_update( file_name, md5_file, data_payloads[0], data_sizes[0] );
+    CU_ASSERT(0 == result);
+
+    usleep(300000); /* let scheduler_thread pick up the new schedule and build the timeline */
+    before = g_timeline_auto_rebuild_count;
+
+    add_time = 11 * 86400; /* simulate 11 days later - past the 10-day threshold */
+    usleep(300000); /* let scheduler_thread notice the stale timeline and rebuild it */
+
+    CU_ASSERT(g_timeline_auto_rebuild_count > before);
+
+    add_time = 0;
+}
+
 void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution For Scheduler---------\n");
@@ -142,6 +171,7 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "Scheduler Test 1", test1);
     CU_add_test( *suite, "Scheduler Test 2", test2);
     CU_add_test( *suite, "Scheduler Test 3", test3);
+    CU_add_test( *suite, "Scheduler Test 4: 10-day auto-rebuild", test4);
 }
 
 /*----------------------------------------------------------------------------*/

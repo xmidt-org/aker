@@ -54,6 +54,12 @@ static pthread_mutex_t schedule_lock;
 static pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 static int report_metrics_to_log = 0;
 static mac_timeline_collection_t *notification_timeline = NULL;
+#ifdef UNIT_TESTING
+/* Counts successful 10-day-stale auto-rebuilds; only compiled into test
+ * builds so unit tests can observe the branch fired without waiting 10 real
+ * days. Never present in the production aker/aker-cli binaries. */
+int g_timeline_auto_rebuild_count = 0;
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*                             External functions                             */
@@ -329,6 +335,9 @@ void *scheduler_thread(void *args)
 
                 if( notification_timeline ) {
                     debug_info("scheduler_thread(): Timeline auto-rebuilt successfully\n");
+#ifdef UNIT_TESTING
+                    g_timeline_auto_rebuild_count++;
+#endif
                 } else {
                     debug_error("scheduler_thread(): Failed to auto-rebuild timeline\n");
                 }
