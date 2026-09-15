@@ -530,6 +530,1063 @@ void test_timeline_recalculation_on_schedule_change(void)
     destroy_schedule(s);
 }
 
+/* Regression test for a real field report (RDKB-65401): an absolute pause
+ * fully ENCLOSES a weekly window (starts before weekly start, ends after
+ * weekly end) for the SAME MACs, with NO backend-injected tie events at the
+ * weekly's own boundaries (unlike Cases 1/2/3 below). Previously the
+ * weekly's own end event prematurely closed the period at the weekly end
+ * time (treating it as a WEEKLY end), silently dropping the true absolute
+ * end and causing DOWNTIME_ENDING_SOON/DOWNTIME_ENDED to be sent instead of
+ * NON_RECURRING_UNPAUSED. */
+void test_absolute_fully_encloses_weekly_no_tie_events(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block01[] = { 0, 1 };
+    time_t weekly_start = DAY_BASE + 7200;
+    time_t weekly_end   = DAY_BASE + 8160;
+    time_t abs_start    = weekly_start - 1320;
+    time_t abs_end      = weekly_end + 1320;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 7200, block01, 2);
+    add_weekly_event(s, 8160, NULL, 0);
+    add_absolute_event(s, abs_start, block01, 2);
+    add_absolute_event(s, abs_end, NULL, 0);
+
+    collection = build_timeline_from_schedule(s, abs_start + 1, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    for (size_t mac = 0; mac < 2; mac++) {
+        CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[mac].periods);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->start_time, abs_start);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->end_time, abs_end);
+        CU_ASSERT_TRUE(collection->timelines[mac].periods->start_is_absolute);
+        CU_ASSERT_TRUE(collection->timelines[mac].periods->end_is_absolute);
+    }
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Corner case per AC: a genuinely absolute-controlled MAC (absolute start has
+ * no weekly tie) whose absolute END happens to fall on the EXACT SAME
+ * timestamp as the weekly's own end. Must still resolve as ABSOLUTE end
+ * (skip ENDING_SOON/ENDED, send NON_RECURRING_UNPAUSED) - a coincidental
+ * timestamp match must not misclassify it as a normal weekly end. */
+void test_absolute_end_exactly_ties_weekly_end_stays_absolute(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+    time_t abs_start     = weekly_start - 1000;   /* before weekly start, no tie */
+    time_t abs_end       = weekly_end;             /* exactly ties weekly's own end */
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 39600, NULL, 0);
+    add_absolute_event(s, abs_start, block0, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+
+    collection = build_timeline_from_schedule(s, abs_start + 1, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, abs_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, abs_end);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* ---------------------------------------------------------------------------
+ * AC rule matrix. Each period resolves to one of four (start,end) shapes:
+ *   R1 ABS/ABS     -> skip all weekly, send NON_RECURRING_UNPAUSED
+ *   R2 ABS/WEEKLY  -> skip STARTING_SOON+STARTED, send ENDING_SOON+ENDED
+ *   R3 WEEKLY/WEEK -> all 4 weekly notifications
+ *   R4 WEEKLY/ABS  -> STARTING_SOON+STARTED, skip ENDING_SOON, NON_RECURRING_UNPAUSED
+ *   R5 absolute end tying weekly end wins for a genuinely absolute-held period
+ * --------------------------------------------------------------------------- */
+
+/* R1, single MAC: pure user pause, no weekly at all. */
+void test_rule1_abs_abs_single_mac(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t abs_start = DAY_BASE + 20000;
+    time_t abs_end   = DAY_BASE + 23600;
+
+    s = build_schedule("UTC", 1, macs);
+    add_absolute_event(s, abs_start, block0, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+
+    collection = build_timeline_from_schedule(s, abs_start - 100, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* R2, single MAC: absolute starts early, hands off at the weekly start tie,
+ * so the weekly's own end closes the period. */
+void test_rule2_abs_start_weekly_end_single_mac(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+    time_t abs_start    = weekly_start - 1500;
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 39600, NULL, 0);
+    add_absolute_event(s, abs_start, block0, 1);
+    add_absolute_event(s, weekly_start, block0, 1);  /* hand-off tie at weekly start */
+
+    collection = build_timeline_from_schedule(s, abs_start + 1, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, abs_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, weekly_end);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_FALSE(collection->timelines[0].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* R3, two MACs sharing one weekly profile: plain recurring, all 4 for both. */
+void test_rule3_weekly_weekly_two_macs(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block01[] = { 0, 1 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+    size_t mac;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 36000, block01, 2);
+    add_weekly_event(s, 39600, NULL, 0);
+
+    collection = build_timeline_from_schedule(s, weekly_start - 2000, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    for (mac = 0; mac < 2; mac++) {
+        CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[mac].periods);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->start_time, weekly_start);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->end_time, weekly_end);
+        CU_ASSERT_FALSE(collection->timelines[mac].periods->start_is_absolute);
+        CU_ASSERT_FALSE(collection->timelines[mac].periods->end_is_absolute);
+    }
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* R4, single MAC: weekly starts normally, then a user pause extends past the
+ * weekly end, so the period closes on the absolute expiry. */
+void test_rule4_weekly_start_abs_end_single_mac(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+    time_t abs_end      = weekly_end + 1800;
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 39600, NULL, 0);
+    add_absolute_event(s, weekly_start + 600, block0, 1);  /* pause asserted mid-weekly */
+    add_absolute_event(s, abs_end, NULL, 0);
+
+    collection = build_timeline_from_schedule(s, weekly_start - 2000, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, weekly_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, abs_end);
+    CU_ASSERT_FALSE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* R5 with a WEEKLY start: absolute end lands exactly on the weekly end, and
+ * the MAC is genuinely under an absolute pause - absolute must win, giving
+ * the R4 shape (WEEKLY start, ABSOLUTE end). */
+void test_rule5_abs_end_ties_weekly_end_after_weekly_start(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 39600, NULL, 0);
+    add_absolute_event(s, weekly_start + 900, block0, 1); /* genuine pause, no tie */
+    add_absolute_event(s, weekly_end, NULL, 0);           /* ends exactly at weekly end */
+
+    collection = build_timeline_from_schedule(s, weekly_start - 2000, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, weekly_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, weekly_end);
+    CU_ASSERT_FALSE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* R5 must NOT fire for a bystander MAC: MAC1 is only in the weekly profile,
+ * MAC0 holds the absolute pause. MAC1's weekly end coincides with MAC0's
+ * absolute event timestamp but MAC1 stays a pure WEEKLY/WEEKLY period. */
+void test_rule5_does_not_leak_to_weekly_only_mac(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    uint32_t block01[] = { 0, 1 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+    time_t abs_start    = weekly_start - 1200;
+    time_t abs_end      = weekly_end + 300;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 36000, block01, 2);
+    add_weekly_event(s, 39600, NULL, 0);
+    add_absolute_event(s, abs_start, block0, 1);      /* MAC0 only */
+    add_absolute_event(s, weekly_start, block01, 2);  /* backend pad at weekly start */
+    add_absolute_event(s, weekly_end, block0, 1);     /* MAC1 released, MAC0 held */
+    add_absolute_event(s, abs_end, NULL, 0);
+
+    collection = build_timeline_from_schedule(s, abs_start + 1, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    /* MAC0: genuine absolute pause on both ends. */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, abs_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, abs_end);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->end_is_absolute);
+
+    /* MAC1: untouched by the pause - normal weekly on both ends. */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[1].periods);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->start_time, weekly_start);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->end_time, weekly_end);
+    CU_ASSERT_FALSE(collection->timelines[1].periods->start_is_absolute);
+    CU_ASSERT_FALSE(collection->timelines[1].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Two overlapping profiles plus a pause: MAC0+MAC1 on profile A, MAC2 on a
+ * later profile B, MAC3 holding a solo absolute pause. Each MAC must resolve
+ * independently to its own rule shape. */
+void test_rules_mixed_two_profiles_and_absolute_mac(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22",
+                           "33:33:33:33:33:33", "44:44:44:44:44:44" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t blockA[]  = { 0, 1 };
+    uint32_t blockAB[] = { 0, 1, 2 };
+    uint32_t blockB[]  = { 2 };
+    uint32_t block3[]  = { 3 };
+    time_t a_start = DAY_BASE + 36000;
+    time_t b_start = DAY_BASE + 37200;
+    time_t a_end   = DAY_BASE + 39600;
+    time_t b_end   = DAY_BASE + 41400;
+    time_t abs_start = DAY_BASE + 34800;
+    time_t abs_end   = DAY_BASE + 36600;
+
+    s = build_schedule("UTC", 4, macs);
+    add_weekly_event(s, 36000, blockA, 2);   /* profile A starts */
+    add_weekly_event(s, 37200, blockAB, 3);  /* profile B adds MAC2 */
+    add_weekly_event(s, 39600, blockB, 1);   /* profile A ends, MAC2 stays */
+    add_weekly_event(s, 41400, NULL, 0);     /* profile B ends */
+    add_absolute_event(s, abs_start, block3, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+
+    collection = build_timeline_from_schedule(s, abs_start + 1, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    /* MAC0/MAC1 - profile A, pure weekly (R3). */
+    for (size_t mac = 0; mac < 2; mac++) {
+        CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[mac].periods);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->start_time, a_start);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->end_time, a_end);
+        CU_ASSERT_FALSE(collection->timelines[mac].periods->start_is_absolute);
+        CU_ASSERT_FALSE(collection->timelines[mac].periods->end_is_absolute);
+    }
+
+    /* MAC2 - profile B, pure weekly (R3) on its own later window. */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[2].periods);
+    CU_ASSERT_EQUAL(collection->timelines[2].periods->start_time, b_start);
+    CU_ASSERT_EQUAL(collection->timelines[2].periods->end_time, b_end);
+    CU_ASSERT_FALSE(collection->timelines[2].periods->start_is_absolute);
+    CU_ASSERT_FALSE(collection->timelines[2].periods->end_is_absolute);
+
+    /* MAC3 - solo pause, absolute on both ends (R1). */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[3].periods);
+    CU_ASSERT_EQUAL(collection->timelines[3].periods->start_time, abs_start);
+    CU_ASSERT_EQUAL(collection->timelines[3].periods->end_time, abs_end);
+    CU_ASSERT_TRUE(collection->timelines[3].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[3].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Absolute pause expires while the weekly window is still blocking: the
+ * period must stay open and close on the WEEKLY end, not on the absolute
+ * expiry. Real shape: pause 9:00-9:30, weekly 9:20-10:00, both MACs in both.
+ * Expected per AC: skip STARTING_SOON/STARTED, send ENDING_SOON + ENDED. */
+void test_abs_expires_while_weekly_active_two_macs(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block01[] = { 0, 1 };
+    time_t abs_start    = DAY_BASE + 32400;  /* 09:00 */
+    time_t weekly_start = DAY_BASE + 33600;  /* 09:20 */
+    time_t abs_end      = DAY_BASE + 34200;  /* 09:30 */
+    time_t weekly_end   = DAY_BASE + 36000;  /* 10:00 */
+    size_t mac;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 33600, block01, 2);
+    add_weekly_event(s, 36000, NULL, 0);
+    add_absolute_event(s, abs_start, block01, 2);
+    add_absolute_event(s, abs_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, abs_start - 60, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    for (mac = 0; mac < 2; mac++) {
+        CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[mac].periods);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->start_time, abs_start);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->end_time, weekly_end);
+        CU_ASSERT_TRUE(collection->timelines[mac].periods->start_is_absolute);
+        CU_ASSERT_FALSE(collection->timelines[mac].periods->end_is_absolute);
+    }
+    (void) weekly_start;
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Near-miss ordering: absolute ends one second BEFORE the weekly end. Weekly
+ * still holds for that second, so the period closes WEEKLY at the later time. */
+void test_abs_end_one_second_before_weekly_end(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+    time_t abs_start    = weekly_start - 1200;
+    time_t abs_end      = weekly_end - 1;
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 39600, NULL, 0);
+    add_absolute_event(s, abs_start, block0, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, abs_start - 60, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, abs_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, weekly_end);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_FALSE(collection->timelines[0].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Near-miss ordering: absolute ends one second AFTER the weekly end. The pause
+ * outlives weekly, so the period closes ABSOLUTE at the later time. */
+void test_abs_end_one_second_after_weekly_end(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+    time_t abs_start    = weekly_start - 1200;
+    time_t abs_end      = weekly_end + 1;
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 39600, NULL, 0);
+    add_absolute_event(s, abs_start, block0, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, abs_start - 60, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, abs_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, abs_end);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Asymmetric membership: only MAC0 is paused (09:00-09:30) but the weekly
+ * window (09:20-10:00) covers MAC0 and MAC1. MAC0 hands off to weekly at the
+ * pause expiry; MAC1 must be completely untouched by the absolute events. */
+void test_abs_mac0_only_weekly_both_macs(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[]  = { 0 };
+    uint32_t block01[] = { 0, 1 };
+    time_t abs_start    = DAY_BASE + 32400;  /* 09:00 */
+    time_t weekly_start = DAY_BASE + 33600;  /* 09:20 */
+    time_t abs_end      = DAY_BASE + 34200;  /* 09:30 */
+    time_t weekly_end   = DAY_BASE + 36000;  /* 10:00 */
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 33600, block01, 2);
+    add_weekly_event(s, 36000, NULL, 0);
+    add_absolute_event(s, abs_start, block0, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, abs_start - 60, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    /* MAC0: paused, then weekly keeps blocking -> ABSOLUTE start, WEEKLY end */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, abs_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, weekly_end);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_FALSE(collection->timelines[0].periods->end_is_absolute);
+
+    /* MAC1: weekly only - the pause it never joined must not clip its period */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[1].periods);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->start_time, weekly_start);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->end_time, weekly_end);
+    CU_ASSERT_FALSE(collection->timelines[1].periods->start_is_absolute);
+    CU_ASSERT_FALSE(collection->timelines[1].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Absolute pause 21:00-23:00 fully encloses weekly 21:30-22:00 for both MACs.
+ * Weekly has already ended when the pause expires, so the whole span stays a
+ * single ABSOLUTE/ABSOLUTE period (NON_RECURRING_UNPAUSED only). */
+void test_absolute_encloses_weekly_both_macs(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block01[] = { 0, 1 };
+    time_t abs_start = DAY_BASE + 75600;  /* 21:00 */
+    time_t abs_end   = DAY_BASE + 82800;  /* 23:00 */
+    size_t mac;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 77400, block01, 2);   /* 21:30 */
+    add_weekly_event(s, 79200, NULL, 0);      /* 22:00 */
+    add_absolute_event(s, abs_start, block01, 2);
+    add_absolute_event(s, abs_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, abs_start - 60, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    for (mac = 0; mac < 2; mac++) {
+        CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[mac].periods);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->start_time, abs_start);
+        CU_ASSERT_EQUAL(collection->timelines[mac].periods->end_time, abs_end);
+        CU_ASSERT_TRUE(collection->timelines[mac].periods->start_is_absolute);
+        CU_ASSERT_TRUE(collection->timelines[mac].periods->end_is_absolute);
+    }
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Same enclosing pause 21:00-23:00, but only MAC0 is paused. MAC0 collapses to
+ * one absolute period; MAC1 keeps its plain weekly 21:30-22:00 period. */
+void test_absolute_encloses_weekly_abs_mac0_only(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[]  = { 0 };
+    uint32_t block01[] = { 0, 1 };
+    time_t abs_start    = DAY_BASE + 75600;  /* 21:00 */
+    time_t weekly_start = DAY_BASE + 77400;  /* 21:30 */
+    time_t weekly_end   = DAY_BASE + 79200;  /* 22:00 */
+    time_t abs_end      = DAY_BASE + 82800;  /* 23:00 */
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 77400, block01, 2);
+    add_weekly_event(s, 79200, NULL, 0);
+    add_absolute_event(s, abs_start, block0, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, abs_start - 60, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, abs_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, abs_end);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->end_is_absolute);
+
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[1].periods);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->start_time, weekly_start);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->end_time, weekly_end);
+    CU_ASSERT_FALSE(collection->timelines[1].periods->start_is_absolute);
+    CU_ASSERT_FALSE(collection->timelines[1].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/*----------------------------------------------------------------------------*/
+/*                          Dispatch-level helpers                            */
+/*----------------------------------------------------------------------------*/
+extern int g_notification_sent_count[NOTIFY_NON_RECURRING_UNPAUSED + 1];
+
+static void reset_sent_counts(void)
+{
+    size_t i;
+    for (i = 0; i <= (size_t) NOTIFY_NON_RECURRING_UNPAUSED; i++) {
+        g_notification_sent_count[i] = 0;
+    }
+}
+
+/* Drives the dispatcher through every notification instant of a period. */
+static void run_full_dispatch(mac_timeline_collection_t *collection, schedule_t *s,
+                              time_t start, time_t end)
+{
+    send_pending_notifications_with_state_check(collection, s, start - NOTIFICATION_ADVANCE_TIME_SEC);
+    send_pending_notifications_with_state_check(collection, s, start);
+    send_pending_notifications_with_state_check(collection, s, end - NOTIFICATION_ADVANCE_TIME_SEC);
+    send_pending_notifications_with_state_check(collection, s, end);
+}
+
+/* Rule 3 dispatch: a plain weekly window must emit all four notifications. */
+void test_dispatch_rule3_weekly_sends_all_four(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 39600, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, weekly_start - 2000, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    reset_sent_counts();
+    run_full_dispatch(collection, s, weekly_start, weekly_end);
+
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTING_SOON], 1);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTED], 1);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDING_SOON], 1);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDED], 1);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_NON_RECURRING_UNPAUSED], 0);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Rule 1 dispatch: a pure pause emits only NON_RECURRING_UNPAUSED. */
+void test_dispatch_rule1_absolute_only_unpause(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t abs_start = DAY_BASE + 36000;
+    time_t abs_end   = DAY_BASE + 41400;
+
+    s = build_schedule("UTC", 1, macs);
+    add_absolute_event(s, abs_start, block0, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, abs_start - 2000, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    reset_sent_counts();
+    run_full_dispatch(collection, s, abs_start, abs_end);
+
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTING_SOON], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTED], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDING_SOON], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDED], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_NON_RECURRING_UNPAUSED], 1);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Rule 2 dispatch, the 9:00-9:30 pause under a 9:20-10:00 weekly window:
+ * start notifications suppressed, end notifications delivered. */
+void test_dispatch_rule2_abs_start_weekly_end(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block01[] = { 0, 1 };
+    time_t abs_start  = DAY_BASE + 32400;
+    time_t abs_end    = DAY_BASE + 34200;
+    time_t weekly_end = DAY_BASE + 36000;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 33600, block01, 2);
+    add_weekly_event(s, 36000, NULL, 0);
+    add_absolute_event(s, abs_start, block01, 2);
+    add_absolute_event(s, abs_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, abs_start - 60, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    reset_sent_counts();
+    run_full_dispatch(collection, s, abs_start, weekly_end);
+
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTING_SOON], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTED], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDING_SOON], 1);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDED], 1);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_NON_RECURRING_UNPAUSED], 0);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Rule 4 dispatch: weekly start is announced, but the pause outliving the
+ * window replaces ENDING_SOON/ENDED with NON_RECURRING_UNPAUSED. */
+void test_dispatch_rule4_weekly_start_abs_end(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t abs_end      = DAY_BASE + 41400;
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 39600, NULL, 0);
+    add_absolute_event(s, weekly_start + 600, block0, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, weekly_start - 2000, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    reset_sent_counts();
+    run_full_dispatch(collection, s, weekly_start, abs_end);
+
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTING_SOON], 1);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTED], 1);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDING_SOON], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDED], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_NON_RECURRING_UNPAUSED], 1);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Two MACs on different weekly windows must each get their own batch, so the
+ * dispatcher flushes the pending batch when the scheduled time changes. */
+void test_dispatch_batches_flush_on_time_change(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    uint32_t block01[] = { 0, 1 };
+    time_t mac0_start = DAY_BASE + 36000;
+    time_t mac1_start = DAY_BASE + 37800;
+    time_t both_end   = DAY_BASE + 41400;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 36000, block0, 1);    /* MAC0 starts */
+    add_weekly_event(s, 37800, block01, 2);   /* MAC1 joins later */
+    add_weekly_event(s, 41400, NULL, 0);      /* both end together */
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, mac0_start - 2000, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    reset_sent_counts();
+    send_pending_notifications_with_state_check(collection, s, mac0_start - NOTIFICATION_ADVANCE_TIME_SEC);
+    send_pending_notifications_with_state_check(collection, s, mac0_start);
+    send_pending_notifications_with_state_check(collection, s, mac1_start - NOTIFICATION_ADVANCE_TIME_SEC);
+    send_pending_notifications_with_state_check(collection, s, mac1_start);
+    send_pending_notifications_with_state_check(collection, s, both_end - NOTIFICATION_ADVANCE_TIME_SEC);
+    send_pending_notifications_with_state_check(collection, s, both_end);
+
+    CU_ASSERT_TRUE(g_notification_sent_count[NOTIFY_DOWNTIME_STARTING_SOON] >= 2);
+    CU_ASSERT_TRUE(g_notification_sent_count[NOTIFY_DOWNTIME_STARTED] >= 2);
+    CU_ASSERT_TRUE(g_notification_sent_count[NOTIFY_DOWNTIME_ENDED] >= 1);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Arriving far outside the +/-5s window must suppress the notification while
+ * still marking it handled, so it is never retried. */
+void test_dispatch_late_arrival_is_suppressed(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    mac_notification_state_t *state;
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 39600;
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 39600, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, weekly_start - 2000, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    state = &collection->timelines[0].periods->mac_states[0];
+
+    reset_sent_counts();
+    /* 200s past each window - far beyond NOTIFICATION_LATE_THRESHOLD_SEC */
+    send_pending_notifications_with_state_check(collection, s,
+        weekly_start - NOTIFICATION_ADVANCE_TIME_SEC + 200);
+    send_pending_notifications_with_state_check(collection, s, weekly_start + 200);
+    send_pending_notifications_with_state_check(collection, s,
+        weekly_end - NOTIFICATION_ADVANCE_TIME_SEC + 200);
+    send_pending_notifications_with_state_check(collection, s, weekly_end + 200);
+
+    CU_ASSERT_TRUE(state->starting_soon_sent);
+    CU_ASSERT_TRUE(state->started_sent);
+    CU_ASSERT_TRUE(state->ending_soon_sent);
+    /* A period already in the past is skipped wholesale before the ENDED
+     * check, so ENDED stays unmarked rather than being flagged late. */
+    CU_ASSERT_FALSE(state->ended_sent);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTING_SOON], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTED], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDING_SOON], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDED], 0);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* A window shorter than the 15-minute advance window must skip the "soon"
+ * notifications entirely rather than firing them at a nonsensical time. */
+void test_dispatch_short_period_skips_soon(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block0[] = { 0 };
+    mac_notification_state_t *state;
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t weekly_end   = DAY_BASE + 36300;  /* 5 minutes only */
+
+    s = build_schedule("UTC", 1, macs);
+    add_weekly_event(s, 36000, block0, 1);
+    add_weekly_event(s, 36300, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, weekly_start - 2000, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    state = &collection->timelines[0].periods->mac_states[0];
+
+    reset_sent_counts();
+    run_full_dispatch(collection, s, weekly_start, weekly_end);
+
+    CU_ASSERT_FALSE(state->starting_soon_sent);
+    CU_ASSERT_FALSE(state->ending_soon_sent);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTING_SOON], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDING_SOON], 0);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_ENDED], 1);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Guard clauses must not crash or dispatch anything. */
+void test_dispatch_null_inputs(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11" };
+    schedule_t *s = build_schedule("UTC", 1, macs);
+
+    reset_sent_counts();
+    send_pending_notifications_with_state_check(NULL, s, DAY_BASE);
+    send_pending_notifications_with_state_check(NULL, NULL, DAY_BASE);
+    CU_ASSERT_EQUAL(g_notification_sent_count[NOTIFY_DOWNTIME_STARTED], 0);
+
+    destroy_schedule(s);
+}
+
+/* The absolute-schedule summary log only formats windows that end after the
+ * real wall clock, so this anchors to time(NULL) instead of DAY_BASE. Two MACs
+ * share one window (exercising the grouped, comma-separated MAC list) and a
+ * third has its own, producing two distinct patterns. */
+void test_log_summary_groups_absolute_macs(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22", "33:33:33:33:33:33" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block01[] = { 0, 1 };
+    uint32_t block2[]  = { 2 };
+    time_t base = time(NULL) + 3600;
+
+    s = build_schedule("UTC", 3, macs);
+    add_absolute_event(s, base, block01, 2);
+    add_absolute_event(s, base + 3600, block2, 1);
+    add_absolute_event(s, base + 7200, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, time(NULL), MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    /* MAC0 and MAC1 share the first window. */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, base);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, base + 3600);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[1].periods);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->start_time, base);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->end_time, base + 3600);
+
+    /* MAC2 has its own, later window. */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[2].periods);
+    CU_ASSERT_EQUAL(collection->timelines[2].periods->start_time, base + 3600);
+    CU_ASSERT_EQUAL(collection->timelines[2].periods->end_time, base + 7200);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Regression guard for the bounded MAC-list formatting (CWE-787): enough MACs
+ * in one absolute window to overflow the 256-byte buffer must truncate safely
+ * rather than run off the end. Run under valgrind to make this meaningful. */
+void test_log_summary_truncates_long_mac_list(void)
+{
+    enum { MANY = 40 };
+    char mac_buf[MANY][18];
+    const char *macs[MANY];
+    uint32_t block_all[MANY];
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    time_t base = time(NULL) + 3600;
+    size_t i;
+
+    for (i = 0; i < MANY; i++) {
+        snprintf(mac_buf[i], sizeof(mac_buf[i]), "aa:bb:cc:dd:ee:%02x", (unsigned) i);
+        macs[i] = mac_buf[i];
+        block_all[i] = (uint32_t) i;
+    }
+
+    s = build_schedule("UTC", MANY, macs);
+    add_absolute_event(s, base, block_all, MANY);
+    add_absolute_event(s, base + 3600, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, time(NULL), MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+    for (i = 0; i < MANY; i++) {
+        CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[i].periods);
+        CU_ASSERT_EQUAL(collection->timelines[i].periods->start_time, base);
+        CU_ASSERT_EQUAL(collection->timelines[i].periods->end_time, base + 3600);
+    }
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Field case: a user pauses MAC1 only, and the cloud folds the overlapping
+ * weekly window into the absolute array by adding MAC0 at the weekly start.
+ * MAC0's entry ties the weekly start, so it must be attributed to WEEKLY and
+ * must not be reported as an absolute pause in the summary log. */
+void test_cloud_adjusted_absolute_mac_not_user_pause(void)
+{
+    const char *macs[] = { "40:d1:60:41:5d:14", "aa:1f:3d:47:0b:30" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block1[]  = { 1 };
+    uint32_t block01[] = { 0, 1 };
+    time_t now_ref = time(NULL) + 600;
+    time_t weekly_start, pause_start, window_end;
+    time_t week_start;
+
+    /* Sunday 00:00 UTC of the current week. Jan 1 1970 was a Thursday, hence
+     * the 4-day shift. Keeping this in UTC (and using a UTC schedule) makes
+     * the weekly offsets independent of the build machine's timezone. */
+    week_start = ((now_ref + 4 * 86400) / SECONDS_IN_A_WEEK) * SECONDS_IN_A_WEEK - 4 * 86400;
+
+    weekly_start = now_ref + 1020;          /* weekly window opens shortly */
+    pause_start  = now_ref;                 /* user pause starts earlier */
+    window_end   = weekly_start + 2040;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, weekly_start - week_start, block01, 2);
+    add_weekly_event(s, window_end - week_start, NULL, 0);
+
+    add_absolute_event(s, pause_start, block1, 1);    /* genuine pause, MAC1 */
+    add_absolute_event(s, weekly_start, block01, 2);  /* cloud folds MAC0 in */
+    add_absolute_event(s, window_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, now_ref - 60, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    /* MAC0 joined only because of the weekly window -> WEEKLY start. */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, weekly_start);
+    CU_ASSERT_FALSE(collection->timelines[0].periods->start_is_absolute);
+
+    /* MAC1 is the real pause -> ABSOLUTE start. */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[1].periods);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->start_time, pause_start);
+    CU_ASSERT_TRUE(collection->timelines[1].periods->start_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Field case: two genuine user pauses triggered 8 seconds apart, both fully
+ * enclosing a later weekly window. Neither start ties a weekly event, so both
+ * must stay ABSOLUTE/ABSOLUTE and both must survive the summary-log filter
+ * that hides cloud-folded entries. */
+void test_two_staggered_user_pauses_enclosing_weekly(void)
+{
+    const char *macs[] = { "40:d1:60:41:5d:14", "aa:1f:3d:47:0b:30" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block1[]  = { 1 };
+    uint32_t block0[]  = { 0 };
+    uint32_t block01[] = { 0, 1 };
+    time_t now_ref = time(NULL) + 600;
+    time_t week_start;
+    time_t mac1_start, mac0_start, weekly_start, weekly_end, mac1_end, mac0_end;
+
+    week_start = ((now_ref + 4 * 86400) / SECONDS_IN_A_WEEK) * SECONDS_IN_A_WEEK - 4 * 86400;
+
+    mac1_start   = now_ref;             /* first pause */
+    mac0_start   = now_ref + 8;         /* second pause, 8s later */
+    weekly_start = now_ref + 1548;      /* weekly opens inside both pauses */
+    weekly_end   = weekly_start + 960;  /* 16-minute window */
+    mac1_end     = now_ref + 3600;
+    mac0_end     = now_ref + 3608;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, weekly_start - week_start, block01, 2);
+    add_weekly_event(s, weekly_end - week_start, NULL, 0);
+
+    add_absolute_event(s, mac1_start, block1, 1);
+    add_absolute_event(s, mac0_start, block01, 2);
+    add_absolute_event(s, mac1_end, block0, 1);   /* MAC1 released, MAC0 stays */
+    add_absolute_event(s, mac0_end, NULL, 0);
+    CU_ASSERT_TRUE(finalize_schedule(s) <= 0);
+
+    collection = build_timeline_from_schedule(s, now_ref - 60, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    /* MAC0: own pause, weekly swallowed -> ABSOLUTE/ABSOLUTE. */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[0].periods);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->start_time, mac0_start);
+    CU_ASSERT_EQUAL(collection->timelines[0].periods->end_time, mac0_end);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[0].periods->end_is_absolute);
+
+    /* MAC1: its own, 8-second-offset pause, independently resolved. */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[1].periods);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->start_time, mac1_start);
+    CU_ASSERT_EQUAL(collection->timelines[1].periods->end_time, mac1_end);
+    CU_ASSERT_TRUE(collection->timelines[1].periods->start_is_absolute);
+    CU_ASSERT_TRUE(collection->timelines[1].periods->end_is_absolute);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
+/* Rule 6 support: repeated rebuilds from the same schedule must stay stable
+ * and self-consistent (run under valgrind in CI to catch leaks). */
+void test_rule6_repeated_rebuild_is_stable(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    uint32_t block0[] = { 0 };
+    uint32_t block01[] = { 0, 1 };
+    time_t weekly_start = DAY_BASE + 36000;
+    time_t abs_start = weekly_start - 1200;
+    time_t abs_end   = weekly_start + 600;
+    int i;
+
+    s = build_schedule("UTC", 2, macs);
+    add_weekly_event(s, 36000, block01, 2);
+    add_weekly_event(s, 39600, NULL, 0);
+    add_absolute_event(s, abs_start, block0, 1);
+    add_absolute_event(s, abs_end, NULL, 0);
+
+    for (i = 0; i < 12; i++) {
+        /* Advance a simulated day each pass, mirroring the scheduler's
+         * 10-day staleness rebuild without waiting real time. */
+        time_t now = abs_start + ((time_t) i * 86400);
+        mac_timeline_collection_t *collection =
+            build_timeline_from_schedule(s, now, MAX_WEEKS_AHEAD);
+
+        CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+        CU_ASSERT_EQUAL(collection->mac_count, 2);
+        CU_ASSERT_PTR_NOT_NULL(collection->timelines);
+        /* Weekly recurrence must still be projected on every rebuild. */
+        CU_ASSERT_PTR_NOT_NULL(collection->timelines[1].periods);
+
+        destroy_timeline_collection(collection);
+    }
+
+    destroy_schedule(s);
+}
+
 /* Case 1 (Akerlogs "Overlap Scenario"): absolute block end TIME TIES the
  * weekly START, with no further absolute event near the weekly end. MAC0
  * must transition seamlessly from ABSOLUTE start into a natural WEEKLY end. */
@@ -774,6 +1831,34 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "Test get_next_notification_time", test_get_next_notification_time );
     CU_add_test( *suite, "Test get_next_notification_time absolute/short period", test_get_next_notification_time_absolute_and_short_period );
     CU_add_test( *suite, "Test timeline recalculation on schedule change", test_timeline_recalculation_on_schedule_change );
+    CU_add_test( *suite, "Test absolute fully encloses weekly with no tie events (RDKB-65401)", test_absolute_fully_encloses_weekly_no_tie_events );
+    CU_add_test( *suite, "Test absolute end exactly ties weekly end stays absolute", test_absolute_end_exactly_ties_weekly_end_stays_absolute );
+    CU_add_test( *suite, "Rule 1: ABS start + ABS end (single MAC)", test_rule1_abs_abs_single_mac );
+    CU_add_test( *suite, "Rule 2: ABS start + WEEKLY end (single MAC)", test_rule2_abs_start_weekly_end_single_mac );
+    CU_add_test( *suite, "Rule 3: WEEKLY start + WEEKLY end (two MACs)", test_rule3_weekly_weekly_two_macs );
+    CU_add_test( *suite, "Rule 4: WEEKLY start + ABS end (single MAC)", test_rule4_weekly_start_abs_end_single_mac );
+    CU_add_test( *suite, "Rule 5: ABS end ties weekly end after weekly start", test_rule5_abs_end_ties_weekly_end_after_weekly_start );
+    CU_add_test( *suite, "Rule 5: does not leak to weekly-only MAC", test_rule5_does_not_leak_to_weekly_only_mac );
+    CU_add_test( *suite, "Rules: mixed two profiles + absolute MAC", test_rules_mixed_two_profiles_and_absolute_mac );
+    CU_add_test( *suite, "ABS expires while weekly active (two MACs)", test_abs_expires_while_weekly_active_two_macs );
+    CU_add_test( *suite, "ABS end 1s before weekly end -> WEEKLY end", test_abs_end_one_second_before_weekly_end );
+    CU_add_test( *suite, "ABS end 1s after weekly end -> ABSOLUTE end", test_abs_end_one_second_after_weekly_end );
+    CU_add_test( *suite, "ABS on MAC0 only, weekly on both MACs", test_abs_mac0_only_weekly_both_macs );
+    CU_add_test( *suite, "ABS 21-23 encloses weekly 21:30-22 (both MACs)", test_absolute_encloses_weekly_both_macs );
+    CU_add_test( *suite, "ABS 21-23 encloses weekly, MAC0 paused only", test_absolute_encloses_weekly_abs_mac0_only );
+    CU_add_test( *suite, "Dispatch R3: weekly sends all four", test_dispatch_rule3_weekly_sends_all_four );
+    CU_add_test( *suite, "Dispatch R1: absolute only sends unpause", test_dispatch_rule1_absolute_only_unpause );
+    CU_add_test( *suite, "Dispatch R2: ABS start + WEEKLY end", test_dispatch_rule2_abs_start_weekly_end );
+    CU_add_test( *suite, "Dispatch R4: WEEKLY start + ABS end", test_dispatch_rule4_weekly_start_abs_end );
+    CU_add_test( *suite, "Dispatch: batch flush on time change", test_dispatch_batches_flush_on_time_change );
+    CU_add_test( *suite, "Dispatch: late arrival suppressed", test_dispatch_late_arrival_is_suppressed );
+    CU_add_test( *suite, "Dispatch: short period skips soon", test_dispatch_short_period_skips_soon );
+    CU_add_test( *suite, "Dispatch: NULL inputs", test_dispatch_null_inputs );
+    CU_add_test( *suite, "Log summary groups absolute MACs", test_log_summary_groups_absolute_macs );
+    CU_add_test( *suite, "Log summary truncates long MAC list", test_log_summary_truncates_long_mac_list );
+    CU_add_test( *suite, "Cloud-adjusted absolute MAC is not a user pause", test_cloud_adjusted_absolute_mac_not_user_pause );
+    CU_add_test( *suite, "Two staggered user pauses enclosing weekly", test_two_staggered_user_pauses_enclosing_weekly );
+    CU_add_test( *suite, "Rule 6: repeated rebuild is stable", test_rule6_repeated_rebuild_is_stable );
 }
 
 /*----------------------------------------------------------------------------*/
