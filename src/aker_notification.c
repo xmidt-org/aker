@@ -36,6 +36,10 @@
 /*----------------------------------------------------------------------------*/
 static char g_timezone[256] = {0};
 
+#ifdef UNIT_TESTING
+int g_notification_sent_count[NOTIFY_NON_RECURRING_UNPAUSED + 1] = {0};
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*                             Helper Functions                               */
 /*----------------------------------------------------------------------------*/
@@ -459,6 +463,11 @@ static mac_block_period_t* build_periods_for_mac(
     time_t block_start = 0;
     bool currently_blocked = false;
     bool start_is_absolute = false;  /* Track if block START is from absolute */
+    /* Once an ABSOLUTE event opens a period, only an ABSOLUTE event may close
+     * it. A weekly-only event that falls inside that still-open absolute
+     * window (e.g. the weekly's own start/end when an absolute pause fully
+     * encloses it) must not be treated as a real state transition. */
+    bool absolute_controls_period = false;
 
     if (!events || total_mac_count == 0) {
         debug_error("build_periods_for_mac: Invalid parameters (events=%p, total_mac_count=%zu)\n",
@@ -473,22 +482,17 @@ static mac_block_period_t* build_periods_for_mac(
      * same tie point, breaking a prev_event-only check). */
     time_t last_absolute_time = 0;
     bool has_last_absolute_time = false;
+    /* Whether the WEEKLY schedule alone currently blocks this MAC. Maintained
+     * for every weekly event even when that event is skipped for period
+     * purposes, so an expiring absolute pause can tell if weekly still holds. */
+    bool weekly_blocked = false;
+    /* Same idea for the absolute list, used to tell a brand-new pause apart
+     * from the backend merely carrying this MAC forward while it edits the
+     * list (only the former may take control away from an active weekly). */
+    bool absolute_blocked = false;
     while (current) {
         bool mac_in_current_list = false;
-
-        /* Skip weekly events if there was an absolute event at the same time (absolute takes precedence) */
-        if (!current->is_absolute && has_last_absolute_time &&
-            last_absolute_time == current->event_time) {
-            debug_print("build_periods_for_mac: MAC %u - Skipping weekly event at %ld, absolute event already processed\n",
-                       mac_index, current->event_time);
-            current = current->next;
-            continue;
-        }
-
-        if (current->is_absolute) {
-            last_absolute_time = current->event_time;
-            has_last_absolute_time = true;
-        }
+        bool was_absolute_blocked = absolute_blocked;
 
         /* Check if this MAC is in the current event's block list */
         if (current->mac_count == 0) {
@@ -504,10 +508,40 @@ static mac_block_period_t* build_periods_for_mac(
             }
         }
 
+        if (current->is_absolute) {
+            absolute_blocked = mac_in_current_list;
+        } else {
+            weekly_blocked = mac_in_current_list;
+        }
+
+        /* Skip weekly events if there was an absolute event at the same time (absolute takes precedence) */
+        if (!current->is_absolute && has_last_absolute_time &&
+            last_absolute_time == current->event_time) {
+            debug_print("build_periods_for_mac: MAC %u - Skipping weekly event at %ld, absolute event already processed\n",
+                       mac_index, current->event_time);
+            current = current->next;
+            continue;
+        }
+
+        if (current->is_absolute) {
+            last_absolute_time = current->event_time;
+            has_last_absolute_time = true;
+        }
+
         /* Detect state transitions:
          * - currently_blocked=false, mac_in_list=true → Block START
          * - currently_blocked=true, mac_in_list=false → Block END (unblocked by removal from list)
          */
+
+        /* A weekly-only event crossing through a still-open ABSOLUTE-controlled
+         * period (start or end) must be ignored entirely - the absolute window
+         * governs exclusively until its own matching event closes it. */
+        if (currently_blocked && absolute_controls_period && !current->is_absolute) {
+            debug_print("build_periods_for_mac: MAC %u - Ignoring weekly event at %ld, absolute period still open\n",
+                       mac_index, current->event_time);
+            current = current->next;
+            continue;
+        }
 
         /* Process the event */
         if (mac_in_current_list && !currently_blocked) {
@@ -560,8 +594,85 @@ static mac_block_period_t* build_periods_for_mac(
                 debug_print("build_periods_for_mac: MAC %u - Block start at %ld: WEEKLY event\n",
                            mac_index, current->event_time);
             }
+
+            absolute_controls_period = start_is_absolute;
+        } else if (mac_in_current_list && currently_blocked && current->is_absolute) {
+            /* An absolute event reaffirms blocking while the period is
+             * already open. Resolve who governs from here:
+             *  - ties a weekly event for this MAC -> backend hand-off point
+             *    (Case 1: absolute expires exactly where weekly takes over),
+             *    so weekly governs;
+             *  - otherwise, only a MAC *newly* entering the absolute list is a
+             *    genuine user pause that may outlive weekly and take control.
+             *    A MAC already in the previous absolute list is just being
+             *    carried forward while the backend edits membership, so
+             *    whoever governs the period keeps it. */
+            bool found_matching_weekly = false;
+            timeline_event_t *check = current->next;
+
+            while (check && check->event_time == current->event_time) {
+                if (!check->is_absolute && check->mac_indexes) {
+                    for (size_t i = 0; i < check->mac_count; i++) {
+                        if (check->mac_indexes[i] == mac_index) {
+                            found_matching_weekly = true;
+                            break;
+                        }
+                    }
+                    if (found_matching_weekly) break;
+                }
+                check = check->next;
+            }
+
+            if (found_matching_weekly) {
+                absolute_controls_period = false;
+                debug_print("build_periods_for_mac: MAC %u - Absolute continuation at %ld: ties weekly, hand off control\n",
+                           mac_index, current->event_time);
+            } else if (!was_absolute_blocked) {
+                absolute_controls_period = true;
+                debug_print("build_periods_for_mac: MAC %u - Absolute continuation at %ld: new pause, absolute takes control\n",
+                           mac_index, current->event_time);
+            } else {
+                debug_print("build_periods_for_mac: MAC %u - Absolute continuation at %ld: carried forward, control unchanged\n",
+                           mac_index, current->event_time);
+            }
         } else if (!mac_in_current_list && currently_blocked) {
             /* MAC was removed from block list (state transition: blocked → unblocked) */
+
+            /* An absolute pause can expire while the weekly window is still
+             * blocking this MAC. Weekly events at this exact timestamp sort
+             * after absolute ones, so peek before trusting the running state.
+             * If weekly still holds, keep the period open and let the weekly
+             * end close it (ABSOLUTE start + WEEKLY end). */
+            if (current->is_absolute) {
+                bool weekly_holds = weekly_blocked;
+                timeline_event_t *peek = current->next;
+
+                while (peek && peek->event_time == current->event_time) {
+                    if (!peek->is_absolute) {
+                        bool in_weekly = false;
+                        if (peek->mac_indexes) {
+                            for (size_t i = 0; i < peek->mac_count; i++) {
+                                if (peek->mac_indexes[i] == mac_index) {
+                                    in_weekly = true;
+                                    break;
+                                }
+                            }
+                        }
+                        weekly_holds = in_weekly;
+                        break;
+                    }
+                    peek = peek->next;
+                }
+
+                if (weekly_holds) {
+                    debug_print("build_periods_for_mac: MAC %u - Absolute expiry at %ld but weekly still blocking, handing control to weekly\n",
+                               mac_index, current->event_time);
+                    absolute_controls_period = false;
+                    current = current->next;
+                    continue;
+                }
+            }
+
             /* Create period only if it's in the future or currently active */
             if (current->event_time > now) {
                 /* Determine if this block end is controlled by absolute or weekly schedule
@@ -570,7 +681,18 @@ static mac_block_period_t* build_periods_for_mac(
                  */
                 bool end_is_absolute = current->is_absolute;
 
-                if (current->is_absolute) {
+                if (current->is_absolute && absolute_controls_period) {
+                    /* This MAC's period has been genuinely absolute-controlled
+                     * (no backend hand-off tie found along the way) - its own
+                     * end always resolves as ABSOLUTE, even if a weekly event
+                     * happens to unblock at the exact same timestamp. Per AC:
+                     * weekly-end == absolute-end for a genuinely absolute
+                     * period must still send NON_RECURRING_UNPAUSED, not a
+                     * normal weekly ENDED. */
+                    end_is_absolute = true;
+                    debug_print("build_periods_for_mac: MAC %u - Block end at %ld: absolute-controlled period, treating as ABSOLUTE end regardless of weekly tie\n",
+                               mac_index, current->event_time);
+                } else if (current->is_absolute) {
                     /* Check if there's a weekly event at the same time that also unblocks this MAC */
                     bool found_matching_weekly = false;
                     timeline_event_t *check = current->next;
@@ -654,12 +776,44 @@ static mac_block_period_t* build_periods_for_mac(
                 }
             }
             currently_blocked = false;
+            absolute_controls_period = false;
         }
 
         current = current->next;
     }
 
     return periods_head;
+}
+
+/**
+ * True when an absolute entry merely mirrors a weekly window the backend
+ * folded into the absolute array, rather than a pause the user requested.
+ * Mirrors the tie rule build_periods_for_mac() uses for start attribution.
+ */
+static bool absolute_start_ties_weekly(schedule_t *schedule, time_t abs_start, size_t mac_idx)
+{
+    schedule_event_t *ev;
+
+    if (!schedule) {
+        return false;
+    }
+
+    ev = schedule->weekly;
+    while (ev) {
+        if (ev->block_count > 0) {
+            for (size_t i = 0; i < ev->block_count; i++) {
+                if (ev->block[i] == mac_idx) {
+                    if (weekly_to_unix_time(ev->time, abs_start, schedule->time_zone) == abs_start) {
+                        return true;
+                    }
+                    break;
+                }
+            }
+        }
+        ev = ev->next;
+    }
+
+    return false;
 }
 
 /**
@@ -685,8 +839,9 @@ static void log_timeline_summary(mac_timeline_collection_t *collection, schedule
 
     /* Process WEEKLY schedule - group by time-of-day pattern */
     typedef struct {
-        int start_hour, start_min;
-        int end_hour, end_min;
+        int start_hour, start_min, start_sec;
+        int end_hour, end_min, end_sec;
+        time_t duration;     /* start -> end, already unwrapped across midnight */
         bool days[7];
         uint32_t macs[256];  /* Max MACs per pattern */
         size_t mac_count;
@@ -727,9 +882,16 @@ static void log_timeline_summary(mac_timeline_collection_t *collection, schedule
                 int start_day = start_seconds / 86400;
                 int start_hour = (start_seconds % 86400) / 3600;
                 int start_min = (start_seconds % 3600) / 60;
+                int start_sec = start_seconds % 60;
 
                 int end_hour = (end_seconds % 86400) / 3600;
                 int end_min = (end_seconds % 3600) / 60;
+                int end_sec = end_seconds % 60;
+
+                time_t duration = end_seconds - start_seconds;
+                if (duration < 0) {
+                    duration += SECONDS_IN_A_WEEK;
+                }
 
                 /* Validate day range */
                 if (start_day >= 0 && start_day <= 6) {
@@ -738,8 +900,10 @@ static void log_timeline_summary(mac_timeline_collection_t *collection, schedule
                     for (int i = 0; i < weekly_count; i++) {
                         if (weekly_patterns[i].start_hour == start_hour &&
                             weekly_patterns[i].start_min == start_min &&
+                            weekly_patterns[i].start_sec == start_sec &&
                             weekly_patterns[i].end_hour == end_hour &&
-                            weekly_patterns[i].end_min == end_min) {
+                            weekly_patterns[i].end_min == end_min &&
+                            weekly_patterns[i].end_sec == end_sec) {
                             found = i;
                             break;
                         }
@@ -762,8 +926,11 @@ static void log_timeline_summary(mac_timeline_collection_t *collection, schedule
                         /* New pattern */
                         weekly_patterns[weekly_count].start_hour = start_hour;
                         weekly_patterns[weekly_count].start_min = start_min;
+                        weekly_patterns[weekly_count].start_sec = start_sec;
                         weekly_patterns[weekly_count].end_hour = end_hour;
                         weekly_patterns[weekly_count].end_min = end_min;
+                        weekly_patterns[weekly_count].end_sec = end_sec;
+                        weekly_patterns[weekly_count].duration = duration;
                         weekly_patterns[weekly_count].days[start_day] = true;
                         weekly_patterns[weekly_count].macs[0] = mac_idx;
                         weekly_patterns[weekly_count].mac_count = 1;
@@ -779,13 +946,17 @@ static void log_timeline_summary(mac_timeline_collection_t *collection, schedule
 
     /* Log weekly patterns */
     for (int i = 0; i < weekly_count; i++) {
-        /* Build MAC list */
+        /* Build MAC list - bounded append, a pattern can hold up to 256 MACs */
         char mac_list[256] = {0};
+        size_t mac_list_len = 0;
         for (size_t m = 0; m < weekly_patterns[i].mac_count; m++) {
-            if (m > 0) strcat(mac_list, ", ");
-            char mac_str[16];
-            snprintf(mac_str, sizeof(mac_str), "MAC%u", weekly_patterns[i].macs[m]);
-            strcat(mac_list, mac_str);
+            int written = snprintf(mac_list + mac_list_len, sizeof(mac_list) - mac_list_len,
+                                   "%sMAC%u", (m > 0) ? ", " : "", weekly_patterns[i].macs[m]);
+            if (written < 0 || (size_t)written >= sizeof(mac_list) - mac_list_len) {
+                mac_list_len = sizeof(mac_list) - 1;
+                break;
+            }
+            mac_list_len += (size_t)written;
         }
 
         /* Build days string */
@@ -809,18 +980,66 @@ static void log_timeline_summary(mac_timeline_collection_t *collection, schedule
         int end_hour_12 = weekly_patterns[i].end_hour % 12;
         if (end_hour_12 == 0) end_hour_12 = 12;
 
-        debug_info("Received weekly schedule - %d:%02d %s to %d:%02d %s to block %s on %s\n",
-                   start_hour_12, weekly_patterns[i].start_min,
+        /* Convert local time-of-day to an approximate UTC time-of-day */
+        /* A weekly window recurs, so anchor the UTC stamp to the next upcoming
+         * occurrence among this pattern's days - that yields a real calendar
+         * date and exact DST handling, unlike a fixed offset. */
+        time_t now_ref = time(NULL);
+        time_t next_start = 0;
+        for (int d = 0; d < 7; d++) {
+            if (!weekly_patterns[i].days[d]) {
+                continue;
+            }
+            time_t weekly_sec = (time_t)d * 86400
+                              + weekly_patterns[i].start_hour * 3600
+                              + weekly_patterns[i].start_min * 60
+                              + weekly_patterns[i].start_sec;
+            time_t candidate = weekly_to_unix_time(weekly_sec, now_ref, schedule->time_zone);
+            if (candidate < now_ref) {
+                candidate += SECONDS_IN_A_WEEK;
+            }
+            if (next_start == 0 || candidate < next_start) {
+                next_start = candidate;
+            }
+        }
+
+        char start_utc_str[32] = "unknown";
+        char end_utc_str[32] = "unknown";
+        if (next_start > 0) {
+            time_t next_end = next_start + weekly_patterns[i].duration;
+            struct tm start_gmt, end_gmt;
+            if (gmtime_r(&next_start, &start_gmt) && gmtime_r(&next_end, &end_gmt)) {
+                strftime(start_utc_str, sizeof(start_utc_str), "%Y-%m-%d %H:%M:%S", &start_gmt);
+                strftime(end_utc_str, sizeof(end_utc_str), "%Y-%m-%d %H:%M:%S", &end_gmt);
+            }
+        }
+
+        debug_info("Received weekly schedule - %d:%02d:%02d %s to %d:%02d:%02d %s to block %s on %s - next UTC: %s to %s\n",
+                   start_hour_12, weekly_patterns[i].start_min, weekly_patterns[i].start_sec,
                    (weekly_patterns[i].start_hour < 12) ? "AM" : "PM",
-                   end_hour_12, weekly_patterns[i].end_min,
+                   end_hour_12, weekly_patterns[i].end_min, weekly_patterns[i].end_sec,
                    (weekly_patterns[i].end_hour < 12) ? "AM" : "PM",
-                   mac_list, days_str);
+                   mac_list, days_str,
+                   start_utc_str, end_utc_str);
     }
 
-    /* Process ABSOLUTE schedule - log each blocking period (first MAC only, skip expired) */
+    /* Process ABSOLUTE schedule - group MACs sharing the same start/end time
+     * into one log line, mirroring the WEEKLY pattern grouping above (was
+     * previously hardcoded to only track/log the first blocked MAC, which
+     * silently hid other MACs sharing the same absolute window). */
+    typedef struct {
+        time_t start;
+        time_t end;
+        uint32_t macs[256];
+        size_t mac_count;
+    } abs_pattern_t;
+
+    abs_pattern_t abs_patterns[50];
+    int abs_pattern_count = 0;
+    memset(abs_patterns, 0, sizeof(abs_patterns));
+
     bool abs_mac_blocked[256] = {false};
     time_t abs_block_start[256] = {0};
-    uint32_t first_blocked_mac = 256;
     time_t now_time = time(NULL);
 
     schedule_event_t *abs_event = schedule->absolute;
@@ -841,35 +1060,75 @@ static void log_timeline_summary(mac_timeline_collection_t *collection, schedule
                 /* Absolute blocking starts */
                 abs_mac_blocked[mac_idx] = true;
                 abs_block_start[mac_idx] = abs_event->time;
-                if (first_blocked_mac == 256) {
-                    first_blocked_mac = mac_idx;  /* Remember first MAC */
-                }
             } else if (!is_in_event && abs_mac_blocked[mac_idx]) {
-                /* Absolute blocking ends - log only if this is the first MAC and not expired */
-                if (mac_idx == first_blocked_mac && abs_event->time > now_time) {
-                    struct tm start_tm, end_tm;
-                    if (localtime_r(&abs_block_start[mac_idx], &start_tm) &&
-                        localtime_r(&abs_event->time, &end_tm)) {
-                        int start_hour_12 = start_tm.tm_hour % 12;
-                        if (start_hour_12 == 0) start_hour_12 = 12;
-                        int end_hour_12 = end_tm.tm_hour % 12;
-                        if (end_hour_12 == 0) end_hour_12 = 12;
+                /* Absolute blocking ends - group into a pattern by (start, end), skip expired */
+                time_t start_t = abs_block_start[mac_idx];
+                time_t end_t = abs_event->time;
 
-                        debug_info("Received absolute schedule - %d:%02d %s to %d:%02d %s to block MAC%u\n",
-                                   start_hour_12, start_tm.tm_min,
-                                   (start_tm.tm_hour < 12) ? "AM" : "PM",
-                                   end_hour_12, end_tm.tm_min,
-                                   (end_tm.tm_hour < 12) ? "AM" : "PM",
-                                   mac_idx);
+                if (end_t > now_time && abs_pattern_count < 50 &&
+                    !absolute_start_ties_weekly(schedule, start_t, mac_idx)) {
+                    int found = -1;
+                    for (int i = 0; i < abs_pattern_count; i++) {
+                        if (abs_patterns[i].start == start_t && abs_patterns[i].end == end_t) {
+                            found = i;
+                            break;
+                        }
+                    }
+                    if (found == -1) {
+                        found = abs_pattern_count++;
+                        abs_patterns[found].start = start_t;
+                        abs_patterns[found].end = end_t;
+                        abs_patterns[found].mac_count = 0;
+                    }
+                    if (abs_patterns[found].mac_count < 256) {
+                        abs_patterns[found].macs[abs_patterns[found].mac_count++] = (uint32_t)mac_idx;
                     }
                 }
                 abs_mac_blocked[mac_idx] = false;
-                if (mac_idx == first_blocked_mac) {
-                    first_blocked_mac = 256;  /* Reset for next period */
-                }
             }
         }
         abs_event = abs_event->next;
+    }
+
+    /* Log absolute patterns */
+    for (int i = 0; i < abs_pattern_count; i++) {
+        struct tm start_tm, end_tm;
+        if (localtime_r(&abs_patterns[i].start, &start_tm) &&
+            localtime_r(&abs_patterns[i].end, &end_tm)) {
+            char mac_list[256] = {0};
+            size_t mac_list_len = 0;
+            for (size_t m = 0; m < abs_patterns[i].mac_count; m++) {
+                int written = snprintf(mac_list + mac_list_len, sizeof(mac_list) - mac_list_len,
+                                       "%sMAC%u", (m > 0) ? ", " : "", abs_patterns[i].macs[m]);
+                if (written < 0 || (size_t)written >= sizeof(mac_list) - mac_list_len) {
+                    mac_list_len = sizeof(mac_list) - 1;
+                    break;
+                }
+                mac_list_len += (size_t)written;
+            }
+
+            int start_hour_12 = start_tm.tm_hour % 12;
+            if (start_hour_12 == 0) start_hour_12 = 12;
+            int end_hour_12 = end_tm.tm_hour % 12;
+            if (end_hour_12 == 0) end_hour_12 = 12;
+
+            /* Absolute events have real unix timestamps, so UTC is exact (no
+             * DST approximation needed, unlike the weekly section above). */
+            struct tm start_gmt, end_gmt;
+            char start_utc_str[32] = {0};
+            char end_utc_str[32] = {0};
+            if (gmtime_r(&abs_patterns[i].start, &start_gmt) && gmtime_r(&abs_patterns[i].end, &end_gmt)) {
+                strftime(start_utc_str, sizeof(start_utc_str), "%Y-%m-%d %H:%M:%S", &start_gmt);
+                strftime(end_utc_str, sizeof(end_utc_str), "%Y-%m-%d %H:%M:%S", &end_gmt);
+            }
+
+            debug_info("Received absolute schedule - %d:%02d %s to %d:%02d %s to block %s - UTC: %s to %s\n",
+                       start_hour_12, start_tm.tm_min,
+                       (start_tm.tm_hour < 12) ? "AM" : "PM",
+                       end_hour_12, end_tm.tm_min,
+                       (end_tm.tm_hour < 12) ? "AM" : "PM",
+                       mac_list, start_utc_str, end_utc_str);
+        }
     }
 }
 
@@ -1406,6 +1665,14 @@ void send_notification_event(
     debug_info("send_notification_event: Sending %s for %zu MACs\n", 
                event_type_str, mac_count);
     debug_info("send_notification_event: Payload: %s\n", json_payload);
+
+#ifdef UNIT_TESTING
+    /* Lets tests assert what was actually dispatched; the per-period "sent"
+     * flags cannot, since they are also set when a notification is skipped. */
+    if (type >= 0 && type <= NOTIFY_NON_RECURRING_UNPAUSED) {
+        g_notification_sent_count[type]++;
+    }
+#endif
 
 #ifdef ENABLE_FEATURE_TELEMETRY2_0
     const char *t2_marker = get_t2_marker_name(type);

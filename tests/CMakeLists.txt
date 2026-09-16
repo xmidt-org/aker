@@ -225,6 +225,7 @@ add_executable(test_aker_notification test_aker_notification.c ../src/schedule_p
                mem_wrapper.c common_test_stubs.c
                ../src/aker_metrics.c libparodus_mock.c)
 target_link_libraries (test_aker_notification ${AKER_COMMON_LIBS})
+target_compile_definitions(test_aker_notification PUBLIC UNIT_TESTING)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 target_link_libraries (test_aker_notification ${AKER_LINUX_LIBS})
 endif()
