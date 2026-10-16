@@ -1246,12 +1246,35 @@ mac_timeline_collection_t* build_timeline_from_schedule(
      * when a MAC is removed from the block list. */
     if (schedule->absolute) {
         debug_print("build_timeline_from_schedule: Adding absolute events\n");
-        
+
+        /* State-replacement model: the absolute event with the greatest time
+         * <= now defines the CURRENTLY active absolute blocking state. When the
+         * timeline is rebuilt while a pause is already in progress (e.g. the
+         * weekly schedule is edited/deleted mid-pause), that defining event can
+         * be older than the tolerance window. It must still be included,
+         * otherwise build_periods_for_mac() never sees the block-start, no
+         * block period is produced, and the pause's end notification
+         * (NON_RECURRING_UNPAUSED) is never generated. */
+        time_t current_state_time = 0;
+        bool has_current_state = false;
+        sched_event = schedule->absolute;
+        while (sched_event) {
+            if (sched_event->time <= now &&
+                (!has_current_state || sched_event->time > current_state_time)) {
+                current_state_time = sched_event->time;
+                has_current_state = true;
+            }
+            sched_event = sched_event->next;
+        }
+
         sched_event = schedule->absolute;
         while (sched_event) {
             /* Include events from past SCHEDULED_TIME_TOLERANCE_SEC to catch events that just happened
-             * due to network latency between cloud schedule creation and device receipt */
-            if (sched_event->time >= (now - SCHEDULED_TIME_TOLERANCE_SEC) && sched_event->time <= future_limit) {
+             * due to network latency between cloud schedule creation and device receipt,
+             * plus the event defining the currently active absolute state (see above). */
+            bool within_window = (sched_event->time >= (now - SCHEDULED_TIME_TOLERANCE_SEC));
+            bool is_current_state = (has_current_state && sched_event->time == current_state_time);
+            if ((within_window || is_current_state) && sched_event->time <= future_limit) {
 
                 /* Add the absolute event - each event defines which MACs are blocked at that time */
                 bool is_block_start = (sched_event->block_count > 0);

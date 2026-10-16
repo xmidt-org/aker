@@ -1809,6 +1809,56 @@ void test_case5_two_overlapping_weekly_windows_with_absolute_mac(void)
     destroy_schedule(s);
 }
 
+/* Regression (RDKB-65401): weekly schedule deleted while an absolute pause is
+ * already in progress. The scheduler rebuilds the timeline from an
+ * absolute-only schedule, but the pause started more than
+ * SCHEDULED_TIME_TOLERANCE_SEC ago. The absolute block-start event must still
+ * be included (it defines the currently active state), otherwise no block
+ * period is produced and the pause's end NON_RECURRING_UNPAUSED notification
+ * is never scheduled. Mirrors the field log: pause 05:18:17 -> 05:48:17,
+ * timeline rebuilt at 05:22:08 (~231s into the pause). */
+void test_abs_pause_in_progress_weekly_deleted(void)
+{
+    const char *macs[] = { "11:11:11:11:11:11", "22:22:22:22:22:22" };
+    schedule_t *s;
+    mac_timeline_collection_t *collection;
+    uint32_t block01[] = { 0, 1 };
+    time_t abs_start = DAY_BASE + 36000;              /* pause begins */
+    time_t abs_end   = abs_start + 1800;              /* pause ends 30 min later */
+    time_t now       = abs_start + 231;               /* rebuilt well past the 60s tolerance */
+    int i;
+
+    s = build_schedule("UTC", 2, macs);
+    add_absolute_event(s, abs_start, block01, 2);     /* block both MACs */
+    add_absolute_event(s, abs_end, NULL, 0);          /* unblock all */
+
+    collection = build_timeline_from_schedule(s, now, MAX_WEEKS_AHEAD);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(collection);
+
+    /* Both MACs must have an ABSOLUTE/ABSOLUTE period ending at abs_end so the
+     * end-of-pause unpause notification is generated. */
+    for (i = 0; i < 2; i++) {
+        CU_ASSERT_PTR_NOT_NULL_FATAL(collection->timelines[i].periods);
+        CU_ASSERT_EQUAL(collection->timelines[i].periods->start_time, abs_start);
+        CU_ASSERT_EQUAL(collection->timelines[i].periods->end_time, abs_end);
+        CU_ASSERT_TRUE(collection->timelines[i].periods->start_is_absolute);
+        CU_ASSERT_TRUE(collection->timelines[i].periods->end_is_absolute);
+        CU_ASSERT_PTR_NULL(collection->timelines[i].periods->next);
+    }
+
+    /* The scheduler's next wake must be the pause-end ENDING_SOON checkpoint
+     * (NOTIFICATION_ADVANCE_TIME_SEC before abs_end); send_pending then skips
+     * ENDING_SOON for an absolute end and the following wake fires the
+     * NON_RECURRING_UNPAUSED at abs_end. The key regression guard is that this
+     * is NOT INT_MAX (no pending notification), which is the bug's signature. */
+    CU_ASSERT_NOT_EQUAL(get_next_notification_time(collection, now), INT_MAX);
+    CU_ASSERT_EQUAL(get_next_notification_time(collection, now),
+                    abs_end - NOTIFICATION_ADVANCE_TIME_SEC);
+
+    destroy_timeline_collection(collection);
+    destroy_schedule(s);
+}
+
 void add_suites( CU_pSuite *suite )
 {
     printf("--------Start of Test Cases Execution ---------\n");
@@ -1859,6 +1909,7 @@ void add_suites( CU_pSuite *suite )
     CU_add_test( *suite, "Cloud-adjusted absolute MAC is not a user pause", test_cloud_adjusted_absolute_mac_not_user_pause );
     CU_add_test( *suite, "Two staggered user pauses enclosing weekly", test_two_staggered_user_pauses_enclosing_weekly );
     CU_add_test( *suite, "Rule 6: repeated rebuild is stable", test_rule6_repeated_rebuild_is_stable );
+    CU_add_test( *suite, "ABS pause in progress, weekly deleted mid-pause (RDKB-65401)", test_abs_pause_in_progress_weekly_deleted );
 }
 
 /*----------------------------------------------------------------------------*/
